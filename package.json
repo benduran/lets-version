@@ -1,0 +1,34 @@
+{
+  "name": "@better-builds/lets-version",
+  "version": "0.1.0",
+  "description": "A package that reads your conventional commits and git history and recommends (or applies) a SemVer version bump for you",
+  "main": "dist/index.js",
+  "scripts": {
+    "postinstall": "husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/benduran/lets-version.git"
+  },
+  "keywords": [
+    "Version",
+    "Bump",
+    "SemVer",
+    "Conventional",
+    "Commits",
+    "Not-Lerna"
+  ],
+  "author": "Benjamin Duran <stratodyne@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/benduran/lets-version/issues"
+  },
+  "homepage": "https://github.com/benduran/lets-version#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^17.6.3",
+    "@commitlint/config-conventional": "^17.6.3",
+    "eslint-config-react-yas": "^4.0.0",
+    "husky": "^8.0.3",
+    "typescript": "^5.0.4"
+  }
+}
