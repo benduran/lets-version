@@ -41,6 +41,29 @@ export class GitCommit {
 }
 
 /**
+ * Represents a raw git commit with no conventional commits connection
+ * (basically straight from "git log"), but with package info
+ * attached to the commit. this might be uber verbose, but at least
+ * we have all the data available
+ */
+export class GitCommitWithPackageInfo extends GitCommit {
+  /**
+   * @param {string} author - Author of the commit
+   * @param {string} date - Date when the commit happened
+   * @param {string} email - Author's email
+   * @param {string} message - Raw commit message
+   * @param {string} sha - Unique hash for the commit
+   * @param {PackageInfo} packageInfo - Parsed packageInfo
+   */
+  constructor(author, date, email, message, sha, packageInfo) {
+    super(author, date, email, message, sha);
+
+    /** @type {PackageInfo} */
+    this.packageInfo = packageInfo;
+  }
+}
+
+/**
  * Represents notes detected on a conventional commit
  */
 export class GitConventionalNote {
@@ -73,7 +96,7 @@ export class GitConventional {
    * @param {object | null} [conventional.revert]
    * @param {string | null} [conventional.scope]
    * @param {string | null} [conventional.subject]
-   * @param {string | null} [conventional.type]
+   * @param {ConventionalCommitType | null} [conventional.type]
    */
   constructor({ body, footer, header, mentions, merge, notes, references, revert, scope, subject, type }) {
     /**
@@ -127,7 +150,7 @@ export class GitConventional {
     this.subject = subject;
 
     /**
-     * @type {string | undefined | null}
+     * @type {ConventionalCommitType | undefined | null}
      */
     this.type = type;
   }
@@ -153,6 +176,29 @@ export class GitCommitWithConventional extends GitCommit {
      * @type {GitConventional}
      */
     this.conventional = conventional;
+  }
+}
+
+/**
+ * Represents a commit that has had its message parsed and converted
+ * into a valid Conventional Commits structure. Additionally, package
+ * info will be attached to the commit
+ */
+export class GitCommitWithConventionalAndPackageInfo extends GitCommitWithConventional {
+  /**
+   * @param {string} author - Author of the commit
+   * @param {string} date - Date when the commit happened
+   * @param {string} email - Author's email
+   * @param {string} message - Raw commit message
+   * @param {string} sha - Unique hash for the commit
+   * @param {GitConventional} conventional - Parsed conventional commit information
+   * @param {PackageInfo} packageInfo - Parsed package info
+   */
+  constructor(author, date, email, message, sha, conventional, packageInfo) {
+    super(author, date, email, message, sha, conventional);
+
+    /** @type {PackageInfo} */
+    this.packageInfo = packageInfo;
   }
 }
 
@@ -217,5 +263,63 @@ export class PublishTagInfo {
 
     /** @type {string | null} */
     this.sha = sha;
+  }
+}
+
+/**
+ * Represents the type of commit, as detected
+ * by the conventional parser
+ *
+ * @enum {string}
+ */
+export const ConventionalCommitType = {
+  BUILD: 'build',
+  CHORE: 'chore',
+  CI: 'ci',
+  DOCS: 'docs',
+  FEAT: 'feat',
+  FIX: 'fix',
+  PERF: 'perf',
+  REFACTOR: 'refactor',
+  REVERT: 'revert',
+  STYLE: 'style',
+  TEST: 'test',
+};
+
+/**
+ * Represents a semver bump type operation
+ *
+ * @enum {string}
+ */
+export const BumpType = {
+  FIRST: 'FIRST',
+  MAJOR: 'MAJOR',
+  MINOR: 'MINOR',
+  PATCH: 'PATCH',
+};
+
+/**
+ * Represents information about a version bump recommendation
+ * for a specific parsed package
+ */
+export class BumpRecommendation {
+  /**
+   * @param {PackageInfo} packageInfo
+   * @param {string | null} from
+   * @param {string} to
+   * @param {BumpType} type
+   */
+  constructor(packageInfo, from, to, type) {
+    /** @type {PackageInfo} */
+    this.packageInfo = packageInfo;
+
+    /** @type {string | null} */
+    this.from = from;
+
+    /** @type {string} */
+    this.to = to;
+
+    /** @type {BumpType} */
+    this.type = type;
   }
 }

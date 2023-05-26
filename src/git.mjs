@@ -14,7 +14,7 @@ import { GitCommit, PublishTagInfo } from './types.mjs';
  * If the "since" parameter isn't provided, all commits
  * from the dawn of man are returned
  *
- * @param {string} [since=''] - If provided, fetches all commits since this particular git SHA or Tag
+ * @param {string | null | undefined} [since=''] - If provided, fetches all commits since this particular git SHA or Tag
  * @param {string} [cwd=appRootPath.toString] - Where the git logic should run. Defaults to your repository root
  * @returns {Promise<GitCommit[]>}
  */
@@ -112,7 +112,7 @@ export function formatVersionTagForPackage(packageInfo) {
  *
  * @param {PackageInfo} packageInfo
  *
- * @returns {Promise<{ sha: string, tag: string } | null>}
+ * @returns {Promise<PublishTagInfo | null>}
  */
 export async function gitLastKnownPublishTagInfoForPackage(packageInfo, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
@@ -154,7 +154,7 @@ export async function gitLastKnownPublishTagInfoForPackage(packageInfo, cwd = ap
       match = allRemoteTagsMap.get(tag);
     }
   }
-  return match ? { tag, sha: match } : null;
+  return match ? new PublishTagInfo(packageInfo.name, tag, match) : null;
 }
 
 /**

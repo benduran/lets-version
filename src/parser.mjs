@@ -7,6 +7,17 @@ import { sync as conventionalParser } from 'conventional-commits-parser';
 import { GitCommitWithConventional, GitConventional, GitConventionalNote } from './types.mjs';
 
 /**
+ * Attempts to sniff out and parse the detected Conventional Commit
+ * type to a stable type
+ *
+ * @param {string | undefined} type
+ */
+const parseConventionalType = type => {
+  switch (type) {
+  }
+};
+
+/**
  * Given an array of already parsed commits, attempts
  * to use the official conventional commits parser
  * to map details into an enriched Commit object

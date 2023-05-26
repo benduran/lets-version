@@ -14,7 +14,9 @@ import { getPackages } from './getPackages.mjs';
 import {
   getChangedFilesSinceBump,
   getChangedPackagesSinceBump,
+  getConventionalCommitsByPackage,
   getLastVersionTagsByPackageName,
+  getRecommendedBumpsByPackage,
 } from './lets-version.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -131,6 +133,36 @@ async function setupCLI() {
       },
     )
     .command(
+      'get-conventional',
+      'Parsed git commits for a specific package or packages, using the official Conventional Commits parser',
+      y =>
+        getSharedYargs(y).option('package', {
+          alias: 'p',
+          description:
+            'One or more packages to check. You can specify multiple by doing -p <name1> -p <name2> -p <name3>',
+          type: 'array',
+        }),
+      async args => {
+        // @ts-ignore
+        const commits = await getConventionalCommitsByPackage(args.package, args.cwd);
+
+        if (args.json) return console.info(JSON.stringify(commits, null, 2));
+
+        if (!commits.length) {
+          return console.warn('No conventional commits could be parsed');
+        }
+
+        return console.info(
+          commits
+            .map(
+              c =>
+                `package: ${c.packageInfo.name}${os.EOL}  message: ${c.message}  commit: ${c.sha}${os.EOL}  author: ${c.author}${os.EOL}  email: ${c.email}${os.EOL}  date: ${c.date}${os.EOL}`,
+            )
+            .join(`${os.EOL}${os.EOL}`),
+        );
+      },
+    )
+    .command(
       'get-bumps',
       'Gets a series of recommended version bumps for a specific package or set of packages. NOTE: It is possible for your bump recommendation to not change. If this is the case, this means that your particular package has never had a version bump by the lets-version library.',
       y =>
@@ -140,7 +172,12 @@ async function setupCLI() {
             'One or more packages to check. You can specify multiple by doing -p <name1> -p <name2> -p <name3>',
           type: 'array',
         }),
-      async args => {},
+      async args => {
+        // @ts-ignore
+        const bumps = await getRecommendedBumpsByPackage(args.package, args.cwd);
+
+        console.info('bumps', bumps);
+      },
     )
     .help();
   const { _ } = await yargs.argv;
