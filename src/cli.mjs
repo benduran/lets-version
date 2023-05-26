@@ -10,12 +10,12 @@ import { fileURLToPath } from 'url';
 import createCLI from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPackages } from './getPackages.mjs';
+import { getPackages } from './getPackages.mjs';
 import {
-  getAllFilesChangedSinceTagInfos,
-  getLastKnownPublishTagInfoForAllPackages,
-  gitAllFilesChangedSinceSha,
-} from './git.mjs';
+  getChangedFilesSinceBump,
+  getChangedPackagesSinceBump,
+  getLastVersionTagsByPackageName,
+} from './lets-version.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -50,7 +50,10 @@ async function setupCLI() {
       y => getSharedYargs(y),
       async args => {
         const packages = await getPackages(args.cwd);
+
         if (args.json) return console.info(JSON.stringify(packages, null, 2));
+
+        if (!packages.length) return console.warn('No packages were detected');
 
         return console.info(packages.map(p => p.packagePath).join(os.EOL));
       },
@@ -67,11 +70,7 @@ async function setupCLI() {
         }),
       async args => {
         // @ts-ignore
-        const filteredPackages = filterPackagesByNames(await getPackages(args.cwd), args.package);
-
-        if (!filteredPackages) return console.warn('No packages were found that match your arguments');
-
-        const allResults = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, args.cwd);
+        const allResults = await getLastVersionTagsByPackageName(args.package, args.cwd);
 
         if (args.json) return console.info(JSON.stringify(allResults, null, 2));
 
@@ -95,18 +94,7 @@ async function setupCLI() {
         }),
       async args => {
         // @ts-ignore
-        const filteredPackages = filterPackagesByNames(await getPackages(args.cwd), args.package);
-
-        if (!filteredPackages) return console.warn('No packages were found that match your arguments');
-
-        const tagResults = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, args.cwd);
-        const changedFiles = Array.from(
-          new Set(
-            (
-              await Promise.all(tagResults.map(async t => (t.sha ? gitAllFilesChangedSinceSha(t.sha, args.cwd) : [])))
-            ).flat(),
-          ),
-        );
+        const changedFiles = await getChangedFilesSinceBump(args.package, args.cwd);
 
         if (args.json) return console.info(JSON.stringify(changedFiles, null, 2));
 
@@ -130,17 +118,7 @@ async function setupCLI() {
         }),
       async args => {
         // @ts-ignore
-        const filteredPackages = filterPackagesByNames(await getPackages(args.cwd), args.package);
-
-        if (!filteredPackages) return console.warn('No packages were found that match your arguments');
-
-        const tagInfos = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, args.cwd);
-        const changedFiles = await getAllFilesChangedSinceTagInfos(tagInfos, args.cwd);
-        const changedPackages = await getAllPackagesChangedBasedOnFilesModified(
-          changedFiles,
-          filteredPackages,
-          args.cwd,
-        );
+        const changedPackages = await getChangedPackagesSinceBump(args.package, args.cwd);
 
         if (args.json) return console.info(JSON.stringify(changedPackages, null, 2));
 
