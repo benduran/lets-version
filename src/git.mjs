@@ -183,7 +183,7 @@ export async function getLastKnownPublishTagInfoForAllPackages(packages, cwd = a
 
 /**
  * Given a specific git sha, finds all files that have been modified
- * since the sha and returns just the filenames
+ * since the sha and returns the absolute filepaths
  *
  * @param {string} sha
  * @param {string} [cwd=appRootPath.toString()]
@@ -193,11 +193,10 @@ export async function getLastKnownPublishTagInfoForAllPackages(packages, cwd = a
 export async function gitAllFilesChangedSinceSha(sha, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  debugger;
   const { stdout } = await execaCommand(`git --no-pager diff --name-only ${sha}..`, { cwd: fixedCWD, stdio: 'pipe' });
   return stdout
     .trim()
     .split(os.EOL)
     .filter(Boolean)
-    .map(fp => path.join(cwd, fp));
+    .map(fp => path.resolve(path.join(cwd, fp)));
 }

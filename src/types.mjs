@@ -162,6 +162,7 @@ export class GitCommitWithConventional extends GitCommit {
 export class PackageInfo {
   /**
    * @param {object} info
+   * @param {string[] | undefined} [info.filesChanged]
    * @param {boolean} info.isPrivate
    * @param {string} info.name
    * @param {string} info.packagePath
@@ -170,7 +171,7 @@ export class PackageInfo {
    * @param {boolean} info.root
    * @param {string} info.version
    */
-  constructor({ isPrivate, name, packageJSONPath, packagePath, pkg, root, version }) {
+  constructor({ filesChanged, isPrivate, name, packageJSONPath, packagePath, pkg, root, version }) {
     /** @type {boolean} */
     this.isPrivate = isPrivate;
 
@@ -191,5 +192,8 @@ export class PackageInfo {
 
     /** @type {string} */
     this.version = version;
+
+    /** @type {string[] | undefined} */
+    this.filesChanged = filesChanged;
   }
 }
