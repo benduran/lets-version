@@ -197,3 +197,25 @@ export class PackageInfo {
     this.filesChanged = filesChanged;
   }
 }
+
+/**
+ * Represents information about a package and its latest detected git tag
+ * that corresponds to a version or publish event
+ */
+export class PublishTagInfo {
+  /**
+   * @param {string} packageName
+   * @param {string | null} tag
+   * @param {string | null} sha
+   */
+  constructor(packageName, tag, sha) {
+    /** @type {string} */
+    this.packageName = packageName;
+
+    /** @type {string | null} */
+    this.tag = tag;
+
+    /** @type {string | null} */
+    this.sha = sha;
+  }
+}

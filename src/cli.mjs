@@ -11,7 +11,11 @@ import createCLI from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPackages } from './getPackages.mjs';
-import { getLastKnownPublishTagInfoForAllPackages, gitAllFilesChangedSinceSha } from './git.mjs';
+import {
+  getAllFilesChangedSinceTagInfos,
+  getLastKnownPublishTagInfoForAllPackages,
+  gitAllFilesChangedSinceSha,
+} from './git.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -145,14 +149,8 @@ async function setupCLI() {
 
         if (!filteredPackages) return console.warn('No packages were found that match your arguments');
 
-        const tagResults = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, args.cwd);
-        const changedFiles = Array.from(
-          new Set(
-            (
-              await Promise.all(tagResults.map(async t => (t.sha ? gitAllFilesChangedSinceSha(t.sha, args.cwd) : [])))
-            ).flat(),
-          ),
-        );
+        const tagInfos = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, args.cwd);
+        const changedFiles = await getAllFilesChangedSinceTagInfos(tagInfos, args.cwd);
         const changedPackages = await getAllPackagesChangedBasedOnFilesModified(
           changedFiles,
           filteredPackages,

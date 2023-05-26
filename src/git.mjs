@@ -1,13 +1,13 @@
 /** @typedef {import('./types.mjs').PackageInfo} PackageInfo */
 
 import appRootPath from 'app-root-path';
-import { execa, execaCommand } from 'execa';
+import { execaCommand } from 'execa';
 import os from 'os';
 import path from 'path';
 import semver from 'semver';
 
 import { fixCWD } from './cwd.mjs';
-import { GitCommit } from './types.mjs';
+import { GitCommit, PublishTagInfo } from './types.mjs';
 
 /**
  * Returns commits since a particular git SHA or tag.
@@ -163,7 +163,7 @@ export async function gitLastKnownPublishTagInfoForPackage(packageInfo, cwd = ap
  * @param {PackageInfo[]} packages
  * @param {string} [cwd=appRootPath.toString]
  *
- * @returns {Promise<Array<{ packageName: string, tag: string | null, sha: string | null }>>}
+ * @returns {Promise<PublishTagInfo[]>}
  */
 export async function getLastKnownPublishTagInfoForAllPackages(packages, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
@@ -172,11 +172,7 @@ export async function getLastKnownPublishTagInfoForAllPackages(packages, cwd = a
     packages.map(async p => {
       const result = await gitLastKnownPublishTagInfoForPackage(p, fixedCWD);
 
-      return {
-        packageName: p.name,
-        sha: result?.sha ?? null,
-        tag: result?.tag ?? null,
-      };
+      return new PublishTagInfo(p.name, result?.tag ?? null, result?.sha ?? null);
     }),
   );
 }
@@ -199,4 +195,22 @@ export async function gitAllFilesChangedSinceSha(sha, cwd = appRootPath.toString
     .split(os.EOL)
     .filter(Boolean)
     .map(fp => path.resolve(path.join(cwd, fp)));
+}
+
+/**
+ * Given an input of parsed git tag infos,
+ * returns all the files that have changed since any of these git tags
+ * have occured, with duplicates removed
+ *
+ * @param {PublishTagInfo[]} tagInfos
+ * @param {string} [cwd=appRootPath.toString()]
+ */
+export async function getAllFilesChangedSinceTagInfos(tagInfos, cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  const results = (
+    await Promise.all(tagInfos.map(async t => (t.sha ? gitAllFilesChangedSinceSha(t.sha, fixedCWD) : [])))
+  ).flat();
+
+  return Array.from(new Set(results));
 }

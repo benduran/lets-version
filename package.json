@@ -10,7 +10,7 @@
     "clean": "rm -rf ./dist",
     "start": "node src/cli.mjs",
     "postinstall": "husky install",
-    "typecheck": "tsc --project ./tsconfig.json --noEmit"
+    "typecheck": "tsc --noEmit --allowJs"
   },
   "repository": {
     "type": "git",
