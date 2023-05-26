@@ -3,6 +3,7 @@
 import appRootPath from 'app-root-path';
 import { execaCommand } from 'execa';
 import os from 'os';
+import semver from 'semver';
 
 import { GitCommit } from './types.mjs';
 
@@ -39,6 +40,43 @@ export async function gitCommitsSince(since = '', cwd = appRootPath.toString()) 
 }
 
 /**
+ * Grabs the full list of all tags available on upstream
+ *
+ * @param {string} [cwd=appRootPath.toString()] - Nearest .git repo
+ *
+ * @returns {Promise<Array<[string, string]>>}
+ */
+export async function gitRemoteTags(cwd = appRootPath.toString()) {
+  return (await execaCommand('git ls-remote --tags origin', { cwd, stdio: 'pipe' })).stdout
+    .trim()
+    .split(os.EOL)
+    .filter(Boolean)
+    .map(t => {
+      const [sha = '', ref = ''] = t.split(/\s+/);
+
+      return [ref.replace('refs/tags/', ''), sha];
+    });
+}
+
+/**
+ * Grabs the full list of all tags available locally
+ *
+ * @param {string} [cwd=appRootPath.toString()] - Neartest .git repo
+ * @returns {Promise<Array<[string, string]>>}
+ */
+export async function gitLocalTags(cwd = appRootPath.toString()) {
+  return (await execaCommand('git show-ref --tags', { cwd, stdio: 'pipe' })).stdout
+    .trim()
+    .split(os.EOL)
+    .filter(Boolean)
+    .map(t => {
+      const [sha = '', ref = ''] = t.split(/\s+/);
+
+      return [ref.replace('refs/tags/', ''), sha];
+    });
+}
+
+/**
  * Given a package info object, returns a formatted string
  * that can be safely used as a git version tag
  *
@@ -53,27 +91,51 @@ export function formatVersionTagForPackage(packageInfo) {
 /**
  * Given a javascript package info object, checks to see if there's
  * a git tag for its current version. If it's found, its SHA is returned.
- * Otherwise, null is returned
+ * If one for the current version is not found, all existing tags are scanned
+ * to find the closest match, and that is returned. If one isn't found, null
+ * is returned.
  *
  * @param {PackageInfo} packageInfo
  *
  * @returns {Promise<string | null>}
  */
-export async function gitTagForPackage(packageInfo, cwd = appRootPath.toString()) {
+export async function gitLastKnownPublishTagShaForPackage(packageInfo, cwd = appRootPath.toString()) {
   // tag may either be on upstream or local-only. We need to treat both cases as "exists"
-  const { stdout: allRemoteTagsStr } = await execaCommand('git ls-remote --tags origin', { cwd, stdio: 'pipe' });
-  const { stdout: allLocalTagsStr } = await execaCommand('git show-ref --tags', { cwd, stdio: 'pipe' });
+  const allRemoteTag = await gitRemoteTags(cwd);
+  const allLocalTags = await gitLocalTags(cwd);
 
-  const allRemoteTagsMap = new Map(
-    `${allRemoteTagsStr}${os.EOL}${allLocalTagsStr}`
-      .split(os.EOL)
-      .filter(Boolean)
-      .map(t => {
-        const [sha = '', ref = ''] = t.split(/\s+/);
+  // newest / largest tags first
+  const allTags = [...allRemoteTag, ...allLocalTags].sort((a, b) => b[0].localeCompare(a[0]));
 
-        return [ref.replace('refs/tags/', ''), sha];
-      }),
-  );
+  const allRemoteTagsMap = new Map(allTags);
 
-  return allRemoteTagsMap.get(formatVersionTagForPackage(packageInfo)) ?? null;
+  let match = allRemoteTagsMap.get(formatVersionTagForPackage(packageInfo));
+  if (!match) {
+    // no dice on a tag match for the latest posted version in the package.json file.
+    // we now need to scan through all tags and find the "closest" semver match
+
+    /** @type {string | null} */
+    let largestTag = null;
+    for (const tag of allRemoteTagsMap.keys()) {
+      if (tag.includes(packageInfo.name)) {
+        if (!largestTag) {
+          largestTag = tag;
+          continue;
+        }
+
+        const tagSemver = semver.coerce(tag);
+        const largestTagSemver = semver.coerce(largestTag);
+
+        if (!tagSemver || !largestTagSemver) continue;
+
+        if (tagSemver.compare(largestTagSemver) > 0) largestTag = tag;
+      }
+    }
+    if (largestTag) {
+      match = allRemoteTagsMap.get(
+        formatVersionTagForPackage({ ...packageInfo, version: semver.coerce(largestTag)?.version ?? '' }),
+      );
+    }
+  }
+  return match ?? null;
 }
