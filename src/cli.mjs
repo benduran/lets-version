@@ -25,11 +25,17 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
  * @returns {Argv}
  */
 const getSharedYargs = yargs =>
-  yargs.option('cwd', {
-    default: process.cwd(),
-    description: "The folder to use as root when running command. Defaults to your session's CWD",
-    type: 'string',
-  });
+  yargs
+    .option('cwd', {
+      default: process.cwd(),
+      description: "The folder to use as root when running command. Defaults to your session's CWD",
+      type: 'string',
+    })
+    .option('json', {
+      default: false,
+      description: 'If true, lists results as a JSON blob piped to your terminal',
+      type: 'boolean',
+    });
 
 async function setupCLI() {
   /** @type {PackageJson} */
@@ -41,13 +47,7 @@ async function setupCLI() {
     .command(
       'ls',
       'Shows all detected packages for this repository',
-      y =>
-        getSharedYargs(y).option('json', {
-          default: false,
-          description:
-            'If true, lists the detected packages and their information as a JSON blob piped to your terminal',
-          type: 'boolean',
-        }),
+      y => getSharedYargs(y),
       async args => {
         const packages = await getPackages(args.cwd);
         if (args.json) return console.info(JSON.stringify(packages, null, 2));
@@ -59,19 +59,14 @@ async function setupCLI() {
       'last-version-tag',
       'Gets the last tag used when version bumping for a specific package. If no package is specified, all found tags for each package detected are returned',
       y =>
-        getSharedYargs(y)
-          .option('package', {
-            alias: 'p',
-            description:
-              'One or more packages to check. You can specify multiple by doing -p <name1> -p <name2> -p <name3>',
-            type: 'array',
-          })
-          .option('json', {
-            default: false,
-            description: 'If true, lists the found git tags for your arguments as a JSON blob piped to your terminal',
-            type: 'boolean',
-          }),
+        getSharedYargs(y).option('package', {
+          alias: 'p',
+          description:
+            'One or more packages to check. You can specify multiple by doing -p <name1> -p <name2> -p <name3>',
+          type: 'array',
+        }),
       async args => {
+        // @ts-ignore
         const filteredPackages = filterPackagesByNames(await getPackages(args.cwd), args.package);
 
         if (!filteredPackages) return console.warn('No packages were found that match your arguments');
@@ -92,19 +87,14 @@ async function setupCLI() {
       'changed-files-since-bump',
       'Gets a list of all files that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.',
       y =>
-        getSharedYargs(y)
-          .option('package', {
-            alias: 'p',
-            description:
-              'One or more packages to check. You can specify multiple by doing -p <name1> -p <name2> -p <name3>',
-            type: 'array',
-          })
-          .option('json', {
-            default: false,
-            description: 'If true, lists the changed files as a JSON blob piped to your terminal',
-            type: 'boolean',
-          }),
+        getSharedYargs(y).option('package', {
+          alias: 'p',
+          description:
+            'One or more packages to check. You can specify multiple by doing -p <name1> -p <name2> -p <name3>',
+          type: 'array',
+        }),
       async args => {
+        // @ts-ignore
         const filteredPackages = filterPackagesByNames(await getPackages(args.cwd), args.package);
 
         if (!filteredPackages) return console.warn('No packages were found that match your arguments');
@@ -132,19 +122,14 @@ async function setupCLI() {
       'changed-packages-since-bump',
       'Gets a list of all packages that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.',
       y =>
-        getSharedYargs(y)
-          .option('package', {
-            alias: 'p',
-            description:
-              'One or more packages to check. You can specify multiple by doing -p <name1> -p <name2> -p <name3>',
-            type: 'array',
-          })
-          .option('json', {
-            default: false,
-            description: 'If true, lists the changed files as a JSON blob piped to your terminal',
-            type: 'boolean',
-          }),
+        getSharedYargs(y).option('package', {
+          alias: 'p',
+          description:
+            'One or more packages to check. You can specify multiple by doing -p <name1> -p <name2> -p <name3>',
+          type: 'array',
+        }),
       async args => {
+        // @ts-ignore
         const filteredPackages = filterPackagesByNames(await getPackages(args.cwd), args.package);
 
         if (!filteredPackages) return console.warn('No packages were found that match your arguments');
@@ -166,6 +151,18 @@ async function setupCLI() {
         }
         return console.info(changedPackages.map(p => p.packagePath).join(os.EOL));
       },
+    )
+    .command(
+      'get-bumps',
+      'Gets a series of recommended version bumps for a specific package or set of packages. NOTE: It is possible for your bump recommendation to not change. If this is the case, this means that your particular package has never had a version bump by the lets-version library.',
+      y =>
+        getSharedYargs(y).option('package', {
+          alias: 'p',
+          description:
+            'One or more packages to check. You can specify multiple by doing -p <name1> -p <name2> -p <name3>',
+          type: 'array',
+        }),
+      async args => {},
     )
     .help();
   const { _ } = await yargs.argv;

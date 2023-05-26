@@ -116,12 +116,12 @@ export async function getAllPackagesChangedBasedOnFilesModified(filesModified, p
  * If no names are provided, all packages are returned
  *
  * @param {PackageInfo[]} packages
- * @param {string[]} names
+ * @param {string[] | undefined} names
  *
  * @returns {PackageInfo[]}
  */
 export function filterPackagesByNames(packages, names) {
-  const namesSet = new Set(names);
+  const namesSet = new Set(names ?? []);
 
   if (!namesSet.size) return packages;
   return packages.filter(p => namesSet.has(p.name));
