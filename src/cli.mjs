@@ -10,8 +10,8 @@ import { fileURLToPath } from 'url';
 import createCLI from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-import { getPackages } from './getPackages.mjs';
-import { getLastKnownPublishTagInfoForAllPackages } from './git.mjs';
+import { filterPackagesByNames, getPackages } from './getPackages.mjs';
+import { getLastKnownPublishTagInfoForAllPackages, gitAllFilesChangedSinceSha } from './git.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -68,10 +68,7 @@ async function setupCLI() {
             type: 'boolean',
           }),
       async args => {
-        const packages = await getPackages(args.cwd);
-
-        const toCheckSet = new Set(args.package ?? []);
-        const filteredPackages = packages.filter(p => !toCheckSet.size || toCheckSet.has(p.name));
+        const filteredPackages = filterPackagesByNames(await getPackages(args.cwd), args.package);
 
         if (!filteredPackages) return console.warn('No packages were found that match your arguments');
 
@@ -85,6 +82,46 @@ async function setupCLI() {
             .map(r => `${r.packageName}:${os.EOL}  tag: ${r.tag}${os.EOL}  sha: ${r.sha}`)
             .join(`${os.EOL}${os.EOL}`),
         );
+      },
+    )
+    .command(
+      'changed-files-since-bump',
+      'Gets a list of all files that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.',
+      y =>
+        getSharedYargs(y)
+          .option('package', {
+            alias: 'p',
+            description:
+              'One or more packages to check. You can specify multiple by doing -p <name1> -p <name2> -p <name3>',
+            type: 'array',
+          })
+          .option('json', {
+            default: false,
+            description: 'If true, lists the changed files as a JSON blob piped to your terminal',
+            type: 'boolean',
+          }),
+      async args => {
+        const filteredPackages = filterPackagesByNames(await getPackages(args.cwd), args.package);
+
+        if (!filteredPackages) return console.warn('No packages were found that match your arguments');
+
+        const tagResults = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, args.cwd);
+        const changedFiles = Array.from(
+          new Set(
+            (
+              await Promise.all(tagResults.map(async t => (t.sha ? gitAllFilesChangedSinceSha(t.sha, args.cwd) : [])))
+            ).flat(),
+          ),
+        );
+
+        if (args.json) return console.info(JSON.stringify(changedFiles, null, 2));
+
+        if (!changedFiles.length) {
+          return console.warn(
+            'No files have changed. This likely means you have not yet created your first version with the lets-version library',
+          );
+        }
+        return console.info(changedFiles.join(os.EOL));
       },
     )
     .help();

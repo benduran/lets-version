@@ -1,7 +1,7 @@
 /** @typedef {import('./types.mjs').PackageInfo} PackageInfo */
 
 import appRootPath from 'app-root-path';
-import { execaCommand } from 'execa';
+import { execa, execaCommand } from 'execa';
 import os from 'os';
 import path from 'path';
 import semver from 'semver';
@@ -73,15 +73,22 @@ export async function gitRemoteTags(cwd = appRootPath.toString()) {
 export async function gitLocalTags(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  return (await execaCommand('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' })).stdout
-    .trim()
-    .split(os.EOL)
-    .filter(Boolean)
-    .map(t => {
-      const [sha = '', ref = ''] = t.split(/\s+/);
+  try {
+    return (await execaCommand('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' })).stdout
+      .trim()
+      .split(os.EOL)
+      .filter(Boolean)
+      .map(t => {
+        const [sha = '', ref = ''] = t.split(/\s+/);
 
-      return [ref.replace('refs/tags/', ''), sha];
-    });
+        return [ref.replace('refs/tags/', ''), sha];
+      });
+  } catch (error) {
+    // According to the official git documentation, zero results will cause an exit code of "1"
+    // https://git-scm.com/docs/git-show-ref#_examples
+    if (error.exitCode === 1) return [];
+    throw error;
+  }
 }
 
 /**
@@ -185,6 +192,8 @@ export async function getLastKnownPublishTagInfoForAllPackages(packages, cwd = a
  */
 export async function gitAllFilesChangedSinceSha(sha, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
+
+  debugger;
   const { stdout } = await execaCommand(`git --no-pager diff --name-only ${sha}..`, { cwd: fixedCWD, stdio: 'pipe' });
   return stdout
     .trim()

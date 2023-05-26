@@ -20,7 +20,6 @@ import { PackageInfo } from './types.mjs';
  * @param {string} [cwd=appRootPath.toString()] - Repo root to work in. Defaults to closest .git repo
  */
 export async function getPackages(cwd = appRootPath.toString()) {
-  debugger;
   const fixedCWD = fixCWD(cwd);
   const pm = await detectPackageManager({ cwd: fixedCWD });
 
@@ -102,4 +101,22 @@ export async function getAllPackagesChangedBasedOnFilesModified(filesModified, p
   }
 
   return Array.from(out.values());
+}
+
+/**
+ * Given a set of found packages and an array of possible names,
+ * filters the packages to only those that have exact name matches.
+ *
+ * If no names are provided, all packages are returned
+ *
+ * @param {PackageInfo[]} packages
+ * @param {string[]} names
+ *
+ * @returns {PackageInfo[]}
+ */
+export function filterPackagesByNames(packages, names) {
+  const namesSet = new Set(names);
+
+  if (!namesSet.size) return packages;
+  return packages.filter(p => namesSet.has(p.name));
 }
