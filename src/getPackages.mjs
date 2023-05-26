@@ -5,6 +5,7 @@ import { execaCommand } from 'execa';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+import { fixCWD } from './cwd.mjs';
 import { PackageInfo } from './types.mjs';
 
 /** @typedef {import('type-fest').PackageJson} PackageJson */
@@ -19,9 +20,11 @@ import { PackageInfo } from './types.mjs';
  * @param {string} [cwd=appRootPath.toString()] - Repo root to work in. Defaults to closest .git repo
  */
 export async function getPackages(cwd = appRootPath.toString()) {
-  const pm = await detectPackageManager({ cwd });
+  debugger;
+  const fixedCWD = fixCWD(cwd);
+  const pm = await detectPackageManager({ cwd: fixedCWD });
 
-  const rootPJSONPath = path.join(cwd, 'package.json');
+  const rootPJSONPath = path.join(fixedCWD, 'package.json');
 
   /** @type {PackageJson} */
   const rootPJSON = JSON.parse(await fs.readFile(rootPJSONPath, 'utf8'));
@@ -31,7 +34,7 @@ export async function getPackages(cwd = appRootPath.toString()) {
 
   if (pm === 'pnpm') {
     // this will also include the ROOT workspace, which we need to manually exclude
-    const pnpmOutput = await execaCommand('pnpm list -r --dept -1 --json', { cwd, stdio: 'pipe' });
+    const pnpmOutput = await execaCommand('pnpm list -r --dept -1 --json', { cwd: fixedCWD, stdio: 'pipe' });
 
     /** @type {Array<{ name: string; path: string; private: boolean; version: string }>} */
     const foundPnpmWorkspaces = JSON.parse(pnpmOutput.stdout);
@@ -41,7 +44,7 @@ export async function getPackages(cwd = appRootPath.toString()) {
     // yarn and npm use the same "workspaces" field in the package.json,
     // so we can rely on the npmcli detection algo
     workspaces = await mapWorkspaces({
-      cwd,
+      cwd: fixedCWD,
       pkg: rootPJSON,
     });
   }
@@ -87,7 +90,8 @@ export async function getPackages(cwd = appRootPath.toString()) {
  * @returns {Promise<PackageInfo[]>}
  */
 export async function getAllPackagesChangedBasedOnFilesModified(filesModified, packages, cwd = appRootPath.toString()) {
-  const packagesToCheck = packages?.length ? packages : await getPackages(cwd);
+  const fixedCWD = fixCWD(cwd);
+  const packagesToCheck = packages?.length ? packages : await getPackages(fixedCWD);
 
   /** @type {Map<string, PackageInfo>} */
   const out = new Map();
