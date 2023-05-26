@@ -76,3 +76,26 @@ export async function getPackages(cwd = appRootPath.toString()) {
   // always include the root
   return [rootPackage, ...packages].sort((a, b) => a.name.localeCompare(b.name));
 }
+
+/**
+ * Based on an input set of files that have been touched by some series of git commits,
+ * returns an array of PackageInfo[] that have been changed since
+ * @param {string[]} filesModified
+ * @param {PackageInfo[]} [packages] - If provided, will scan through these packages instead
+ * @param {string} [cwd=appRootPath.toString()]
+ *
+ * @returns {Promise<PackageInfo[]>}
+ */
+export async function getAllPackagesChangedBasedOnFilesModified(filesModified, packages, cwd = appRootPath.toString()) {
+  const packagesToCheck = packages?.length ? packages : await getPackages(cwd);
+
+  /** @type {Map<string, PackageInfo>} */
+  const out = new Map();
+
+  for (const filePath of filesModified) {
+    const touchedPackage = packagesToCheck.find(p => filePath.includes(p.packagePath));
+    if (touchedPackage) out.set(touchedPackage.name, touchedPackage);
+  }
+
+  return Array.from(out.values());
+}

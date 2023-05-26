@@ -3,6 +3,7 @@
 import appRootPath from 'app-root-path';
 import { execaCommand } from 'execa';
 import os from 'os';
+import path from 'path';
 import semver from 'semver';
 
 import { GitCommit } from './types.mjs';
@@ -138,4 +139,22 @@ export async function gitLastKnownPublishTagShaForPackage(packageInfo, cwd = app
     }
   }
   return match ?? null;
+}
+
+/**
+ * Given a specific git sha, finds all files that have been modified
+ * since the sha and returns just the filenames
+ *
+ * @param {string} sha
+ * @param {string} [cwd=appRootPath.toString()]
+ *
+ * @returns {Promise<string[]>}
+ */
+export async function gitAllFilesChangedSinceSha(sha, cwd = appRootPath.toString()) {
+  const { stdout } = await execaCommand(`git --no-pager diff --name-only ${sha}..`, { cwd, stdio: 'pipe' });
+  return stdout
+    .trim()
+    .split(os.EOL)
+    .filter(Boolean)
+    .map(fp => path.join(cwd, fp));
 }
