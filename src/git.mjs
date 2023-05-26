@@ -21,8 +21,8 @@ export async function gitCommitsSince(since = '', cwd = appRootPath.toString()) 
   const DELIMITER = '~~~***~~~';
   const LINE_DELIMITER = '====----====++++====';
 
-  if (since) cmd += ` ${since}`;
   cmd += ` --format=${DELIMITER}%H${DELIMITER}%an${DELIMITER}%ae${DELIMITER}%ad${DELIMITER}%B${LINE_DELIMITER}`;
+  if (since) cmd += ` ${since}..`;
 
   const { stdout } = await execaCommand(cmd, { cwd, stdio: 'pipe' });
 
