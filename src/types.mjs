@@ -1,3 +1,5 @@
+/** @typedef {import('type-fest').PackageJson} PackageJson */
+
 /**
  * Represents a raw git commit with no conventional commits connection
  * (basically straight from "git log")
@@ -151,5 +153,43 @@ export class GitCommitWithConventional extends GitCommit {
      * @type {GitConventional}
      */
     this.conventional = conventional;
+  }
+}
+
+/**
+ * Represents a collection of information about a javascript package
+ */
+export class PackageInfo {
+  /**
+   * @param {object} info
+   * @param {boolean} info.isPrivate
+   * @param {string} info.name
+   * @param {string} info.packagePath
+   * @param {string} info.packageJSONPath
+   * @param {PackageJson} info.pkg
+   * @param {boolean} info.root
+   * @param {string} info.version
+   */
+  constructor({ isPrivate, name, packageJSONPath, packagePath, pkg, root, version }) {
+    /** @type {boolean} */
+    this.isPrivate = isPrivate;
+
+    /** @type {string} */
+    this.name = name;
+
+    /** @type {string} */
+    this.packageJSONPath = packageJSONPath;
+
+    /** @type {string} */
+    this.packagePath = packagePath;
+
+    /** @type {PackageJson} */
+    this.pkg = pkg;
+
+    /** @type {boolean} */
+    this.root = root;
+
+    /** @type {string} */
+    this.version = version;
   }
 }

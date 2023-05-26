@@ -5,42 +5,9 @@ import { execaCommand } from 'execa';
 import { promises as fs } from 'fs';
 import path from 'path';
 
+import { PackageInfo } from './types.mjs';
+
 /** @typedef {import('type-fest').PackageJson} PackageJson */
-
-export class PackageInfo {
-  /**
-   * @param {object} info
-   * @param {boolean} info.isPrivate
-   * @param {string} info.name
-   * @param {string} info.packagePath
-   * @param {string} info.packageJSONPath
-   * @param {PackageJson} info.pkg
-   * @param {boolean} info.root
-   * @param {string} info.version
-   */
-  constructor({ isPrivate, name, packageJSONPath, packagePath, pkg, root, version }) {
-    /** @type {boolean} */
-    this.isPrivate = isPrivate;
-
-    /** @type {string} */
-    this.name = name;
-
-    /** @type {string} */
-    this.packageJSONPath = packageJSONPath;
-
-    /** @type {string} */
-    this.packagePath = packagePath;
-
-    /** @type {PackageJson} */
-    this.pkg = pkg;
-
-    /** @type {boolean} */
-    this.root = root;
-
-    /** @type {string} */
-    this.version = version;
-  }
-}
 
 /**
  * Tries to figure out what all packages live in repository.
