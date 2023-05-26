@@ -4,7 +4,13 @@
 
 import { sync as conventionalParser } from 'conventional-commits-parser';
 
-import { GitCommitWithConventional, GitConventional, GitConventionalNote } from './types.mjs';
+import {
+  BumpType,
+  ConventionalCommitType,
+  GitCommitWithConventional,
+  GitConventional,
+  GitConventionalNote,
+} from './types.mjs';
 
 /**
  * Given an array of already parsed commits, attempts
@@ -41,4 +47,21 @@ export function parseToConventional(commits) {
       }),
     );
   });
+}
+
+/**
+ * Given a git commit that's been parsed into a conventional commit format
+ * returns a bump type recommendation
+ *
+ * @param {GitCommitWithConventional} commit
+ *
+ * @returns {BumpType}
+ */
+export function conventionalCommitToBumpType(commit) {
+  const {
+    conventional: { type },
+  } = commit;
+
+  if (type === ConventionalCommitType.FEAT) return BumpType.MINOR;
+  return BumpType.PATCH;
 }

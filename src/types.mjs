@@ -289,13 +289,13 @@ export const ConventionalCommitType = {
 /**
  * Represents a semver bump type operation
  *
- * @enum {string}
+ * @enum {number}
  */
 export const BumpType = {
-  FIRST: 'FIRST',
-  MAJOR: 'MAJOR',
-  MINOR: 'MINOR',
-  PATCH: 'PATCH',
+  PATCH: 0,
+  MINOR: 1,
+  MAJOR: 2,
+  FIRST: 3,
 };
 
 /**

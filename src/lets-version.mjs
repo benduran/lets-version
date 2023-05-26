@@ -15,6 +15,7 @@ import {
   getLastKnownPublishTagInfoForAllPackages,
   gitConventionalForAllPackages,
 } from './git.mjs';
+import { BumpType } from './types.mjs';
 
 export * from './getPackages.mjs';
 export * from './git.mjs';
@@ -116,6 +117,13 @@ export async function getRecommendedBumpsByPackage(names, cwd = appRootPath.toSt
   const filteredPackages = filterPackagesByNames(await getPackages(fixedCWD), names);
 
   if (!filteredPackages) return [];
+
+  const conventional = await gitConventionalForAllPackages(filteredPackages, fixedCWD);
+
+  // we need to gather the commit types per-package, then pick the "greatest" or "most disruptive" one
+  // as the one that will determine the bump to be applied
+  /** @type {Map<string, BumpType>} */
+  const bumpTypeByPackageName = new Map();
 
   return [];
   // const result = await Promise.all(
