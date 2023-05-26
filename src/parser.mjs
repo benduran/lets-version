@@ -24,6 +24,8 @@ export function parseToConventional(commits) {
   const mergePattern =
     /^merge\s+(branch|tag|commit|pull\srequest|remote-tracking\s+branch)\s+'([^']+)'(?:\s+of\s+(.*))?$/i;
 
+  const breakingChangePattern = /(\w+(!)\s?:)|(BREAKING\sCHANGE:\s.+)/g;
+
   return commits.map(c => {
     const details = conventionalParser(c.message, { mergeCorrespondence: ['sourceType', 'source'], mergePattern });
     return new GitCommitWithConventional(
@@ -34,6 +36,8 @@ export function parseToConventional(commits) {
       c.sha,
       new GitConventional({
         body: details.body,
+        // breaking change can exist in any of these, but we'll do a top-down precedence
+        breaking: breakingChangePattern.test(details.header || details.body || details.footer || ''),
         footer: details.footer,
         header: details.header,
         mentions: details.mentions,
@@ -59,8 +63,11 @@ export function parseToConventional(commits) {
  */
 export function conventionalCommitToBumpType(commit) {
   const {
-    conventional: { type },
+    conventional: { breaking, type },
   } = commit;
+
+  // breaking, regardless of type, is always considered a major bump change
+  if (breaking) return BumpType.MAJOR;
 
   if (type === ConventionalCommitType.FEAT) return BumpType.MINOR;
   return BumpType.PATCH;

@@ -1,5 +1,4 @@
 /**
- * @typedef {import('./types.mjs').BumpRecommendation} BumpRecommendation
  * @typedef {import('./types.mjs').GitCommitWithConventional} GitCommitWithConventional
  * @typedef {import('./types.mjs').GitCommitWithConventionalAndPackageInfo} GitCommitWithConventionalAndPackageInfo
  * @typedef {import('./types.mjs').PublishTagInfo} PublishTagInfo
@@ -7,6 +6,7 @@
  */
 
 import appRootPath from 'app-root-path';
+import semver from 'semver';
 
 import { fixCWD } from './cwd.mjs';
 import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPackages } from './getPackages.mjs';
@@ -15,7 +15,8 @@ import {
   getLastKnownPublishTagInfoForAllPackages,
   gitConventionalForAllPackages,
 } from './git.mjs';
-import { BumpType } from './types.mjs';
+import { conventionalCommitToBumpType } from './parser.mjs';
+import { BumpRecommendation, BumpType } from './types.mjs';
 
 export * from './getPackages.mjs';
 export * from './git.mjs';
@@ -118,30 +119,50 @@ export async function getRecommendedBumpsByPackage(names, cwd = appRootPath.toSt
 
   if (!filteredPackages) return [];
 
+  const filteredPackagesByName = new Map(filteredPackages.map(p => [p.name, p]));
+
   const conventional = await gitConventionalForAllPackages(filteredPackages, fixedCWD);
+  const tagsForPackagesMap = new Map(
+    (await getLastKnownPublishTagInfoForAllPackages(filteredPackages, fixedCWD)).map(t => [t.packageName, t]),
+  );
 
   // we need to gather the commit types per-package, then pick the "greatest" or "most disruptive" one
   // as the one that will determine the bump to be applied
   /** @type {Map<string, BumpType>} */
   const bumpTypeByPackageName = new Map();
 
-  return [];
-  // const result = await Promise.all(
-  //   filteredPackages.map(async p => {
-  //     const { version: currentVersion } = p;
+  for (const commit of conventional) {
+    const bumpType = Math.max(
+      bumpTypeByPackageName.get(commit.packageInfo.name) ?? BumpType.PATCH,
+      conventionalCommitToBumpType(commit),
+    );
+    bumpTypeByPackageName.set(commit.packageInfo.name, bumpType);
+  }
 
-  //     const lastTagInfo = await gitLastKnownPublishTagInfoForPackage(p, fixedCWD);
+  /** @type {BumpRecommendation[]} */
+  const out = [];
 
-  //     // package was never bumped before using the lets-version utility,
-  //     // so we will treat this as a special case
-  //     if (!lastTagInfo?.sha) {
-  //       return new BumpRecommendation(p, null, currentVersion, BumpType.FIRST);
-  //     }
+  for (const [packageName, bumpType] of bumpTypeByPackageName.entries()) {
+    const packageInfo = filteredPackagesByName.get(packageName);
+    if (!packageInfo) {
+      throw new Error(`No package info for ${packageName} was loaded in memory. Unable to get recommended bump.`);
+    }
+    const tagInfo = tagsForPackagesMap.get(packageName);
 
-  //     const commitsSince = parseToConventional(await gitCommitsSince(lastTagInfo.sha, fixedCWD));
-  //     console.info('commitsSince', JSON.stringify(commitsSince, null, 2));
-  //   }),
-  // );
+    const newBump = semver.inc(
+      packageInfo.version,
+      bumpType === BumpType.PATCH ? 'patch' : bumpType === BumpType.MINOR ? 'minor' : 'major',
+    );
 
-  // return result;
+    out.push(
+      new BumpRecommendation(
+        packageInfo,
+        tagInfo?.sha ? packageInfo.version : null,
+        newBump || packageInfo.version,
+        bumpType,
+      ),
+    );
+  }
+
+  return out;
 }

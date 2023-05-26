@@ -18,6 +18,7 @@ import {
   getLastVersionTagsByPackageName,
   getRecommendedBumpsByPackage,
 } from './lets-version.mjs';
+import { BumpTypeToString } from './types.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -176,7 +177,18 @@ async function setupCLI() {
         // @ts-ignore
         const bumps = await getRecommendedBumpsByPackage(args.package, args.cwd);
 
-        console.info('bumps', bumps);
+        if (args.json) return console.info(JSON.stringify(bumps, null, 2));
+
+        return console.info(
+          bumps
+            .map(
+              b =>
+                `package: ${b.packageInfo.name}${os.EOL}  bump: ${
+                  b.from ? `${b.from} -> ${b.to}` : `First time -> ${b.to}`
+                }${os.EOL}  type: ${BumpTypeToString[b.type]}${os.EOL}  valid: ${b.isValid}`,
+            )
+            .join(`${os.EOL}${os.EOL}`),
+        );
       },
     )
     .help();

@@ -87,6 +87,7 @@ export class GitConventional {
   /**
    * @param {object} conventional
    * @param {string | null} conventional.body
+   * @param {boolean} conventional.breaking
    * @param {string | null} conventional.footer
    * @param {string | null} conventional.header
    * @param {string[] | null} conventional.mentions
@@ -98,11 +99,14 @@ export class GitConventional {
    * @param {string | null} [conventional.subject]
    * @param {ConventionalCommitType | null} [conventional.type]
    */
-  constructor({ body, footer, header, mentions, merge, notes, references, revert, scope, subject, type }) {
+  constructor({ body, breaking, footer, header, mentions, merge, notes, references, revert, scope, subject, type }) {
     /**
      * @type {string | null}
      */
     this.body = body;
+
+    /** @type {boolean} */
+    this.breaking = breaking;
 
     /**
      * @type {string | null}
@@ -299,6 +303,19 @@ export const BumpType = {
 };
 
 /**
+ * Represents the string version of a bump type for user display
+ *
+ * @type {Object.<number, string>}
+ */
+export const BumpTypeToString = Object.entries(BumpType).reduce(
+  (prev, [key, val]) => ({
+    ...prev,
+    [val]: key,
+  }),
+  {},
+);
+
+/**
  * Represents information about a version bump recommendation
  * for a specific parsed package
  */
@@ -321,5 +338,16 @@ export class BumpRecommendation {
 
     /** @type {BumpType} */
     this.type = type;
+  }
+
+  /**
+   * Determines if the bump is valid.
+   * An invalid bump is one where the "from" an "to" are marked as the same.
+   * This means there was an issue when attempting to recommend a bump in the "lets-version" logic
+   *
+   * @returns {boolean}
+   */
+  get isValid() {
+    return this.from !== this.to;
   }
 }
