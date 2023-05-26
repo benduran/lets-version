@@ -7,17 +7,6 @@ import { sync as conventionalParser } from 'conventional-commits-parser';
 import { GitCommitWithConventional, GitConventional, GitConventionalNote } from './types.mjs';
 
 /**
- * Attempts to sniff out and parse the detected Conventional Commit
- * type to a stable type
- *
- * @param {string | undefined} type
- */
-const parseConventionalType = type => {
-  switch (type) {
-  }
-};
-
-/**
  * Given an array of already parsed commits, attempts
  * to use the official conventional commits parser
  * to map details into an enriched Commit object
@@ -26,8 +15,11 @@ const parseConventionalType = type => {
  * @returns {GitCommitWithConventional[]}
  */
 export function parseToConventional(commits) {
+  const mergePattern =
+    /^merge\s+(branch|tag|commit|pull\srequest|remote-tracking\s+branch)\s+'([^']+)'(?:\s+of\s+(.*))?$/i;
+
   return commits.map(c => {
-    const details = conventionalParser(c.message);
+    const details = conventionalParser(c.message, { mergeCorrespondence: ['sourceType', 'source'], mergePattern });
     return new GitCommitWithConventional(
       c.author,
       c.date,
