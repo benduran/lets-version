@@ -7,7 +7,8 @@ import path from 'path';
 import semver from 'semver';
 
 import { fixCWD } from './cwd.mjs';
-import { GitCommit, PublishTagInfo } from './types.mjs';
+import { parseToConventional } from './parser.mjs';
+import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.mjs';
 
 /**
  * Returns commits since a particular git SHA or tag.
@@ -213,4 +214,49 @@ export async function getAllFilesChangedSinceTagInfos(tagInfos, cwd = appRootPat
   ).flat();
 
   return Array.from(new Set(results));
+}
+
+/**
+ * Gets full git commit, with conventional commits parsed data,
+ * for a single, parsed package info
+ *
+ * @param {PackageInfo} packageInfo
+ * @param {string} [cwd=appRootPath.toString()]
+ *
+ * @returns {Promise<GitCommitWithConventionalAndPackageInfo[]>}
+ */
+export async function gitConventionalForPackage(packageInfo, cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  const taginfo = await gitLastKnownPublishTagInfoForPackage(packageInfo, fixedCWD);
+  const results = await gitCommitsSince(taginfo?.sha, fixedCWD);
+  const conventional = parseToConventional(results);
+
+  return conventional.map(
+    c =>
+      new GitCommitWithConventionalAndPackageInfo(
+        c.author,
+        c.date,
+        c.email,
+        c.message,
+        c.sha,
+        c.conventional,
+        packageInfo,
+      ),
+  );
+}
+
+/**
+ * Gets full git commit, with conventional commits parsed data,
+ * for all provided packages
+ *
+ * @param {PackageInfo[]} packageInfos
+ * @param {string} [cwd=appRootPath.toString()]
+ *
+ * @returns {Promise<GitCommitWithConventionalAndPackageInfo[]>}
+ */
+export async function gitConventionalForAllPackages(packageInfos, cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  return (await Promise.all(packageInfos.map(async p => gitConventionalForPackage(p, fixedCWD)))).flat();
 }

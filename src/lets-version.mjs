@@ -1,7 +1,9 @@
 /**
+ * @typedef {import('./types.mjs').BumpRecommendation} BumpRecommendation
+ * @typedef {import('./types.mjs').GitCommitWithConventional} GitCommitWithConventional
+ * @typedef {import('./types.mjs').GitCommitWithConventionalAndPackageInfo} GitCommitWithConventionalAndPackageInfo
  * @typedef {import('./types.mjs').PublishTagInfo} PublishTagInfo
  * @typedef {import('./types.mjs').PackageInfo} PackageInfo
- * @typedef {import('./types.mjs').GitCommitWithConventional} GitCommitWithConventional
  */
 
 import appRootPath from 'app-root-path';
@@ -11,11 +13,8 @@ import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPa
 import {
   getAllFilesChangedSinceTagInfos,
   getLastKnownPublishTagInfoForAllPackages,
-  gitCommitsSince,
-  gitLastKnownPublishTagInfoForPackage,
+  gitConventionalForAllPackages,
 } from './git.mjs';
-import { parseToConventional } from './parser.mjs';
-import { BumpRecommendation, BumpType, GitCommitWithConventionalAndPackageInfo } from './types.mjs';
 
 export * from './getPackages.mjs';
 export * from './git.mjs';
@@ -93,39 +92,10 @@ export async function getConventionalCommitsByPackage(names, cwd = appRootPath.t
   const fixedCWD = fixCWD(cwd);
 
   const filteredPackages = filterPackagesByNames(await getPackages(fixedCWD), names);
-  const filteredPackagesMap = new Map(filteredPackages.map(f => [f.name, f]));
 
   if (!filteredPackages.length) return [];
 
-  const tagInfos = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, fixedCWD);
-  const commits = (
-    await Promise.all(
-      tagInfos.map(async t => {
-        const results = await gitCommitsSince(t.sha, fixedCWD);
-        const conventional = parseToConventional(results);
-
-        return conventional.map(c => {
-          const foundPackage = filteredPackagesMap.get(t.packageName);
-
-          if (!foundPackage) {
-            throw new Error(`Did not find ${t.packageName} in the internal map in getConventionalCommitsByPackage`);
-          }
-
-          return new GitCommitWithConventionalAndPackageInfo(
-            c.author,
-            c.date,
-            c.email,
-            c.message,
-            c.sha,
-            c.conventional,
-            foundPackage,
-          );
-        });
-      }),
-    )
-  ).flat();
-
-  return commits;
+  return gitConventionalForAllPackages(filteredPackages, fixedCWD);
 }
 
 /**
