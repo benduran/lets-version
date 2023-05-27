@@ -244,6 +244,7 @@ export async function applyRecommendedBumpsByPackage(
   if (!allPackages.length) return [];
 
   const bumps = await getRecommendedBumpsByPackage(names, preid, forceAll, noFetchTags, fixedCWD);
+  const bumpsByPackageName = new Map(bumps.map(b => [b.packageInfo.name, b]));
 
   if (!bumps.length) {
     console.warn('Unable to apply version bumps because no packages need bumping.');
@@ -274,13 +275,10 @@ export async function applyRecommendedBumpsByPackage(
   await Promise.all(
     bumps.map(async b => {
       // need to read each package.json file, handle the updates, then write the file back
-
-      /** @type {PackageJson} */
-      let pjson = JSON.parse(await fs.readFile(b.packageInfo.packageJSONPath, 'utf-8'));
-      pjson.version = b.to;
+      b.packageInfo.pkg.version = b.to;
 
       // updated the package that needed the bump
-      await fs.writeFile(b.packageInfo.packageJSONPath, JSON.stringify(pjson, null, 2), 'utf-8');
+      await fs.writeFile(b.packageInfo.packageJSONPath, JSON.stringify(b.packageInfo.pkg, null, 2), 'utf-8');
 
       // now we need to loop over EVERY package detected in the repo
       for (const packageInfo of allPackages) {
@@ -324,7 +322,11 @@ export async function applyRecommendedBumpsByPackage(
 
               // @ts-ignore
               packageInfo.pkg[key][b.packageInfo.name] = newSemverStr;
-              await fs.writeFile(packageInfo.packageJSONPath, JSON.stringify(packageInfo.pkg, null, 2), 'utf-8');
+              await fs.writeFile(
+                packageInfo.packageJSONPath,
+                JSON.stringify({ ...packageInfo.pkg, version: bumpsByPackageName.get(packageInfo.name)?.to }, null, 2),
+                'utf-8',
+              );
               break;
             }
             default:
