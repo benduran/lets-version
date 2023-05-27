@@ -305,6 +305,17 @@ export async function gitCommit(header, body, footer, cwd = appRootPath.toString
 }
 
 /**
+ * Pushes current local changes to upstream / origin
+ *
+ * @param {string} [cwd=appRootPath.toString()]
+ */
+export async function gitPush(cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  await execaCommand('git push --no-verify', { cwd: fixedCWD, stdio: 'inherit' });
+}
+
+/**
  * Creates a git tag
  *
  * @param {string} tag
@@ -314,4 +325,20 @@ export async function gitTag(tag, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   await execaCommand(`git tag ${tag}`, { cwd: fixedCWD, stdio: 'ignore' });
+}
+
+/**
+ * Checks the current repo to see if there are any outstanding changes
+ *
+ * @param {string} [cwd=appRootPath.toString()]
+ *
+ * @returns {Promise<boolean>}
+ */
+export async function gitWorkdirUnclean(cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  const statusResult = (await execaCommand('git status -s', { cwd: fixedCWD, stdio: 'pipe' })).stdout.trim();
+
+  // split by newlines, just in case
+  return statusResult.split(os.EOL).filter(Boolean).length > 0;
 }

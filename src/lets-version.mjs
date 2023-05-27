@@ -21,7 +21,9 @@ import {
   getLastKnownPublishTagInfoForAllPackages,
   gitCommit,
   gitConventionalForAllPackages,
+  gitPush,
   gitTag,
+  gitWorkdirUnclean,
 } from './git.mjs';
 import { conventionalCommitToBumpType } from './parser.mjs';
 import { BumpRecommendation, BumpType, BumpTypeToString } from './types.mjs';
@@ -190,6 +192,7 @@ export async function getRecommendedBumpsByPackage(names, noFetchTags = false, c
  * @param {boolean} [opts.yes=false] - If true, skips all user confirmations
  * @param {boolean} [opts.updatePeer=false] - If true, will update any dependent "package.json#peerDependencies" fields
  * @param {boolean} [opts.updateOptional=false] - If true, will update any dependent "package.json#optionalDependencies" fields
+ * @param {boolean} [opts.noPush=false] - If true, will prevent pushing any changes to upstream / origin
  * @param {string} [cwd=appRootPath.toString()]
  */
 export async function applyRecommendedBumpsByPackage(names, noFetchTags = false, opts, cwd = appRootPath.toString()) {
@@ -198,6 +201,14 @@ export async function applyRecommendedBumpsByPackage(names, noFetchTags = false,
   let yes = opts?.yes || false;
   const updatePeer = opts?.updatePeer || false;
   const updateOptional = opts?.updateOptional || false;
+  const noPush = opts?.noPush || false;
+
+  const workingDirUnclean = await gitWorkdirUnclean(fixedCWD);
+
+  if (workingDirUnclean) {
+    console.warn('Unable to apply version bumps because', fixedCWD, 'has uncommitted changes');
+    return [];
+  }
 
   const allPackages = await getPackages(fixedCWD);
 
@@ -298,4 +309,7 @@ export async function applyRecommendedBumpsByPackage(names, noFetchTags = false,
 
   // create all the git tags
   await Promise.all(bumps.map(async b => gitTag(formatVersionTagForPackage(b.packageInfo), fixedCWD)));
+
+  // push to upstream
+  if (!noPush) await gitPush(fixedCWD);
 }

@@ -85,7 +85,6 @@ async function setupCLI() {
       'Gets the last tag used when version bumping for a specific package. If no package is specified, all found tags for each package detected are returned',
       y => getSharedVersionYargs(y),
       async args => {
-        // @ts-ignore
         const allResults = await getLastVersionTagsByPackageName(args.package, args.noFetchTags, args.cwd);
 
         if (args.json) return console.info(JSON.stringify(allResults, null, 2));
@@ -103,7 +102,6 @@ async function setupCLI() {
       'Gets a list of all files that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.',
       y => getSharedVersionYargs(y),
       async args => {
-        // @ts-ignore
         const changedFiles = await getChangedFilesSinceBump(args.package, args.noFetchTags, args.cwd);
 
         if (args.json) return console.info(JSON.stringify(changedFiles, null, 2));
@@ -121,7 +119,6 @@ async function setupCLI() {
       'Gets a list of all packages that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.',
       y => getSharedVersionYargs(y),
       async args => {
-        // @ts-ignore
         const changedPackages = await getChangedPackagesSinceBump(args.package, args.noFetchTags, args.cwd);
 
         if (args.json) return console.info(JSON.stringify(changedPackages, null, 2));
@@ -162,7 +159,6 @@ async function setupCLI() {
       'Gets a series of recommended version bumps for a specific package or set of packages. NOTE: It is possible for your bump recommendation to not change. If this is the case, this means that your particular package has never had a version bump by the lets-version library.',
       y => getSharedVersionYargs(y),
       async args => {
-        // @ts-ignore
         const bumps = await getRecommendedBumpsByPackage(args.package, args.noFetchTags, args.cwd);
 
         if (args.json) return console.info(JSON.stringify(bumps, null, 2));
@@ -196,6 +192,11 @@ async function setupCLI() {
             description: 'If true, skips any confirmation prompts. Useful if you need to automate this process in CI',
             type: 'boolean',
           })
+          .option('noPush', {
+            default: false,
+            description: 'If true, will not push changes and tags to origin',
+            type: 'boolean',
+          })
           .option('updatePeer', {
             default: false,
             description: 'If true, will update any dependent "package.json#peerDependencies" fields',
@@ -207,11 +208,10 @@ async function setupCLI() {
             type: 'boolean',
           }),
       async args => {
-        // @ts-ignore
         await applyRecommendedBumpsByPackage(
           args.package,
           args.noFetchTags,
-          { updateOptional: args.updateOptional, updatePeer: args.updatePeer, yes: args.yes },
+          { noPush: args.noPush, updateOptional: args.updateOptional, updatePeer: args.updatePeer, yes: args.yes },
           args.cwd,
         );
       },
