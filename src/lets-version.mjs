@@ -122,12 +122,20 @@ export async function getConventionalCommitsByPackage(names, cwd = appRootPath.t
  *
  * @param {string[]} [names]
  * @param {string} [preid]
+ * @param {boolean} [forceAll=false]
  * @param {boolean} [noFetchTags=false]
  * @param {string} [cwd=appRootPath.toString()]
  *
  * @returns {Promise<BumpRecommendation[]>}
  */
-export async function getRecommendedBumpsByPackage(names, preid, noFetchTags = false, cwd = appRootPath.toString()) {
+export async function getRecommendedBumpsByPackage(
+  names,
+  preid,
+  forceAll = false,
+  noFetchTags = false,
+  cwd = appRootPath.toString(),
+) {
+  // args.package, args.preid, args.forceAll, args.noFetchTags, args.cwd
   const fixedCWD = fixCWD(cwd);
 
   const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
@@ -157,6 +165,16 @@ export async function getRecommendedBumpsByPackage(names, preid, noFetchTags = f
     bumpTypeByPackageName.set(commit.packageInfo.name, bumpType);
   }
 
+  if (forceAll) {
+    // loop over all packages and set any packages that don't
+    // already have an entry to a PATCH
+    for (const packageInfo of filteredPackages) {
+      if (bumpTypeByPackageName.has(packageInfo.name)) continue;
+
+      bumpTypeByPackageName.set(packageInfo.name, BumpType.PATCH);
+    }
+  }
+
   /** @type {BumpRecommendation[]} */
   const out = [];
 
@@ -174,7 +192,7 @@ export async function getRecommendedBumpsByPackage(names, preid, noFetchTags = f
       preid,
     );
 
-    const from = tagInfo?.sha ? packageInfo.version : null;
+    const from = forceAll ? packageInfo.version : tagInfo?.sha ? packageInfo.version : null;
     out.push(new BumpRecommendation(packageInfo, from, (Boolean(from) && newBump) || packageInfo.version, bumpType));
   }
 
@@ -191,6 +209,7 @@ export async function getRecommendedBumpsByPackage(names, preid, noFetchTags = f
  *
  * @param {string[]} [names]
  * @param {string} [preid]
+ * @param {boolean} [forceAll=false]
  * @param {boolean} [noFetchTags=false]
  * @param {object} [opts]
  * @param {boolean} [opts.yes=false] - If true, skips all user confirmations
@@ -202,6 +221,7 @@ export async function getRecommendedBumpsByPackage(names, preid, noFetchTags = f
 export async function applyRecommendedBumpsByPackage(
   names,
   preid,
+  forceAll = false,
   noFetchTags = false,
   opts,
   cwd = appRootPath.toString(),
@@ -224,7 +244,7 @@ export async function applyRecommendedBumpsByPackage(
 
   if (!allPackages.length) return [];
 
-  const bumps = await getRecommendedBumpsByPackage(names, preid, noFetchTags, fixedCWD);
+  const bumps = await getRecommendedBumpsByPackage(names, preid, forceAll, noFetchTags, fixedCWD);
 
   if (!bumps.length) {
     console.warn('Unable to apply version bumps because no packages need bumping.');

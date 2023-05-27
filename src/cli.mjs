@@ -63,12 +63,18 @@ const getSharedVersionYargs = yargs =>
  * @param {Argv} yargs
  */
 const getSharedBumpArgs = yargs =>
-  getSharedVersionYargs(yargs).option('preid', {
-    default: '',
-    description:
-      'The "prerelease identifier" to use as a prefix for the "prerelease" part of a semver. Like the rc in 1.2.0-rc.8',
-    type: 'string',
-  });
+  getSharedVersionYargs(yargs)
+    .option('preid', {
+      description:
+        'The "prerelease identifier" to use as a prefix for the "prerelease" part of a semver. Like the rc in 1.2.0-rc.8. If this is specified, a bump type of "prerelease" will always take place.',
+      type: 'string',
+    })
+    .option('forceAll', {
+      default: false,
+      description:
+        'If true, forces all packages to receive a bump update, regardless of whether they have changed. What this means, in practice, is that any package that would not normally be changed will receive a PATCH update (or an equivalent if --preid is set)',
+      type: 'boolean',
+    });
 
 async function setupCLI() {
   /** @type {PackageJson} */
@@ -171,7 +177,13 @@ async function setupCLI() {
       'Gets a series of recommended version bumps for a specific package or set of packages. NOTE: It is possible for your bump recommendation to not change. If this is the case, this means that your particular package has never had a version bump by the lets-version library.',
       y => getSharedBumpArgs(y),
       async args => {
-        const bumps = await getRecommendedBumpsByPackage(args.package, args.preid, args.noFetchTags, args.cwd);
+        const bumps = await getRecommendedBumpsByPackage(
+          args.package,
+          args.preid,
+          args.forceAll,
+          args.noFetchTags,
+          args.cwd,
+        );
 
         if (args.json) return console.info(JSON.stringify(bumps, null, 2));
 
@@ -224,6 +236,7 @@ async function setupCLI() {
           args.package,
           args.noFetchTags,
           args.preid,
+          args.forceAll,
           { noPush: args.noPush, updateOptional: args.updateOptional, updatePeer: args.updatePeer, yes: args.yes },
           args.cwd,
         );
