@@ -18,6 +18,7 @@ import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPa
 import {
   getAllFilesChangedSinceTagInfos,
   getLastKnownPublishTagInfoForAllPackages,
+  gitCommit,
   gitConventionalForAllPackages,
 } from './git.mjs';
 import { conventionalCommitToBumpType } from './parser.mjs';
@@ -293,4 +294,7 @@ export async function applyRecommendedBumpsByPackage(names, noFetchTags = false,
       }
     }),
   );
+
+  // commit the stuffs
+  await gitCommit('Version Bump', bumps.map(b => `${b.packageInfo.name}@${b.to}`).join(os.EOL), '', fixedCWD);
 }

@@ -272,3 +272,25 @@ export async function gitConventionalForAllPackages(packageInfos, cwd = appRootP
 
   return (await Promise.all(packageInfos.map(async p => gitConventionalForPackage(p, fixedCWD)))).flat();
 }
+
+/**
+ * Creates a git commit, based on whatever changes are active
+ *
+ * @param {string} header
+ * @param {string} [body]
+ * @param {string} [footer]
+ * @param {string} [cwd=appRootPath.toString()]
+ */
+export async function gitCommit(header, body, footer, cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  // add files silently
+  await execaCommand('git add .', { cwd, stdio: 'ignore' });
+
+  let message = header;
+  if (body) message += `${os.EOL}${body}`;
+  if (footer) message += `${os.EOL}${footer}`;
+
+  // commit silently
+  await execaCommand(`git commit -m "${message}" --no-verify`, { cwd: fixedCWD, stdio: 'ignore' });
+}
