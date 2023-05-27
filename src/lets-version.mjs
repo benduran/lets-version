@@ -3,12 +3,15 @@
  * @typedef {import('./types.mjs').GitCommitWithConventionalAndPackageInfo} GitCommitWithConventionalAndPackageInfo
  * @typedef {import('./types.mjs').PublishTagInfo} PublishTagInfo
  * @typedef {import('./types.mjs').PackageInfo} PackageInfo
+ * @typedef {import('type-fest').PackageJson} PackageJson
  */
 
 import appRootPath from 'app-root-path';
+import fs from 'fs-extra';
 import os from 'os';
 import prompts from 'prompts';
 import semver from 'semver';
+import semverUtils from 'semver-utils';
 
 import { fixCWD } from './cwd.mjs';
 import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPackages } from './getPackages.mjs';
@@ -191,9 +194,9 @@ export async function applyRecommendedBumpsByPackage(names, opts, cwd = appRootP
   const updatePeer = opts?.updatePeer || false;
   const updateOptional = opts?.updateOptional || false;
 
-  const filteredPackages = filterPackagesByNames(await getPackages(fixedCWD), names);
+  const allPackages = await getPackages(fixedCWD);
 
-  if (!filteredPackages) return [];
+  if (!allPackages.length) return [];
 
   const bumps = await getRecommendedBumpsByPackage(names, fixedCWD);
 
@@ -217,4 +220,59 @@ export async function applyRecommendedBumpsByPackage(names, opts, cwd = appRootP
   }
 
   if (!yes) return console.warn('User did not confirm changes. Aborting now.');
+
+  await Promise.all(
+    bumps.map(async b => {
+      // need to read each package.json file, handle the updates, then write the file back
+
+      /** @type {PackageJson} */
+      let pjson = JSON.parse(await fs.readFile(b.packageInfo.packageJSONPath, 'utf-8'));
+      pjson.version = b.to;
+      await fs.writeFile(b.packageInfo.packageJSONPath, JSON.stringify(pjson, null, 2), 'utf-8');
+
+      for (const key in pjson) {
+        const lowerKey = key.toLowerCase();
+        if (!lowerKey.includes('dependencies')) continue;
+        switch (key) {
+          case 'dependencies':
+          case 'devDependencies':
+          case 'peerDependencies':
+          case 'optionalDependencies': {
+            const canUpdate =
+              (key === 'optionalDependencies' && updateOptional) ||
+              (key === 'peerDependencies' && updatePeer) ||
+              (key !== 'optionalDependencies' && key !== 'peerDependencies');
+            if (!canUpdate || !pjson[key]?.[b.packageInfo.name]) continue;
+
+            // we literally just checked for nullability above, so let's force TSC to ignore
+            // @ts-ignore
+            const existingSemverStr = pjson[key][b.packageInfo.name] || '';
+            const semverDetails = semverUtils.parseRange(existingSemverStr);
+            // if there are more than one semverDetails because user has a complicated range,
+            // we will only take the first one if it's something we can work with in the update.
+            // if it's not something reasonable, it will automatically become "^"
+            const [firstDetail] = semverDetails;
+            let firstDetailOperator = firstDetail?.operator || '^';
+            if (
+              !firstDetailOperator.startsWith('>=') &&
+              !firstDetailOperator.startsWith('^') &&
+              !firstDetailOperator.startsWith('~')
+            ) {
+              firstDetailOperator = '^';
+            }
+
+            const newSemverStr = `${firstDetailOperator}${b.to}`;
+
+            // @ts-ignore
+            pjson[key][b.packageInfo.name] = newSemverStr;
+
+            break;
+          }
+          default:
+            console.warn(`Updating ${key} is not currently supported by the lets-version library`);
+            break;
+        }
+      }
+    }),
+  );
 }
