@@ -216,6 +216,11 @@ export async function applyRecommendedBumpsByPackage(names, noFetchTags = false,
 
   const bumps = await getRecommendedBumpsByPackage(names, noFetchTags, fixedCWD);
 
+  if (!bumps.length) {
+    console.warn('Unable to apply version bumps because no packages need bumping.');
+    return [];
+  }
+
   if (!yes) {
     const message = bumps
       .map(

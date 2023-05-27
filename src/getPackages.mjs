@@ -128,7 +128,6 @@ export async function getAllPackagesChangedBasedOnFilesModified(filesModified, p
 export async function filterPackagesByNames(packages, names, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  debugger;
   const namesSet = new Set(names ?? []);
 
   const out = !namesSet.size ? packages : packages.filter(p => namesSet.has(p.name));
