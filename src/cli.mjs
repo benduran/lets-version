@@ -234,9 +234,9 @@ async function setupCLI() {
       async args => {
         await applyRecommendedBumpsByPackage(
           args.package,
-          args.noFetchTags,
           args.preid,
           args.forceAll,
+          args.noFetchTags,
           { noPush: args.noPush, updateOptional: args.updateOptional, updatePeer: args.updatePeer, yes: args.yes },
           args.cwd,
         );

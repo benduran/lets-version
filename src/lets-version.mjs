@@ -2,7 +2,6 @@
  * @typedef {import('./types.mjs').GitCommitWithConventional} GitCommitWithConventional
  * @typedef {import('./types.mjs').GitCommitWithConventionalAndPackageInfo} GitCommitWithConventionalAndPackageInfo
  * @typedef {import('./types.mjs').PublishTagInfo} PublishTagInfo
- * @typedef {import('./types.mjs').PackageInfo} PackageInfo
  * @typedef {import('type-fest').PackageJson} PackageJson
  */
 
@@ -26,7 +25,7 @@ import {
   gitWorkdirUnclean,
 } from './git.mjs';
 import { conventionalCommitToBumpType } from './parser.mjs';
-import { BumpRecommendation, BumpType, BumpTypeToString } from './types.mjs';
+import { BumpRecommendation, BumpType, BumpTypeToString, PackageInfo } from './types.mjs';
 
 export * from './getPackages.mjs';
 export * from './git.mjs';
@@ -287,10 +286,7 @@ export async function applyRecommendedBumpsByPackage(
       for (const packageInfo of allPackages) {
         if (packageInfo.name === b.packageInfo.name) continue;
 
-        /** @type {PackageJson} */
-        const dependentpjson = JSON.parse(await fs.readFile(packageInfo.packageJSONPath, 'utf-8'));
-
-        for (const key in dependentpjson) {
+        for (const key in packageInfo.pkg) {
           const lowerKey = key.toLowerCase();
           if (!lowerKey.includes('dependencies')) continue;
           switch (key) {
@@ -302,11 +298,12 @@ export async function applyRecommendedBumpsByPackage(
                 (key === 'optionalDependencies' && updateOptional) ||
                 (key === 'peerDependencies' && updatePeer) ||
                 (key !== 'optionalDependencies' && key !== 'peerDependencies');
-              if (!canUpdate || !dependentpjson[key]?.[b.packageInfo.name]) continue;
+
+              if (!canUpdate || !packageInfo.pkg[key]?.[b.packageInfo.name]) continue;
 
               // we literally just checked for nullability above, so let's force TSC to ignore
               // @ts-ignore
-              const existingSemverStr = dependentpjson[key][b.packageInfo.name] || '';
+              const existingSemverStr = packageInfo.pkg[key][b.packageInfo.name] || '';
               const semverDetails = semverUtils.parseRange(existingSemverStr);
               // if there are more than one semverDetails because user has a complicated range,
               // we will only take the first one if it's something we can work with in the update.
@@ -326,8 +323,8 @@ export async function applyRecommendedBumpsByPackage(
               const newSemverStr = `${firstDetailOperator}${b.to}`;
 
               // @ts-ignore
-              dependentpjson[key][b.packageInfo.name] = newSemverStr;
-              await fs.writeFile(packageInfo.packageJSONPath, JSON.stringify(dependentpjson, null, 2), 'utf-8');
+              packageInfo.pkg[key][b.packageInfo.name] = newSemverStr;
+              await fs.writeFile(packageInfo.packageJSONPath, JSON.stringify(packageInfo.pkg, null, 2), 'utf-8');
               break;
             }
             default:
@@ -343,7 +340,19 @@ export async function applyRecommendedBumpsByPackage(
   await gitCommit('Version Bump', bumps.map(b => `${b.packageInfo.name}@${b.to}`).join(os.EOL), '', fixedCWD);
 
   // create all the git tags
-  await Promise.all(bumps.map(async b => gitTag(formatVersionTagForPackage(b.packageInfo), fixedCWD)));
+  await Promise.all(
+    bumps.map(async b =>
+      gitTag(
+        formatVersionTagForPackage(
+          new PackageInfo({
+            ...b.packageInfo,
+            version: b.to,
+          }),
+        ),
+        fixedCWD,
+      ),
+    ),
+  );
 
   // push to upstream
   if (!noPush) await gitPush(fixedCWD);
