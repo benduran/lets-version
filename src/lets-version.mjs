@@ -228,49 +228,59 @@ export async function applyRecommendedBumpsByPackage(names, opts, cwd = appRootP
       /** @type {PackageJson} */
       let pjson = JSON.parse(await fs.readFile(b.packageInfo.packageJSONPath, 'utf-8'));
       pjson.version = b.to;
+
+      // updated the package that needed the bump
       await fs.writeFile(b.packageInfo.packageJSONPath, JSON.stringify(pjson, null, 2), 'utf-8');
 
-      for (const key in pjson) {
-        const lowerKey = key.toLowerCase();
-        if (!lowerKey.includes('dependencies')) continue;
-        switch (key) {
-          case 'dependencies':
-          case 'devDependencies':
-          case 'peerDependencies':
-          case 'optionalDependencies': {
-            const canUpdate =
-              (key === 'optionalDependencies' && updateOptional) ||
-              (key === 'peerDependencies' && updatePeer) ||
-              (key !== 'optionalDependencies' && key !== 'peerDependencies');
-            if (!canUpdate || !pjson[key]?.[b.packageInfo.name]) continue;
+      // now we need to loop over EVERY package detected in the repo
+      for (const packageInfo of allPackages) {
+        if (packageInfo.name === b.packageInfo.name) continue;
 
-            // we literally just checked for nullability above, so let's force TSC to ignore
-            // @ts-ignore
-            const existingSemverStr = pjson[key][b.packageInfo.name] || '';
-            const semverDetails = semverUtils.parseRange(existingSemverStr);
-            // if there are more than one semverDetails because user has a complicated range,
-            // we will only take the first one if it's something we can work with in the update.
-            // if it's not something reasonable, it will automatically become "^"
-            const [firstDetail] = semverDetails;
-            let firstDetailOperator = firstDetail?.operator || '^';
-            if (
-              !firstDetailOperator.startsWith('>=') &&
-              !firstDetailOperator.startsWith('^') &&
-              !firstDetailOperator.startsWith('~')
-            ) {
-              firstDetailOperator = '^';
+        /** @type {PackageJson} */
+        const dependentpjson = JSON.parse(await fs.readFile(packageInfo.packageJSONPath, 'utf-8'));
+
+        for (const key in dependentpjson) {
+          const lowerKey = key.toLowerCase();
+          if (!lowerKey.includes('dependencies')) continue;
+          switch (key) {
+            case 'dependencies':
+            case 'devDependencies':
+            case 'peerDependencies':
+            case 'optionalDependencies': {
+              const canUpdate =
+                (key === 'optionalDependencies' && updateOptional) ||
+                (key === 'peerDependencies' && updatePeer) ||
+                (key !== 'optionalDependencies' && key !== 'peerDependencies');
+              if (!canUpdate || !dependentpjson[key]?.[b.packageInfo.name]) continue;
+
+              // we literally just checked for nullability above, so let's force TSC to ignore
+              // @ts-ignore
+              const existingSemverStr = dependentpjson[key][b.packageInfo.name] || '';
+              const semverDetails = semverUtils.parseRange(existingSemverStr);
+              // if there are more than one semverDetails because user has a complicated range,
+              // we will only take the first one if it's something we can work with in the update.
+              // if it's not something reasonable, it will automatically become "^"
+              const [firstDetail] = semverDetails;
+              let firstDetailOperator = firstDetail?.operator || '^';
+              if (
+                !firstDetailOperator.startsWith('>=') &&
+                !firstDetailOperator.startsWith('^') &&
+                !firstDetailOperator.startsWith('~')
+              ) {
+                firstDetailOperator = '^';
+              }
+
+              const newSemverStr = `${firstDetailOperator}${b.to}`;
+
+              // @ts-ignore
+              dependentpjson[key][b.packageInfo.name] = newSemverStr;
+              await fs.writeFile(packageInfo.packageJSONPath, JSON.stringify(dependentpjson, null, 2), 'utf-8');
+              break;
             }
-
-            const newSemverStr = `${firstDetailOperator}${b.to}`;
-
-            // @ts-ignore
-            pjson[key][b.packageInfo.name] = newSemverStr;
-
-            break;
+            default:
+              console.warn(`Updating ${key} is not currently supported by the lets-version library`);
+              break;
           }
-          default:
-            console.warn(`Updating ${key} is not currently supported by the lets-version library`);
-            break;
         }
       }
     }),
