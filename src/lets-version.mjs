@@ -191,7 +191,8 @@ export async function getRecommendedBumpsByPackage(
       preid,
     );
 
-    const from = forceAll ? packageInfo.version : tagInfo?.sha ? packageInfo.version : null;
+    // preids take precedence above all
+    const from = forceAll ? packageInfo.version : preid || tagInfo?.sha ? packageInfo.version : null;
     out.push(new BumpRecommendation(packageInfo, from, (Boolean(from) && newBump) || packageInfo.version, bumpType));
   }
 
