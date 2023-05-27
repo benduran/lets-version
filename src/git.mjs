@@ -2,6 +2,7 @@
 
 import appRootPath from 'app-root-path';
 import { execaCommand } from 'execa';
+import fs from 'fs-extra';
 import os from 'os';
 import path from 'path';
 import semver from 'semver';
@@ -288,9 +289,29 @@ export async function gitCommit(header, body, footer, cwd = appRootPath.toString
   await execaCommand('git add .', { cwd, stdio: 'ignore' });
 
   let message = header;
-  if (body) message += `${os.EOL}${body}`;
-  if (footer) message += `${os.EOL}${footer}`;
+  if (body) message += `${os.EOL}${os.EOL}${body}`;
+  if (footer) message += `${os.EOL}${os.EOL}${footer}`;
+
+  // write temp file to use as the git commit message
+  const tempFilePath = path.join(os.tmpdir(), '__lets-version-commit-msg__');
+  await fs.ensureFile(tempFilePath);
+  await fs.writeFile(tempFilePath, message, 'utf-8');
 
   // commit silently
-  await execaCommand(`git commit -m "${message}" --no-verify`, { cwd: fixedCWD, stdio: 'ignore' });
+  await execaCommand(`git commit -F ${tempFilePath} --no-verify`, { cwd: fixedCWD, stdio: 'ignore' });
+
+  // remove the commit msg file
+  await fs.remove(tempFilePath);
+}
+
+/**
+ * Creates a git tag
+ *
+ * @param {string} tag
+ * @param {string} [cwd=appRootPath.toString()]
+ */
+export async function gitTag(tag, cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  await execaCommand(`git tag ${tag}`, { cwd: fixedCWD, stdio: 'ignore' });
 }

@@ -10,7 +10,7 @@
     "clean": "rm -rf ./dist",
     "start": "node src/cli.mjs",
     "postinstall": "husky install",
-    "typecheck": "tsc --noEmit --allowJs"
+    "typecheck": "tsc --noEmit --allowJs --skipLibCheck"
   },
   "repository": {
     "type": "git",

@@ -16,10 +16,12 @@ import semverUtils from 'semver-utils';
 import { fixCWD } from './cwd.mjs';
 import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPackages } from './getPackages.mjs';
 import {
+  formatVersionTagForPackage,
   getAllFilesChangedSinceTagInfos,
   getLastKnownPublishTagInfoForAllPackages,
   gitCommit,
   gitConventionalForAllPackages,
+  gitTag,
 } from './git.mjs';
 import { conventionalCommitToBumpType } from './parser.mjs';
 import { BumpRecommendation, BumpType, BumpTypeToString } from './types.mjs';
@@ -167,14 +169,8 @@ export async function getRecommendedBumpsByPackage(names, noFetchTags = false, c
       bumpType === BumpType.PATCH ? 'patch' : bumpType === BumpType.MINOR ? 'minor' : 'major',
     );
 
-    out.push(
-      new BumpRecommendation(
-        packageInfo,
-        tagInfo?.sha ? packageInfo.version : null,
-        newBump || packageInfo.version,
-        bumpType,
-      ),
-    );
+    const from = tagInfo?.sha ? packageInfo.version : null;
+    out.push(new BumpRecommendation(packageInfo, from, (Boolean(from) && newBump) || packageInfo.version, bumpType));
   }
 
   return out;
@@ -279,6 +275,8 @@ export async function applyRecommendedBumpsByPackage(names, noFetchTags = false,
                 firstDetailOperator = '^';
               }
 
+              // IF there's no from, this is the very first lets-version controlled commit operations
+              if (!b.from) continue;
               const newSemverStr = `${firstDetailOperator}${b.to}`;
 
               // @ts-ignore
@@ -297,4 +295,7 @@ export async function applyRecommendedBumpsByPackage(names, noFetchTags = false,
 
   // commit the stuffs
   await gitCommit('Version Bump', bumps.map(b => `${b.packageInfo.name}@${b.to}`).join(os.EOL), '', fixedCWD);
+
+  // create all the git tags
+  await Promise.all(bumps.map(async b => gitTag(formatVersionTagForPackage(b.packageInfo), fixedCWD)));
 }
