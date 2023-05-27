@@ -12,6 +12,7 @@ import { hideBin } from 'yargs/helpers';
 
 import { getPackages } from './getPackages.mjs';
 import {
+  applyRecommendedBumpsByPackage,
   getChangedFilesSinceBump,
   getChangedPackagesSinceBump,
   getConventionalCommitsByPackage,
@@ -188,6 +189,42 @@ async function setupCLI() {
                 }${os.EOL}  type: ${BumpTypeToString[b.type]}${os.EOL}  valid: ${b.isValid}`,
             )
             .join(`${os.EOL}${os.EOL}`),
+        );
+      },
+    )
+    .command(
+      'apply-bumps',
+      'Gets a series of recommended version bumps for a specific package or set of packages, applies the version bumps, and updates all repository dependents to match the version that has been updated',
+      y =>
+        getSharedYargs(y)
+          .option('package', {
+            alias: 'p',
+            description:
+              'One or more packages to check. You can specify multiple by doing -p <name1> -p <name2> -p <name3>',
+            type: 'array',
+          })
+          .option('yes', {
+            alias: 'y',
+            default: false,
+            description: 'If true, skips any confirmation prompts. Useful if you need to automate this process in CI',
+            type: 'boolean',
+          })
+          .option('updatePeer', {
+            default: false,
+            description: 'If true, will update any dependent "package.json#peerDependencies" fields',
+            type: 'boolean',
+          })
+          .option('updateOptional', {
+            default: false,
+            description: 'If true, will update any dependent "package.json#optionalDependencies" fields',
+            type: 'boolean',
+          }),
+      async args => {
+        // @ts-ignore
+        await applyRecommendedBumpsByPackage(
+          args.package,
+          { updateOptional: args.updateOptional, updatePeer: args.updatePeer, yes: args.yes },
+          args.cwd,
         );
       },
     )

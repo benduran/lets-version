@@ -6,6 +6,8 @@
  */
 
 import appRootPath from 'app-root-path';
+import os from 'os';
+import prompts from 'prompts';
 import semver from 'semver';
 
 import { fixCWD } from './cwd.mjs';
@@ -16,7 +18,7 @@ import {
   gitConventionalForAllPackages,
 } from './git.mjs';
 import { conventionalCommitToBumpType } from './parser.mjs';
-import { BumpRecommendation, BumpType } from './types.mjs';
+import { BumpRecommendation, BumpType, BumpTypeToString } from './types.mjs';
 
 export * from './getPackages.mjs';
 export * from './git.mjs';
@@ -165,4 +167,54 @@ export async function getRecommendedBumpsByPackage(names, cwd = appRootPath.toSt
   }
 
   return out;
+}
+
+/**
+ * Given an optional list of package names, parses the git history
+ * since the last bump operation, suggest a bump and applies it, also
+ * updating any dependent package.json files across your repository.
+ *
+ * NOTE: It is possible for your bump recommendation to not change.
+ * If this is the case, this means that your particular package has never had a version bump by the lets-version library.
+ *
+ * @param {string[]} names
+ * @param {object} opts
+ * @param {boolean} [opts.yes=false] - If true, skips all user confirmations
+ * @param {boolean} [opts.updatePeer=false] - If true, will update any dependent "package.json#peerDependencies" fields
+ * @param {boolean} [opts.updateOptional=false] - If true, will update any dependent "package.json#optionalDependencies" fields
+ * @param {string} [cwd=appRootPath.toString()]
+ */
+export async function applyRecommendedBumpsByPackage(names, opts, cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  let yes = opts?.yes || false;
+  const updatePeer = opts?.updatePeer || false;
+  const updateOptional = opts?.updateOptional || false;
+
+  const filteredPackages = filterPackagesByNames(await getPackages(fixedCWD), names);
+
+  if (!filteredPackages) return [];
+
+  const bumps = await getRecommendedBumpsByPackage(names, fixedCWD);
+
+  if (!yes) {
+    const message = bumps
+      .map(
+        b =>
+          `package: ${b.packageInfo.name}${os.EOL}  bump: ${b.from ? `${b.from} -> ${b.to}` : `First time -> ${b.to}`}${
+            os.EOL
+          }  type: ${BumpTypeToString[b.type]}${os.EOL}  valid: ${b.isValid}`,
+      )
+      .join(`${os.EOL}${os.EOL}`);
+    const response = await prompts([
+      {
+        message: `The following bumps will be applied:${os.EOL}${os.EOL}${message}${os.EOL}${os.EOL}Do you want to continue?`,
+        name: 'yes',
+        type: 'confirm',
+      },
+    ]);
+    yes = response.yes;
+  }
+
+  if (!yes) return console.warn('User did not confirm changes. Aborting now.');
 }
