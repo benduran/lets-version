@@ -7,6 +7,7 @@ import path from 'path';
 
 import { fixCWD } from './cwd.mjs';
 import { PackageInfo } from './types.mjs';
+import { detectIfMonorepo } from './workspaces.mjs';
 
 /** @typedef {import('type-fest').PackageJson} PackageJson */
 
@@ -113,16 +114,26 @@ export async function getAllPackagesChangedBasedOnFilesModified(filesModified, p
  * Given a set of found packages and an array of possible names,
  * filters the packages to only those that have exact name matches.
  *
+ * Additionally, this function will remove the root package
+ * if this repository is detected to be a multipackage monorepo
+ *
  * If no names are provided, all packages are returned
  *
  * @param {PackageInfo[]} packages
  * @param {string[] | undefined} names
+ * @param {string} [cwd=appRootPath.toString()]
  *
- * @returns {PackageInfo[]}
+ * @returns {Promise<PackageInfo[]>}
  */
-export function filterPackagesByNames(packages, names) {
+export async function filterPackagesByNames(packages, names, cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  debugger;
   const namesSet = new Set(names ?? []);
 
-  if (!namesSet.size) return packages;
-  return packages.filter(p => namesSet.has(p.name));
+  const out = !namesSet.size ? packages : packages.filter(p => namesSet.has(p.name));
+
+  const isMonorepo = await detectIfMonorepo(fixedCWD);
+
+  return out.filter(p => (isMonorepo && !p.root) || !isMonorepo);
 }

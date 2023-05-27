@@ -43,7 +43,7 @@ export * from './parser.mjs';
 export async function getLastVersionTagsByPackageName(names, noFetchTags = false, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  const filteredPackages = filterPackagesByNames(await getPackages(fixedCWD), names);
+  const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
 
   if (!filteredPackages) return [];
 
@@ -61,7 +61,7 @@ export async function getLastVersionTagsByPackageName(names, noFetchTags = false
  */
 export async function getChangedFilesSinceBump(names, noFetchTags = false, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
-  const filteredPackages = filterPackagesByNames(await getPackages(fixedCWD), names);
+  const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
 
   if (!filteredPackages) return [];
 
@@ -82,7 +82,7 @@ export async function getChangedFilesSinceBump(names, noFetchTags = false, cwd =
 export async function getChangedPackagesSinceBump(names, noFetchTags = false, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  const filteredPackages = filterPackagesByNames(await getPackages(fixedCWD), names);
+  const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
 
   if (!filteredPackages) return [];
 
@@ -104,7 +104,7 @@ export async function getChangedPackagesSinceBump(names, noFetchTags = false, cw
 export async function getConventionalCommitsByPackage(names, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  const filteredPackages = filterPackagesByNames(await getPackages(fixedCWD), names);
+  const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
 
   if (!filteredPackages.length) return [];
 
@@ -127,7 +127,7 @@ export async function getConventionalCommitsByPackage(names, cwd = appRootPath.t
 export async function getRecommendedBumpsByPackage(names, noFetchTags = false, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  const filteredPackages = filterPackagesByNames(await getPackages(fixedCWD), names);
+  const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
 
   if (!filteredPackages) return [];
 

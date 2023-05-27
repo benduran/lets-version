@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url';
 import createCLI from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-import { getPackages } from './getPackages.mjs';
+import { filterPackagesByNames, getPackages } from './getPackages.mjs';
 import {
   applyRecommendedBumpsByPackage,
   getChangedFilesSinceBump,
@@ -71,7 +71,7 @@ async function setupCLI() {
       'Shows all detected packages for this repository',
       y => getSharedYargs(y),
       async args => {
-        const packages = await getPackages(args.cwd);
+        const packages = await filterPackagesByNames(await getPackages(args.cwd), undefined, args.cwd);
 
         if (args.json) return console.info(JSON.stringify(packages, null, 2));
 
