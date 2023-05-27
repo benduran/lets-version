@@ -32,18 +32,19 @@ export * from './parser.mjs';
  * git tag that was used in a previous version bump operation.
  *
  * @param {string[]} [names]
+ * @param {boolean} [noFetchTags=false]
  * @param {string} [cwd=appRootPath.toString()]
  *
  * @returns {Promise<PublishTagInfo[]>}
  */
-export async function getLastVersionTagsByPackageName(names, cwd = appRootPath.toString()) {
+export async function getLastVersionTagsByPackageName(names, noFetchTags = false, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   const filteredPackages = filterPackagesByNames(await getPackages(fixedCWD), names);
 
   if (!filteredPackages) return [];
 
-  return getLastKnownPublishTagInfoForAllPackages(filteredPackages, fixedCWD);
+  return getLastKnownPublishTagInfoForAllPackages(filteredPackages, noFetchTags, fixedCWD);
 }
 
 /**
@@ -51,16 +52,17 @@ export async function getLastVersionTagsByPackageName(names, cwd = appRootPath.t
  * If no results are returned, it likely means that there was not a previous version tag detected in git.
  *
  * @param {string[]} [names]
+ * @param {boolean} [noFetchTags=false]
  * @param {string} [cwd=appRootPath.toString()]
  * @returns {Promise<string[]>}
  */
-export async function getChangedFilesSinceBump(names, cwd = appRootPath.toString()) {
+export async function getChangedFilesSinceBump(names, noFetchTags = false, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
   const filteredPackages = filterPackagesByNames(await getPackages(fixedCWD), names);
 
   if (!filteredPackages) return [];
 
-  const tagResults = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, fixedCWD);
+  const tagResults = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, noFetchTags, fixedCWD);
 
   return getAllFilesChangedSinceTagInfos(tagResults, fixedCWD);
 }
@@ -69,18 +71,19 @@ export async function getChangedFilesSinceBump(names, cwd = appRootPath.toString
  * Gets a list of all packages that have changed since the last publish for a specific package or set of packages.
  * If no results are returned, it likely means that there was not a previous version tag detected in git.
  * @param {string[]} [names]
+ * @param {boolean} [noFetchTags]
  * @param {string} [cwd=appRootPath.toString()]
  *
  * @returns {Promise<PackageInfo[]>}
  */
-export async function getChangedPackagesSinceBump(names, cwd = appRootPath.toString()) {
+export async function getChangedPackagesSinceBump(names, noFetchTags = false, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   const filteredPackages = filterPackagesByNames(await getPackages(fixedCWD), names);
 
   if (!filteredPackages) return [];
 
-  const tagInfos = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, fixedCWD);
+  const tagInfos = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, noFetchTags, fixedCWD);
   const changedFiles = await getAllFilesChangedSinceTagInfos(tagInfos, fixedCWD);
 
   return getAllPackagesChangedBasedOnFilesModified(changedFiles, filteredPackages, fixedCWD);
@@ -113,11 +116,12 @@ export async function getConventionalCommitsByPackage(names, cwd = appRootPath.t
  * If this is the case, this means that your particular package has never had a version bump by the lets-version library.
  *
  * @param {string[]} [names]
+ * @param {boolean} [noFetchTags=false]
  * @param {string} [cwd=appRootPath.toString()]
  *
  * @returns {Promise<BumpRecommendation[]>}
  */
-export async function getRecommendedBumpsByPackage(names, cwd = appRootPath.toString()) {
+export async function getRecommendedBumpsByPackage(names, noFetchTags = false, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   const filteredPackages = filterPackagesByNames(await getPackages(fixedCWD), names);
@@ -128,7 +132,10 @@ export async function getRecommendedBumpsByPackage(names, cwd = appRootPath.toSt
 
   const conventional = await gitConventionalForAllPackages(filteredPackages, fixedCWD);
   const tagsForPackagesMap = new Map(
-    (await getLastKnownPublishTagInfoForAllPackages(filteredPackages, fixedCWD)).map(t => [t.packageName, t]),
+    (await getLastKnownPublishTagInfoForAllPackages(filteredPackages, noFetchTags, fixedCWD)).map(t => [
+      t.packageName,
+      t,
+    ]),
   );
 
   // we need to gather the commit types per-package, then pick the "greatest" or "most disruptive" one
@@ -181,13 +188,14 @@ export async function getRecommendedBumpsByPackage(names, cwd = appRootPath.toSt
  * If this is the case, this means that your particular package has never had a version bump by the lets-version library.
  *
  * @param {string[]} names
- * @param {object} opts
+ * @param {boolean} [noFetchTags=false]
+ * @param {object} [opts]
  * @param {boolean} [opts.yes=false] - If true, skips all user confirmations
  * @param {boolean} [opts.updatePeer=false] - If true, will update any dependent "package.json#peerDependencies" fields
  * @param {boolean} [opts.updateOptional=false] - If true, will update any dependent "package.json#optionalDependencies" fields
  * @param {string} [cwd=appRootPath.toString()]
  */
-export async function applyRecommendedBumpsByPackage(names, opts, cwd = appRootPath.toString()) {
+export async function applyRecommendedBumpsByPackage(names, noFetchTags = false, opts, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   let yes = opts?.yes || false;
@@ -198,7 +206,7 @@ export async function applyRecommendedBumpsByPackage(names, opts, cwd = appRootP
 
   if (!allPackages.length) return [];
 
-  const bumps = await getRecommendedBumpsByPackage(names, fixedCWD);
+  const bumps = await getRecommendedBumpsByPackage(names, noFetchTags, fixedCWD);
 
   if (!yes) {
     const message = bumps

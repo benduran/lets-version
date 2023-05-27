@@ -11,6 +11,15 @@ import { parseToConventional } from './parser.mjs';
 import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.mjs';
 
 /**
+ * Pulls in all tags from origin and forces local to be updated
+ * @param {string} [cwd=appRootPath.toString()]
+ */
+export async function gitFetchAllTags(cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+  await execaCommand('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'inherit' });
+}
+
+/**
  * Returns commits since a particular git SHA or tag.
  * If the "since" parameter isn't provided, all commits
  * from the dawn of man are returned
@@ -162,12 +171,15 @@ export async function gitLastKnownPublishTagInfoForPackage(packageInfo, cwd = ap
  * Checks to see if there is a Git tag used for the last publish for a list of packages
  *
  * @param {PackageInfo[]} packages
+ * @param {boolean} noFetchTags
  * @param {string} [cwd=appRootPath.toString]
  *
  * @returns {Promise<PublishTagInfo[]>}
  */
-export async function getLastKnownPublishTagInfoForAllPackages(packages, cwd = appRootPath.toString()) {
+export async function getLastKnownPublishTagInfoForAllPackages(packages, noFetchTags, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
+
+  if (!noFetchTags) await gitFetchAllTags(fixedCWD);
 
   return Promise.all(
     packages.map(async p => {
