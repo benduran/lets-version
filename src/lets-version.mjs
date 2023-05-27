@@ -121,12 +121,13 @@ export async function getConventionalCommitsByPackage(names, cwd = appRootPath.t
  * If this is the case, this means that your particular package has never had a version bump by the lets-version library.
  *
  * @param {string[]} [names]
+ * @param {string} [preid]
  * @param {boolean} [noFetchTags=false]
  * @param {string} [cwd=appRootPath.toString()]
  *
  * @returns {Promise<BumpRecommendation[]>}
  */
-export async function getRecommendedBumpsByPackage(names, noFetchTags = false, cwd = appRootPath.toString()) {
+export async function getRecommendedBumpsByPackage(names, preid, noFetchTags = false, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
@@ -168,7 +169,9 @@ export async function getRecommendedBumpsByPackage(names, noFetchTags = false, c
 
     const newBump = semver.inc(
       packageInfo.version,
-      bumpType === BumpType.PATCH ? 'patch' : bumpType === BumpType.MINOR ? 'minor' : 'major',
+      preid ? 'prerelease' : bumpType === BumpType.PATCH ? 'patch' : bumpType === BumpType.MINOR ? 'minor' : 'major',
+      undefined,
+      preid,
     );
 
     const from = tagInfo?.sha ? packageInfo.version : null;
@@ -186,7 +189,8 @@ export async function getRecommendedBumpsByPackage(names, noFetchTags = false, c
  * NOTE: It is possible for your bump recommendation to not change.
  * If this is the case, this means that your particular package has never had a version bump by the lets-version library.
  *
- * @param {string[]} names
+ * @param {string[]} [names]
+ * @param {string} [preid]
  * @param {boolean} [noFetchTags=false]
  * @param {object} [opts]
  * @param {boolean} [opts.yes=false] - If true, skips all user confirmations
@@ -195,7 +199,13 @@ export async function getRecommendedBumpsByPackage(names, noFetchTags = false, c
  * @param {boolean} [opts.noPush=false] - If true, will prevent pushing any changes to upstream / origin
  * @param {string} [cwd=appRootPath.toString()]
  */
-export async function applyRecommendedBumpsByPackage(names, noFetchTags = false, opts, cwd = appRootPath.toString()) {
+export async function applyRecommendedBumpsByPackage(
+  names,
+  preid,
+  noFetchTags = false,
+  opts,
+  cwd = appRootPath.toString(),
+) {
   const fixedCWD = fixCWD(cwd);
 
   let yes = opts?.yes || false;
@@ -214,7 +224,7 @@ export async function applyRecommendedBumpsByPackage(names, noFetchTags = false,
 
   if (!allPackages.length) return [];
 
-  const bumps = await getRecommendedBumpsByPackage(names, noFetchTags, fixedCWD);
+  const bumps = await getRecommendedBumpsByPackage(names, preid, noFetchTags, fixedCWD);
 
   if (!bumps.length) {
     console.warn('Unable to apply version bumps because no packages need bumping.');
