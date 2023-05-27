@@ -8,6 +8,8 @@
     "build:bundle": "tsup -d ./dist --target es2022 --format esm ./src/lets-version.mjs",
     "build:types": "tsc --project ./tsconfig.json",
     "clean": "rm -rf ./dist",
+    "lint": "eslint --no-error-on-unmatched-pattern './src/**/*.{tsx,ts,jsx,js,mjs}'",
+    "lint:fix": "npm run lint -- --fix",
     "start": "node src/cli.mjs",
     "postinstall": "husky install",
     "typecheck": "tsc --noEmit --allowJs --skipLibCheck"

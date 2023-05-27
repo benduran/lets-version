@@ -110,7 +110,7 @@ async function setupCLI() {
 
         if (!changedFiles.length) {
           return console.warn(
-            'No files have changed. This likely means you have not yet created your first version with the lets-version library',
+            'No files have changed. This likely means you have not yet created your first version with the lets-version library, or no changes have occurred since the last version bump.',
           );
         }
         return console.info(changedFiles.join(os.EOL));
@@ -128,19 +128,18 @@ async function setupCLI() {
 
         if (!changedPackages.length) {
           return console.warn(
-            'No files have changed. This likely means you have not yet created your first version with the lets-version library',
+            'No files have changed. This likely means you have not yet created your first version with the lets-version library, or no changes have occurred since the last version bump.',
           );
         }
         return console.info(changedPackages.map(p => p.packagePath).join(os.EOL));
       },
     )
     .command(
-      'get-conventional',
+      'get-conventional-since-bump',
       'Parsed git commits for a specific package or packages, using the official Conventional Commits parser',
       y => getSharedVersionYargs(y),
       async args => {
-        // @ts-ignore
-        const commits = await getConventionalCommitsByPackage(args.package, args.noFetchTags, args.cwd);
+        const commits = await getConventionalCommitsByPackage(args.package, args.cwd);
 
         if (args.json) return console.info(JSON.stringify(commits, null, 2));
 
@@ -167,6 +166,12 @@ async function setupCLI() {
         const bumps = await getRecommendedBumpsByPackage(args.package, args.noFetchTags, args.cwd);
 
         if (args.json) return console.info(JSON.stringify(bumps, null, 2));
+
+        if (!bumps.length) {
+          return console.warn(
+            'No bumps can be applied. This likely means you have not yet created your first version with the lets-version library, or no changes have occurred since the last version bump.',
+          );
+        }
 
         return console.info(
           bumps
