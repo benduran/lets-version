@@ -3,16 +3,17 @@
   "version": "0.1.1-beta.0",
   "description": "A package that reads your conventional commits and git history and recommends (or applies) a SemVer version bump for you",
   "main": "dist/index.js",
+  "bin": "dist/cli.mjs",
   "scripts": {
-    "build": "run-s clean typecheck build:bundle",
-    "build:bundle": "tsup -d ./dist --target es2022 --format esm ./src/lets-version.mjs",
-    "build:types": "tsc --project ./tsconfig.json",
+    "build": "run-s clean compile",
     "clean": "rm -rf ./dist",
+    "compile": "tsc --project ./tsconfig.json",
     "lint": "eslint --no-error-on-unmatched-pattern './src/**/*.{tsx,ts,jsx,js,mjs}'",
     "lint:fix": "npm run lint -- --fix",
     "start": "node src/cli.mjs",
     "postinstall": "husky install",
-    "typecheck": "tsc --noEmit --allowJs --skipLibCheck"
+    "typecheck": "tsc --project ./tsconfig.json",
+    "typecheck:staged": "tsc --noEmit --allowJs --skipLibCheck"
   },
   "repository": {
     "type": "git",
@@ -65,7 +66,7 @@
   "lint-staged": {
     "*.{js,jsx,ts,tsx,mjs,mts}": [
       "eslint",
-      "npm run typecheck --"
+      "npm run typecheck:staged --"
     ]
   }
 }
