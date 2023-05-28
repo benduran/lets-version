@@ -6,6 +6,8 @@
  */
 
 import appRootPath from 'app-root-path';
+import { detect as detectPM } from 'detect-package-manager';
+import { execaCommand } from 'execa';
 import fs from 'fs-extra';
 import os from 'os';
 import prompts from 'prompts';
@@ -338,6 +340,10 @@ export async function applyRecommendedBumpsByPackage(
       }
     }),
   );
+
+  // install deps to ensure lockfiles are updated
+  const pm = await detectPM({ cwd: fixedCWD });
+  await execaCommand(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
 
   // commit the stuffs
   await gitCommit('Version Bump', bumps.map(b => `${b.packageInfo.name}@${b.to}`).join(os.EOL), '', fixedCWD);
