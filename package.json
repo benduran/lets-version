@@ -4,8 +4,9 @@
   "description": "A package that reads your conventional commits and git history and recommends (or applies) a SemVer version bump for you",
   "main": "dist/index.js",
   "bin": "dist/cli.mjs",
-  "typings": "dist/lets-version.d.ts",
-  "types": "dist/lets-version.d.ts",
+  "typings": "dist/lets-version.d.mts",
+  "types": "dist/lets-version.d.mts",
+  "files": ["dist/"],
   "scripts": {
     "build": "run-s clean compile",
     "clean": "rm -rf ./dist",
