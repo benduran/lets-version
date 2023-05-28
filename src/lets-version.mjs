@@ -159,7 +159,7 @@ export async function getRecommendedBumpsByPackage(
   for (const commit of conventional) {
     const bumpType = Math.max(
       bumpTypeByPackageName.get(commit.packageInfo.name) ?? BumpType.PATCH,
-      conventionalCommitToBumpType(commit),
+      preid ? BumpType.PRERELEASE : conventionalCommitToBumpType(commit),
     );
     bumpTypeByPackageName.set(commit.packageInfo.name, bumpType);
   }

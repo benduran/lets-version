@@ -300,6 +300,7 @@ export const BumpType = {
   MINOR: 1,
   MAJOR: 2,
   FIRST: 3,
+  PRERELEASE: 4,
 };
 
 /**
