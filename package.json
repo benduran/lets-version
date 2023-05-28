@@ -1,12 +1,14 @@
 {
   "name": "@better-builds/lets-version",
-  "version": "0.1.1-beta.1",
+  "version": "0.1.1-beta.2",
   "description": "A package that reads your conventional commits and git history and recommends (or applies) a SemVer version bump for you",
   "main": "dist/index.js",
   "bin": "dist/cli.mjs",
   "typings": "dist/lets-version.d.mts",
   "types": "dist/lets-version.d.mts",
-  "files": ["dist/"],
+  "files": [
+    "dist/"
+  ],
   "scripts": {
     "build": "run-s clean compile",
     "clean": "rm -rf ./dist",
