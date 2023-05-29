@@ -10,7 +10,6 @@ import { fileURLToPath } from 'url';
 import createCLI from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
-import { filterPackagesByNames, getPackages } from './getPackages.mjs';
 import {
   applyRecommendedBumpsByPackage,
   getChangedFilesSinceBump,
@@ -18,6 +17,7 @@ import {
   getConventionalCommitsByPackage,
   getLastVersionTagsByPackageName,
   getRecommendedBumpsByPackage,
+  listPackages,
 } from './lets-version.mjs';
 import { BumpTypeToString } from './types.mjs';
 
@@ -83,13 +83,12 @@ async function setupCLI() {
   const yargs = createCLI(hideBin(process.argv))
     .scriptName('lets-version')
     .version(pjson.version || '')
-
     .command(
       'ls',
-      'Shows all detected packages for this repository',
+      'Lists all detected packages for this repository',
       y => getSharedYargs(y),
       async args => {
-        const packages = await filterPackagesByNames(await getPackages(args.cwd), undefined, args.cwd);
+        const packages = await listPackages(args.cwd);
 
         if (args.json) return console.info(JSON.stringify(packages, null, 2));
 
@@ -207,7 +206,7 @@ async function setupCLI() {
     )
     .command(
       'apply-bumps',
-      'Gets a series of recommended version bumps for a specific package or set of packages, applies the version bumps, and updates all repository dependents to match the version that has been updated',
+      'Gets a series of recommended version bumps for a specific package or set of packages, applies the version bumps, and updates all repository dependents to match the version that has been updated.',
       y =>
         getSharedBumpArgs(y)
           .option('yes', {

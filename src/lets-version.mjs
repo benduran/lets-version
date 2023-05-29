@@ -29,12 +29,20 @@ import {
 import { conventionalCommitToBumpType } from './parser.mjs';
 import { BumpRecommendation, BumpType, BumpTypeToString, PackageInfo } from './types.mjs';
 
-export * from './getPackages.mjs';
-export * from './git.mjs';
-export * from './parser.mjs';
+/**
+ * Returns all detected packages for this repository
+ *
+ * @param {string} [cwd=appRootPath.toString()]
+ * @returns {Promise<PackageInfo[]>}
+ */
+export async function listPackages(cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  return filterPackagesByNames(await getPackages(fixedCWD), undefined, fixedCWD);
+}
 
 /**
- * Given an optiona array of package names, reads the latest
+ * Given an optional array of package names, reads the latest
  * git tag that was used in a previous version bump operation.
  *
  * @param {string[]} [names]
@@ -97,7 +105,7 @@ export async function getChangedPackagesSinceBump(names, noFetchTags = false, cw
 
 /**
  * Parses commits since last publish for a specific package or set of packages
- * and returns them represented as Conventional Commits objects
+ * and returns them represented as Conventional Commits objects.
  *
  * @param {string[]} [names]
  * @param {string} [cwd=appRootPath.toString()]
