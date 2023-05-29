@@ -258,6 +258,8 @@ export async function applyRecommendedBumpsByPackage(
   const noChangelog = opts?.noChangelog || false;
   const dryRun = opts?.dryRun || false;
 
+  if (dryRun) console.warn('**Dry Run has been enabled**');
+
   const workingDirUnclean = await gitWorkdirUnclean(fixedCWD);
 
   if (workingDirUnclean) {
@@ -357,11 +359,14 @@ export async function applyRecommendedBumpsByPackage(
 
               // @ts-ignore
               packageInfo.pkg[key][b.packageInfo.name] = newSemverStr;
-              const version = bumpsByPackageName.get(packageInfo.name)?.to;
+
+              // If the dependent package had an update prior, we need to take the new version update or
+              // keep the existing (this is the top-level "version" field for the package, not a "dependencies")
+              const version = bumpsByPackageName.get(packageInfo.name)?.to ?? packageInfo.version;
 
               if (dryRun) {
                 console.info(
-                  `Will update ${packageInfo.packageJSONPath} because found that "${b.packageInfo.name}" in "${key}" needs to be set to "${version}"`,
+                  `Will update ${packageInfo.packageJSONPath} because found that "${b.packageInfo.name}" in "${key}" needs to be set to "${newSemverStr}"`,
                 );
               } else {
                 await fs.writeFile(
@@ -389,7 +394,8 @@ export async function applyRecommendedBumpsByPackage(
 
   // generate changelogs
   if (!noChangelog) {
-    await getChangelogUpdateForPackageInfo(recommendedBumpsInfo);
+    const things = await getChangelogUpdateForPackageInfo(recommendedBumpsInfo);
+    console.info(JSON.stringify(things, null, 2));
 
     if (dryRun) {
       // tell user changelogs will be written
@@ -403,7 +409,7 @@ export async function applyRecommendedBumpsByPackage(
   const body = bumps.map(b => `${b.packageInfo.name}@${b.to}`).join(os.EOL);
   if (dryRun) {
     console.info(
-      `Will create a git commit with the following message:${os.EOL}${os.EOL}${header}${os.EOL}${os.EOL}${body}`,
+      `~~~~~${os.EOL}Will create a git commit with the following message:${os.EOL}${os.EOL}${header}${os.EOL}${os.EOL}${body}${os.EOL}~~~~~`,
     );
   } else await gitCommit(header, body, '', fixedCWD);
 
@@ -425,7 +431,7 @@ export async function applyRecommendedBumpsByPackage(
 
   // push to upstream
   if (!noPush) {
-    if (dryRun) console.info(`Will git push --no-verify all changed made during the version bump operation`);
+    if (dryRun) console.info(`Will git push --no-verify all changes made during the version bump operation`);
     else await gitPush(fixedCWD);
 
     for (const tagToPush of tagsToPush) {
