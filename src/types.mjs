@@ -415,7 +415,9 @@ export class ChangelogUpdateEntry {
    * @returns {string}
    */
   toString() {
-    return `### ${this.type}${os.EOL}${os.EOL}${this.lines.map(l => `* ${l.header} (${l.sha})`).join(os.EOL)}`;
+    return `### ${this.type}${os.EOL}${os.EOL}${this.lines
+      .map(l => `* ${l.header} ${l.sha ? `(${l.sha})` : ''}`)
+      .join(os.EOL)}`;
   }
 }
 

@@ -22,6 +22,15 @@ import {
  */
 
 /**
+ * Simple utility function to return a consistent date for changelog headers
+ *
+ * @returns {string}
+ */
+export function getFormattedChangelogDate() {
+  return dayjs().format('YYYY-MM-DD');
+}
+
+/**
  * Given a fully parsed package and conventional commits (represented by a GitCommitWithConventionalAndPackageInfo object),
  * generates a changelog update message that can be safely prepended to
  * a package's CHANGELOG.md file
@@ -43,8 +52,6 @@ export async function getChangelogUpdateForPackageInfo(opts) {
   /** @type {ChangelogUpdate[]} */
   const out = [];
 
-  const formattedDate = dayjs().format('YYYY-MM-DD');
-
   for (const [packageName, commits] of conventionalByPackageName.entries()) {
     const bumpRecommendation = bumpsByPackageName.get(packageName);
     if (!bumpRecommendation) {
@@ -53,7 +60,7 @@ export async function getChangelogUpdateForPackageInfo(opts) {
       );
     }
 
-    const toPush = new ChangelogUpdate(formattedDate, bumpRecommendation, {});
+    const toPush = new ChangelogUpdate(getFormattedChangelogDate(), bumpRecommendation, {});
     for (const c of commits) {
       // can't reliably write out a changelog without a meaningful header
 
