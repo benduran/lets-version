@@ -313,7 +313,18 @@ export async function gitPush(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   await execaCommand('git push --no-verify', { cwd: fixedCWD, stdio: 'inherit' });
-  await execaCommand('git push --tags --no-verify', { cwd: fixedCWD, stdio: 'inherit' });
+}
+
+/**
+ * Git pushes a single tag to upstream / origin
+ *
+ * @param {string} tag
+ * @param {string} [cwd=appRooPath.toString()]
+ */
+export async function gitPushTag(tag, cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  await execaCommand(`git push origin ${tag} --no-verify`, { cwd: fixedCWD, stdio: 'inherit' });
 }
 
 /**

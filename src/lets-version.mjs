@@ -23,6 +23,7 @@ import {
   gitCommit,
   gitConventionalForAllPackages,
   gitPush,
+  gitPushTag,
   gitTag,
   gitWorkdirUnclean,
 } from './git.mjs';
@@ -357,20 +358,25 @@ export async function applyRecommendedBumpsByPackage(
   await gitCommit('Version Bump', bumps.map(b => `${b.packageInfo.name}@${b.to}`).join(os.EOL), '', fixedCWD);
 
   // create all the git tags
-  await Promise.all(
-    bumps.map(async b =>
-      gitTag(
-        formatVersionTagForPackage(
-          new PackageInfo({
-            ...b.packageInfo,
-            version: b.to,
-          }),
-        ),
-        fixedCWD,
-      ),
-    ),
+  const tagsToPush = await Promise.all(
+    bumps.map(async b => {
+      const tag = formatVersionTagForPackage(
+        new PackageInfo({
+          ...b.packageInfo,
+          version: b.to,
+        }),
+      );
+      gitTag(tag);
+      return tag;
+    }, fixedCWD),
   );
 
   // push to upstream
-  if (!noPush) await gitPush(fixedCWD);
+  if (!noPush) {
+    await gitPush(fixedCWD);
+    for (const tagToPush of tagsToPush) {
+      // push a single tag at a time
+      await gitPushTag(tagToPush, fixedCWD);
+    }
+  }
 }
