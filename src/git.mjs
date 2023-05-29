@@ -313,6 +313,7 @@ export async function gitPush(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   await execaCommand('git push --no-verify', { cwd: fixedCWD, stdio: 'inherit' });
+  await execaCommand('git push --tags --no-verify', { cwd: fixedCWD, stdio: 'inherit' });
 }
 
 /**
