@@ -394,14 +394,28 @@ export async function applyRecommendedBumpsByPackage(
 
   // generate changelogs
   if (!noChangelog) {
-    const things = await getChangelogUpdateForPackageInfo(recommendedBumpsInfo);
-    console.info(JSON.stringify(things, null, 2));
+    const changelogInfo = await getChangelogUpdateForPackageInfo(recommendedBumpsInfo);
 
-    if (dryRun) {
-      // tell user changelogs will be written
-    } else {
-      // actually write the changelog
-    }
+    // actually write the changelogs
+    await Promise.all(
+      changelogInfo.map(async c => {
+        let existingChangelog = '';
+        await fs.ensureFile(c.changelogPath);
+
+        try {
+          existingChangelog = await fs.readFile(c.changelogPath, 'utf-8');
+        } catch (error) {
+          /* file doesn't exist */
+        }
+        const changelogUpdates = `${c.toString()}---`;
+
+        if (dryRun) {
+          console.info(
+            `Will write the following changelog update to ${c.changelogPath}:${os.EOL}${os.EOL}${changelogUpdates}`,
+          );
+        } else await fs.writeFile(c.changelogPath, `${changelogUpdates}${existingChangelog}`, 'utf-8');
+      }),
+    );
   }
 
   // commit the stuffs

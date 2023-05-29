@@ -5,7 +5,6 @@
  */
 
 import dayjs from 'dayjs';
-import fs from 'fs-extra';
 
 import { conventionalCommitToBumpType } from './parser.mjs';
 import {
@@ -76,9 +75,11 @@ export async function getChangelogUpdateForPackageInfo(opts) {
 
       toPush.entries = {
         ...toPush.entries,
-        [entryType]: new ChangelogUpdateEntry(entryType, [...(existingForEntry?.lines ?? []), c.conventional.header]),
+        [entryType]: new ChangelogUpdateEntry(entryType, [...(existingForEntry?.lines ?? []), c.conventional]),
       };
     }
+
+    out.push(toPush);
   }
 
   return out;

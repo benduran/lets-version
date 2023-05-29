@@ -46,6 +46,7 @@ export function parseToConventional(commits) {
         // references: details.references,
         // revert: details.revert,
         scope: details.scope,
+        sha: c.sha,
         subject: details.subject,
         type: details.type,
       }),

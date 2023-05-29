@@ -89,6 +89,7 @@ export class GitConventionalNote {
 export class GitConventional {
   /**
    * @param {object} conventional
+   * @param {string} conventional.sha
    * @param {string | null} conventional.body
    * @param {boolean} conventional.breaking
    * @param {string | null} conventional.footer
@@ -102,7 +103,24 @@ export class GitConventional {
    * @param {string | null} [conventional.subject]
    * @param {ConventionalCommitType | null} [conventional.type]
    */
-  constructor({ body, breaking, footer, header, mentions, merge, notes, references, revert, scope, subject, type }) {
+  constructor({
+    body,
+    breaking,
+    footer,
+    header,
+    mentions,
+    merge,
+    notes,
+    references,
+    revert,
+    scope,
+    sha,
+    subject,
+    type,
+  }) {
+    /** @type {string} */
+    this.sha = sha;
+
     /**
      * @type {string | null}
      */
@@ -379,13 +397,13 @@ export class BumpRecommendation {
 export class ChangelogUpdateEntry {
   /**
    * @param {ChangelogEntryType} type
-   * @param {string[]} lines
+   * @param {GitConventional[]} lines
    */
   constructor(type, lines) {
     /** @type {ChangelogEntryType} */
     this.type = type;
 
-    /** @type {string[]} */
+    /** @type {GitConventional[]} */
     this.lines = lines;
   }
 
@@ -397,7 +415,7 @@ export class ChangelogUpdateEntry {
    * @returns {string}
    */
   toString() {
-    return `### ${this.type}${os.EOL}${os.EOL}${this.lines.map(l => `* ${l}`).join(os.EOL)}`;
+    return `### ${this.type}${os.EOL}${os.EOL}${this.lines.map(l => `* ${l.header} (${l.sha})`).join(os.EOL)}`;
   }
 }
 

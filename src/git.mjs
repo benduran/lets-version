@@ -26,10 +26,11 @@ export async function gitFetchAllTags(cwd = appRootPath.toString()) {
  * from the dawn of man are returned
  *
  * @param {string | null | undefined} [since=''] - If provided, fetches all commits since this particular git SHA or Tag
+ * @param {string | null | undefined} [relPath=''] - If provided, scopes gitLog to only check for changes within a specific subdirectory
  * @param {string} [cwd=appRootPath.toString] - Where the git logic should run. Defaults to your repository root
  * @returns {Promise<GitCommit[]>}
  */
-export async function gitCommitsSince(since = '', cwd = appRootPath.toString()) {
+export async function gitCommitsSince(since = '', relPath = '', cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   let cmd = 'git --no-pager log';
@@ -39,6 +40,7 @@ export async function gitCommitsSince(since = '', cwd = appRootPath.toString()) 
 
   cmd += ` --format=${DELIMITER}%H${DELIMITER}%an${DELIMITER}%ae${DELIMITER}%ad${DELIMITER}%B${LINE_DELIMITER}`;
   if (since) cmd += ` ${since}..`;
+  if (relPath) cmd += ` -- ${relPath}`;
 
   const { stdout } = await execaCommand(cmd, { cwd: fixedCWD, stdio: 'pipe' });
 
@@ -54,6 +56,8 @@ export async function gitCommitsSince(since = '', cwd = appRootPath.toString()) 
     .filter(commit => Boolean(commit.sha));
 }
 
+/** @type {Array<[string, string]> | null} */
+let remoteTagsCache = null;
 /**
  * Grabs the full list of all tags available on upstream
  *
@@ -62,9 +66,13 @@ export async function gitCommitsSince(since = '', cwd = appRootPath.toString()) 
  * @returns {Promise<Array<[string, string]>>}
  */
 export async function gitRemoteTags(cwd = appRootPath.toString()) {
+  if (remoteTagsCache) return remoteTagsCache;
+
   const fixedCWD = fixCWD(cwd);
 
-  return (await execaCommand('git ls-remote --tags origin', { cwd: fixedCWD, stdio: 'pipe' })).stdout
+  // since this function may be called multiple times in a workflow,
+  // we want to avoid accidentally getting different results
+  remoteTagsCache = (await execaCommand('git ls-remote --tags origin', { cwd: fixedCWD, stdio: 'pipe' })).stdout
     .trim()
     .split(os.EOL)
     .filter(Boolean)
@@ -73,8 +81,12 @@ export async function gitRemoteTags(cwd = appRootPath.toString()) {
 
       return [ref.replace('refs/tags/', ''), sha];
     });
+
+  return remoteTagsCache;
 }
 
+/** @type {Array<[string, string]> | null} */
+let localTagsCache = null;
 /**
  * Grabs the full list of all tags available locally
  *
@@ -82,10 +94,14 @@ export async function gitRemoteTags(cwd = appRootPath.toString()) {
  * @returns {Promise<Array<[string, string]>>}
  */
 export async function gitLocalTags(cwd = appRootPath.toString()) {
+  if (localTagsCache) return localTagsCache;
+
   const fixedCWD = fixCWD(cwd);
 
   try {
-    return (await execaCommand('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' })).stdout
+    // since this function may be called multiple times in a workflow,
+    // we want to avoid accidentally getting different results
+    localTagsCache = (await execaCommand('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' })).stdout
       .trim()
       .split(os.EOL)
       .filter(Boolean)
@@ -94,6 +110,8 @@ export async function gitLocalTags(cwd = appRootPath.toString()) {
 
         return [ref.replace('refs/tags/', ''), sha];
       });
+
+    return localTagsCache;
   } catch (error) {
     // According to the official git documentation, zero results will cause an exit code of "1"
     // https://git-scm.com/docs/git-show-ref#_examples
@@ -242,7 +260,8 @@ export async function gitConventionalForPackage(packageInfo, cwd = appRootPath.t
   const fixedCWD = fixCWD(cwd);
 
   const taginfo = await gitLastKnownPublishTagInfoForPackage(packageInfo, fixedCWD);
-  const results = await gitCommitsSince(taginfo?.sha, fixedCWD);
+  const relPackagePath = path.relative(cwd, packageInfo.packagePath);
+  const results = await gitCommitsSince(taginfo?.sha, relPackagePath, fixedCWD);
   const conventional = parseToConventional(results);
 
   return conventional.map(
