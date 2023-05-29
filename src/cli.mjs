@@ -1,3 +1,5 @@
+#!/usr/bin/env node
+
 /**
  * @typedef {import('type-fest').PackageJson} PackageJson
  * @typedef {import('yargs').Argv} Argv
