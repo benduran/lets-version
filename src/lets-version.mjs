@@ -8,14 +8,15 @@
 
 import appRootPath from 'app-root-path';
 import { detect as detectPM } from 'detect-package-manager';
-import { execaCommand } from 'execa';
 import fs from 'fs-extra';
 import os from 'os';
+import path from 'path';
 import prompts from 'prompts';
 
 import { getChangelogUpdateForPackageInfo, getFormattedChangelogDate } from './changelog.mjs';
 import { fixCWD } from './cwd.mjs';
 import { getBumpRecommendationForPackageInfo, synchronizeBumps } from './dependencies.mjs';
+import { execAsync } from './exec.mjs';
 import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPackages } from './getPackages.mjs';
 import {
   formatVersionTagForPackage,
@@ -386,7 +387,7 @@ export async function applyRecommendedBumpsByPackage(
   const pm = await detectPM({ cwd: fixedCWD });
 
   if (dryRun) console.info(`Will run ${pm} install to synchronize lockfiles`);
-  else await execaCommand(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
+  else await execAsync(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
 
   // generate changelogs
   if (!noChangelog) {
@@ -423,14 +424,16 @@ export async function applyRecommendedBumpsByPackage(
     await Promise.all(
       changelogInfo.map(async c => {
         let existingChangelog = '';
-        await fs.ensureFile(c.changelogPath);
+        const changelogDir = path.dirname(c.changelogPath);
+
+        await fs.ensureDir(changelogDir);
 
         try {
           existingChangelog = await fs.readFile(c.changelogPath, 'utf-8');
         } catch (error) {
           /* file doesn't exist */
         }
-        const changelogUpdates = `${c.toString()}---`;
+        const changelogUpdates = `${c.toString()}${os.EOL}---${os.EOL}${os.EOL}`;
 
         if (dryRun) {
           console.info(
@@ -460,7 +463,7 @@ export async function applyRecommendedBumpsByPackage(
         }),
       );
       if (dryRun) console.info(`Will create the following git tag: ${tag}`);
-      else await gitTag(tag);
+      else await gitTag(tag, fixedCWD);
 
       return tag;
     }, fixedCWD),

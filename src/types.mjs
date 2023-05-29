@@ -465,7 +465,9 @@ export class ChangelogUpdate {
    */
   toString() {
     const header = `## ${this.bumpRecommendation.to} (${this.formattedDate})`;
-    const entries = Object.values(this.entries).map(e => e.toString());
+    const entries = Object.values(this.entries)
+      .map(e => e.toString())
+      .join(`${os.EOL}${os.EOL}${os.EOL}${os.EOL}`);
 
     return `${header}${os.EOL}${os.EOL}${entries}${os.EOL}`;
   }

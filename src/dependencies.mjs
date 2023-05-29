@@ -68,8 +68,6 @@ export function synchronizeBumps(bumps, bumpsByPackageName, allPackages, preid, 
 
   const writeToDisk = new Map(bumps.map(b => [b.packageInfo.name, b.packageInfo]));
 
-  const outBumps = [...bumps];
-
   for (const bump of bumps) {
     const toWrite = writeToDisk.get(bump.packageInfo.name);
     if (!toWrite) continue;
@@ -120,15 +118,20 @@ export function synchronizeBumps(bumps, bumpsByPackageName, allPackages, preid, 
 
         // now we need to try and apply a bump for this dependent (p)
         // if it doesn't already have one
-        const existingBump = clonedBumpsByPackageName.get(p.name);
 
-        const childBumpRec = getBumpRecommendationForPackageInfo(
-          p,
-          p.version,
-          (existingBump?.type ?? 0) > parentBumpType.type ? existingBump?.type ?? 0 : parentBumpType.type,
-          preid,
-        );
-        clonedBumpsByPackageName.set(p.name, childBumpRec);
+        /** @type {BumpRecommendation} */
+        let childBumpRec;
+
+        const existingBump = clonedBumpsByPackageName.get(p.name);
+        if (existingBump) {
+          existingBump.type = Math.max(existingBump.type, parentBumpType.type);
+          childBumpRec = existingBump;
+        } else {
+          const childBumpType = parentBumpType.type;
+          childBumpRec = getBumpRecommendationForPackageInfo(p, p.version, childBumpType, preid);
+
+          clonedBumpsByPackageName.set(p.name, childBumpRec);
+        }
         const recursedResults = synchronizeBumps(
           [childBumpRec],
           clonedBumpsByPackageName,
@@ -138,14 +141,14 @@ export function synchronizeBumps(bumps, bumpsByPackageName, allPackages, preid, 
           updateOptional,
         );
 
-        outBumps.push(...recursedResults.bumps);
-
         recursedResults.packages.forEach(r => writeToDisk.set(r.name, r));
       }
     }
   }
 
-  return { bumps: outBumps, bumpsByPackageName: clonedBumpsByPackageName, packages: Array.from(writeToDisk.values()) };
-
-  // return Array.from(writeToDisk.values());
+  return {
+    bumps: Array.from(clonedBumpsByPackageName.values()),
+    bumpsByPackageName: clonedBumpsByPackageName,
+    packages: Array.from(writeToDisk.values()),
+  };
 }

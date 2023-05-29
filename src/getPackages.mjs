@@ -1,11 +1,11 @@
 import mapWorkspaces from '@npmcli/map-workspaces';
 import appRootPath from 'app-root-path';
 import { detect as detectPackageManager } from 'detect-package-manager';
-import { execaCommand } from 'execa';
 import { promises as fs } from 'fs';
 import path from 'path';
 
 import { fixCWD } from './cwd.mjs';
+import { execAsync } from './exec.mjs';
 import { PackageInfo } from './types.mjs';
 import { detectIfMonorepo } from './workspaces.mjs';
 
@@ -34,7 +34,7 @@ export async function getPackages(cwd = appRootPath.toString()) {
 
   if (pm === 'pnpm') {
     // this will also include the ROOT workspace, which we need to manually exclude
-    const pnpmOutput = await execaCommand('pnpm list -r --dept -1 --json', { cwd: fixedCWD, stdio: 'pipe' });
+    const pnpmOutput = await execAsync('pnpm list -r --dept -1 --json', { cwd: fixedCWD, stdio: 'pipe' });
 
     /** @type {Array<{ name: string; path: string; private: boolean; version: string }>} */
     const foundPnpmWorkspaces = JSON.parse(pnpmOutput.stdout);
