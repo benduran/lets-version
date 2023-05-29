@@ -1,5 +1,8 @@
 /** @typedef {import('type-fest').PackageJson} PackageJson */
 
+import os from 'os';
+import path from 'path';
+
 /**
  * Represents a raw git commit with no conventional commits connection
  * (basically straight from "git log")
@@ -304,6 +307,20 @@ export const BumpType = {
 };
 
 /**
+ * Represents the type of entry that will be
+ * added to a changelog
+ *
+ * @enum {string}
+ */
+export const ChangelogEntryType = {
+  BREAKING: '🚨 Breaking Changes 🚨',
+  DOCS: '📖 Docs 📖',
+  FEATURES: '✨ Features ✨',
+  FIXES: '🛠️ Fixes 🛠️',
+  MISC: '🔀 Miscellaneous 🔀',
+};
+
+/**
  * Represents the string version of a bump type for user display
  *
  * @type {Object.<number, string>}
@@ -350,5 +367,86 @@ export class BumpRecommendation {
    */
   get isValid() {
     return this.from !== this.to;
+  }
+}
+
+/**
+ * Represents a single type of changelog update
+ * that should be included as part of a larger "ChangelogUpdate."
+ * This individual entry should be written to a CHANGELOG.md file
+ * as part of the larger update
+ */
+export class ChangelogUpdateEntry {
+  /**
+   * @param {ChangelogEntryType} type
+   * @param {string[]} lines
+   */
+  constructor(type, lines) {
+    /** @type {ChangelogEntryType} */
+    this.type = type;
+
+    /** @type {string[]} */
+    this.lines = lines;
+  }
+
+  /**
+   * Returns a string representation of this specific changelog entry
+   * that can be included in a parent ChangelogUpdate (which will then be
+   * prepended to a CHANGELOG.md file)
+   *
+   * @returns {string}
+   */
+  toString() {
+    return `### ${this.type}${os.EOL}${os.EOL}${this.lines.map(l => `* ${l}`).join(os.EOL)}`;
+  }
+}
+
+/**
+ * Represents a changelog update that can be
+ * prepends to a new or existing CHANGELOG.md file for a specific
+ * package
+ */
+export class ChangelogUpdate {
+  /**
+   * @param {string} formattedDate
+   * @param {BumpRecommendation} bumpRecommendation
+   * @param {Object.<string, ChangelogUpdateEntry>} entries
+   */
+  constructor(formattedDate, bumpRecommendation, entries) {
+    /** @type {string} */
+    this.formattedDate = formattedDate;
+
+    /** @type {BumpRecommendation} */
+    this.bumpRecommendation = bumpRecommendation;
+
+    /**
+     * Dictionary of ChangelogEntryType to actual updates and their lines to be written
+     *
+     * @type {Object.<string, ChangelogUpdateEntry>}
+     */
+    this.entries = entries;
+  }
+
+  /**
+   * Returns an absolute path to the CHANGELOG.md
+   * file that should correspond to this update
+   *
+   * @returns {string}
+   */
+  get changelogPath() {
+    return path.join(this.bumpRecommendation.packageInfo.packagePath, 'CHANGELOG.md');
+  }
+
+  /**
+   * Converts this ChangelogUpdate instance into a string that
+   * can be safely prepended to a CHANGELOG.md file
+   *
+   * @returns {string}
+   */
+  toString() {
+    const header = `## ${this.bumpRecommendation.to} (${this.formattedDate})`;
+    const entries = Object.values(this.entries).map(e => e.toString());
+
+    return `${header}${os.EOL}${os.EOL}${entries}${os.EOL}`;
   }
 }

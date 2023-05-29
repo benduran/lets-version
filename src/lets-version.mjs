@@ -3,6 +3,7 @@
  * @typedef {import('./types.mjs').GitCommitWithConventionalAndPackageInfo} GitCommitWithConventionalAndPackageInfo
  * @typedef {import('./types.mjs').PublishTagInfo} PublishTagInfo
  * @typedef {import('type-fest').PackageJson} PackageJson
+ * @typedef {import('./changelog.mjs').GenerateChangelogOpts} GenerateChangelogOpts
  */
 
 import appRootPath from 'app-root-path';
@@ -14,6 +15,7 @@ import prompts from 'prompts';
 import semver from 'semver';
 import semverUtils from 'semver-utils';
 
+import { getChangelogUpdateForPackageInfo } from './changelog.mjs';
 import { fixCWD } from './cwd.mjs';
 import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPackages } from './getPackages.mjs';
 import {
@@ -136,7 +138,7 @@ export async function getConventionalCommitsByPackage(names, cwd = appRootPath.t
  * @param {boolean} [noFetchTags=false]
  * @param {string} [cwd=appRootPath.toString()]
  *
- * @returns {Promise<BumpRecommendation[]>}
+ * @returns {Promise<GenerateChangelogOpts>}
  */
 export async function getRecommendedBumpsByPackage(
   names,
@@ -145,16 +147,25 @@ export async function getRecommendedBumpsByPackage(
   noFetchTags = false,
   cwd = appRootPath.toString(),
 ) {
-  // args.package, args.preid, args.forceAll, args.noFetchTags, args.cwd
+  /**
+   * @type {GenerateChangelogOpts}
+   */
+  const out = {
+    bumps: [],
+    conventional: [],
+  };
+
   const fixedCWD = fixCWD(cwd);
 
   const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
 
-  if (!filteredPackages) return [];
+  if (!filteredPackages) return out;
 
   const filteredPackagesByName = new Map(filteredPackages.map(p => [p.name, p]));
 
   const conventional = await gitConventionalForAllPackages(filteredPackages, fixedCWD);
+  out.conventional = conventional;
+
   const tagsForPackagesMap = new Map(
     (await getLastKnownPublishTagInfoForAllPackages(filteredPackages, noFetchTags, fixedCWD)).map(t => [
       t.packageName,
@@ -185,9 +196,6 @@ export async function getRecommendedBumpsByPackage(
     }
   }
 
-  /** @type {BumpRecommendation[]} */
-  const out = [];
-
   for (const [packageName, bumpType] of bumpTypeByPackageName.entries()) {
     const packageInfo = filteredPackagesByName.get(packageName);
     if (!packageInfo) {
@@ -204,7 +212,9 @@ export async function getRecommendedBumpsByPackage(
 
     // preids take precedence above all
     const from = forceAll ? packageInfo.version : preid || tagInfo?.sha ? packageInfo.version : null;
-    out.push(new BumpRecommendation(packageInfo, from, (Boolean(from) && newBump) || packageInfo.version, bumpType));
+    out.bumps.push(
+      new BumpRecommendation(packageInfo, from, (Boolean(from) && newBump) || packageInfo.version, bumpType),
+    );
   }
 
   return out;
@@ -227,6 +237,8 @@ export async function getRecommendedBumpsByPackage(
  * @param {boolean} [opts.updatePeer=false] - If true, will update any dependent "package.json#peerDependencies" fields
  * @param {boolean} [opts.updateOptional=false] - If true, will update any dependent "package.json#optionalDependencies" fields
  * @param {boolean} [opts.noPush=false] - If true, will prevent pushing any changes to upstream / origin
+ * @param {boolean} [opts.noChangelog=false] - If true, will not write CHANGELOG.md updates for each package that has changed
+ * @param {boolean} [opts.dryRun=false] - If true, will print the changes that are expected to happen at every step instead of actually writing the changes
  * @param {string} [cwd=appRootPath.toString()]
  */
 export async function applyRecommendedBumpsByPackage(
@@ -243,6 +255,8 @@ export async function applyRecommendedBumpsByPackage(
   const updatePeer = opts?.updatePeer || false;
   const updateOptional = opts?.updateOptional || false;
   const noPush = opts?.noPush || false;
+  const noChangelog = opts?.noChangelog || false;
+  const dryRun = opts?.dryRun || false;
 
   const workingDirUnclean = await gitWorkdirUnclean(fixedCWD);
 
@@ -255,7 +269,9 @@ export async function applyRecommendedBumpsByPackage(
 
   if (!allPackages.length) return [];
 
-  const bumps = await getRecommendedBumpsByPackage(names, preid, forceAll, noFetchTags, fixedCWD);
+  const recommendedBumpsInfo = await getRecommendedBumpsByPackage(names, preid, forceAll, noFetchTags, fixedCWD);
+  const { bumps } = recommendedBumpsInfo;
+
   const bumpsByPackageName = new Map(bumps.map(b => [b.packageInfo.name, b]));
 
   if (!bumps.length) {
@@ -263,15 +279,18 @@ export async function applyRecommendedBumpsByPackage(
     return [];
   }
 
+  let requireUserConfirmation = false;
+
+  const message = bumps
+    .map(
+      b =>
+        `package: ${b.packageInfo.name}${os.EOL}  bump: ${b.from ? `${b.from} -> ${b.to}` : `First time -> ${b.to}`}${
+          os.EOL
+        }  type: ${BumpTypeToString[b.type]}${os.EOL}  valid: ${b.isValid}`,
+    )
+    .join(`${os.EOL}${os.EOL}`);
   if (!yes) {
-    const message = bumps
-      .map(
-        b =>
-          `package: ${b.packageInfo.name}${os.EOL}  bump: ${b.from ? `${b.from} -> ${b.to}` : `First time -> ${b.to}`}${
-            os.EOL
-          }  type: ${BumpTypeToString[b.type]}${os.EOL}  valid: ${b.isValid}`,
-      )
-      .join(`${os.EOL}${os.EOL}`);
+    requireUserConfirmation = true;
     const response = await prompts([
       {
         message: `The following bumps will be applied:${os.EOL}${os.EOL}${message}${os.EOL}${os.EOL}Do you want to continue?`,
@@ -284,13 +303,17 @@ export async function applyRecommendedBumpsByPackage(
 
   if (!yes) return console.warn('User did not confirm changes. Aborting now.');
 
+  // don't want to print the operations message twice, so we track whether a user needed to confirm something
+  if (!requireUserConfirmation) console.info(`Will perform the following updates:${os.EOL}${os.EOL}${message}`);
+
   await Promise.all(
     bumps.map(async b => {
       // need to read each package.json file, handle the updates, then write the file back
       b.packageInfo.pkg.version = b.to;
 
       // updated the package that needed the bump
-      await fs.writeFile(b.packageInfo.packageJSONPath, JSON.stringify(b.packageInfo.pkg, null, 2), 'utf-8');
+      if (dryRun) console.info(`Will update the "version" field in ${b.packageInfo.packageJSONPath} to ${b.to}`);
+      else await fs.writeFile(b.packageInfo.packageJSONPath, JSON.stringify(b.packageInfo.pkg, null, 2), 'utf-8');
 
       // now we need to loop over EVERY package detected in the repo
       for (const packageInfo of allPackages) {
@@ -334,15 +357,23 @@ export async function applyRecommendedBumpsByPackage(
 
               // @ts-ignore
               packageInfo.pkg[key][b.packageInfo.name] = newSemverStr;
-              await fs.writeFile(
-                packageInfo.packageJSONPath,
-                JSON.stringify({ ...packageInfo.pkg, version: bumpsByPackageName.get(packageInfo.name)?.to }, null, 2),
-                'utf-8',
-              );
+              const version = bumpsByPackageName.get(packageInfo.name)?.to;
+
+              if (dryRun) {
+                console.info(
+                  `Will update ${packageInfo.packageJSONPath} because found that "${b.packageInfo.name}" in "${key}" needs to be set to "${version}"`,
+                );
+              } else {
+                await fs.writeFile(
+                  packageInfo.packageJSONPath,
+                  JSON.stringify({ ...packageInfo.pkg, version }, null, 2),
+                  'utf-8',
+                );
+              }
               break;
             }
             default:
-              console.warn(`Updating ${key} is not currently supported by the lets-version library`);
+              console.warn(`Updating "${key}" is not currently supported by the lets-version library`);
               break;
           }
         }
@@ -352,10 +383,29 @@ export async function applyRecommendedBumpsByPackage(
 
   // install deps to ensure lockfiles are updated
   const pm = await detectPM({ cwd: fixedCWD });
-  await execaCommand(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
+
+  if (dryRun) console.info(`Will run ${pm} install to synchronize lockfiles`);
+  else await execaCommand(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
+
+  // generate changelogs
+  if (!noChangelog) {
+    await getChangelogUpdateForPackageInfo(recommendedBumpsInfo);
+
+    if (dryRun) {
+      // tell user changelogs will be written
+    } else {
+      // actually write the changelog
+    }
+  }
 
   // commit the stuffs
-  await gitCommit('Version Bump', bumps.map(b => `${b.packageInfo.name}@${b.to}`).join(os.EOL), '', fixedCWD);
+  const header = 'Version Bump';
+  const body = bumps.map(b => `${b.packageInfo.name}@${b.to}`).join(os.EOL);
+  if (dryRun) {
+    console.info(
+      `Will create a git commit with the following message:${os.EOL}${os.EOL}${header}${os.EOL}${os.EOL}${body}`,
+    );
+  } else await gitCommit(header, body, '', fixedCWD);
 
   // create all the git tags
   const tagsToPush = await Promise.all(
@@ -366,17 +416,22 @@ export async function applyRecommendedBumpsByPackage(
           version: b.to,
         }),
       );
-      gitTag(tag);
+      if (dryRun) console.info(`Will create the following git tag: ${tag}`);
+      else await gitTag(tag);
+
       return tag;
     }, fixedCWD),
   );
 
   // push to upstream
   if (!noPush) {
-    await gitPush(fixedCWD);
+    if (dryRun) console.info(`Will git push --no-verify all changed made during the version bump operation`);
+    else await gitPush(fixedCWD);
+
     for (const tagToPush of tagsToPush) {
       // push a single tag at a time
-      await gitPushTag(tagToPush, fixedCWD);
+      if (dryRun) console.info(`Will push single git tag "${tagToPush}" to origin`);
+      else await gitPushTag(tagToPush, fixedCWD);
     }
   }
 }
