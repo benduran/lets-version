@@ -1,3 +1,11 @@
+## 0.1.1-beta.12 (2023-05-30)
+
+### 🛠️ Fixes 🛠️
+
+* updated all JS file extensions (e9f0ab9a3d772582f9c6a96571339fbfb7afb5cd)
+
+---
+
 ## 0.1.1-beta.11 (2023-05-30)
 
 ### 🛠️ Fixes 🛠️
