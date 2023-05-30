@@ -292,6 +292,20 @@ export class PublishTagInfo {
 }
 
 /**
+ * Represents the which type of preset release a user can do.
+ *
+ * @enum {string}
+ */
+export const ReleaseAsPresets = {
+  ALPHA: 'alpha',
+  AUTO: 'auto',
+  BETA: 'beta',
+  MAJOR: 'major',
+  MINOR: 'minor',
+  PATCH: 'patch',
+};
+
+/**
  * Represents the type of commit, as detected
  * by the conventional parser
  *
@@ -322,6 +336,7 @@ export const BumpType = {
   MAJOR: 2,
   FIRST: 3,
   PRERELEASE: 4,
+  EXACT: 5,
 };
 
 /**

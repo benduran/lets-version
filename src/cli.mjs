@@ -66,9 +66,15 @@ const getSharedVersionYargs = yargs =>
  */
 const getSharedBumpArgs = yargs =>
   getSharedVersionYargs(yargs)
+    .option('releaseAs', {
+      default: 'auto',
+      description:
+        'Releases each changed package as this release type or as an exact version. "major" "minor" "patch" "alpha" "beta" "auto" or an exact semver version number are allowed.',
+      type: 'string',
+    })
     .option('preid', {
       description:
-        'The "prerelease identifier" to use as a prefix for the "prerelease" part of a semver. Like the rc in 1.2.0-rc.8. If this is specified, a bump type of "prerelease" will always take place.',
+        'The "prerelease identifier" to use as a prefix for the "prerelease" part of a semver. Like the rc in 1.2.0-rc.8. If this is specified, a bump type of "prerelease" will always take place, causing any "--releaseAs" setting to be ignored.',
       type: 'string',
     })
     .option('forceAll', {
@@ -180,6 +186,7 @@ async function setupCLI() {
       async args => {
         const { bumps } = await getRecommendedBumpsByPackage(
           args.package,
+          args.releaseAs,
           args.preid,
           args.forceAll,
           args.noFetchTags,
@@ -246,6 +253,7 @@ async function setupCLI() {
       async args => {
         await applyRecommendedBumpsByPackage(
           args.package,
+          args.releaseAs,
           args.preid,
           args.forceAll,
           args.noFetchTags,

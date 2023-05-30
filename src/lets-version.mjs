@@ -12,6 +12,7 @@ import fs from 'fs-extra';
 import os from 'os';
 import path from 'path';
 import prompts from 'prompts';
+import semver from 'semver';
 
 import { getChangelogUpdateForPackageInfo, getFormattedChangelogDate } from './changelog.mjs';
 import { fixCWD } from './cwd.mjs';
@@ -38,6 +39,7 @@ import {
   ChangelogUpdateEntry,
   GitConventional,
   PackageInfo,
+  ReleaseAsPresets,
 } from './types.mjs';
 
 /**
@@ -141,7 +143,8 @@ export async function getConventionalCommitsByPackage(names, cwd = appRootPath.t
  * If this is the case, this means that your particular package has never had a version bump by the lets-version library.
  *
  * @param {string[]} [names]
- * @param {string} [preid]
+ * @param {ReleaseAsPresets} [releaseAs='auto']
+ * @param {string} [preid='']
  * @param {boolean} [forceAll=false]
  * @param {boolean} [noFetchTags=false]
  * @param {string} [cwd=appRootPath.toString()]
@@ -150,7 +153,8 @@ export async function getConventionalCommitsByPackage(names, cwd = appRootPath.t
  */
 export async function getRecommendedBumpsByPackage(
   names,
-  preid,
+  releaseAs = ReleaseAsPresets.AUTO,
+  preid = '',
   forceAll = false,
   noFetchTags = false,
   cwd = appRootPath.toString(),
@@ -186,21 +190,83 @@ export async function getRecommendedBumpsByPackage(
   /** @type {Map<string, BumpType>} */
   const bumpTypeByPackageName = new Map();
 
-  for (const commit of conventional) {
-    const bumpType = Math.max(
-      bumpTypeByPackageName.get(commit.packageInfo.name) ?? BumpType.PATCH,
-      preid ? BumpType.PRERELEASE : conventionalCommitToBumpType(commit),
-    );
-    bumpTypeByPackageName.set(commit.packageInfo.name, bumpType);
+  if (preid && releaseAs) {
+    console.warn('Both preid and releaseAs were set. preid takes precedence');
+  }
+  const isExactRelease = Boolean(semver.coerce(releaseAs));
+
+  if (!isExactRelease) {
+    for (const commit of conventional) {
+      // this is the "AUTO" setting, by default, and also the "preid" case
+      let bumpType = Math.max(
+        bumpTypeByPackageName.get(commit.packageInfo.name) ?? BumpType.PATCH,
+        preid ? BumpType.PRERELEASE : conventionalCommitToBumpType(commit),
+      );
+
+      if (!preid) {
+        switch (releaseAs) {
+          case ReleaseAsPresets.ALPHA:
+            bumpType = BumpType.PRERELEASE;
+            preid = 'alpha';
+            break;
+          case ReleaseAsPresets.AUTO:
+            /* no-op */
+            break;
+          case ReleaseAsPresets.BETA:
+            bumpType = BumpType.PRERELEASE;
+            preid = 'beta';
+            break;
+          case ReleaseAsPresets.MAJOR:
+            bumpType = BumpType.MAJOR;
+            break;
+          case ReleaseAsPresets.MINOR:
+            bumpType = BumpType.MINOR;
+            break;
+          case ReleaseAsPresets.PATCH:
+            bumpType = BumpType.PATCH;
+            break;
+          default:
+            throw new Error(
+              `Unable to getRecommendedBumpsByPackage because an invalid releaseAs of "${releaseAs}" was provided`,
+            );
+        }
+      }
+
+      bumpTypeByPackageName.set(commit.packageInfo.name, bumpType);
+    }
   }
 
-  if (forceAll) {
+  if (forceAll || isExactRelease) {
     // loop over all packages and set any packages that don't
     // already have an entry to a PATCH
     for (const packageInfo of filteredPackages) {
+      if (isExactRelease) {
+        bumpTypeByPackageName.set(packageInfo.name, BumpType.EXACT);
+        continue;
+      }
+
       if (bumpTypeByPackageName.has(packageInfo.name)) continue;
 
-      bumpTypeByPackageName.set(packageInfo.name, BumpType.PATCH);
+      let forcedBumpType = BumpType.PATCH;
+      switch (releaseAs) {
+        case ReleaseAsPresets.ALPHA:
+        case ReleaseAsPresets.BETA:
+          forcedBumpType = BumpType.PRERELEASE;
+          break;
+        case ReleaseAsPresets.MAJOR:
+          forcedBumpType = BumpType.MAJOR;
+          break;
+        case ReleaseAsPresets.MINOR:
+          forcedBumpType = BumpType.MINOR;
+          break;
+        case ReleaseAsPresets.PATCH:
+          forcedBumpType = BumpType.PATCH;
+          break;
+        default:
+          break;
+      }
+
+      bumpTypeByPackageName.set(packageInfo.name, forcedBumpType);
     }
   }
 
@@ -212,9 +278,9 @@ export async function getRecommendedBumpsByPackage(
     const tagInfo = tagsForPackagesMap.get(packageName);
 
     // preids take precedence above all
-    const from = forceAll ? packageInfo.version : preid || tagInfo?.sha ? packageInfo.version : null;
+    const from = forceAll || preid || isExactRelease || tagInfo?.sha ? packageInfo.version : null;
 
-    out.bumps.push(getBumpRecommendationForPackageInfo(packageInfo, from, bumpType, preid));
+    out.bumps.push(getBumpRecommendationForPackageInfo(packageInfo, from, bumpType, releaseAs, preid));
   }
 
   return out;
@@ -229,7 +295,8 @@ export async function getRecommendedBumpsByPackage(
  * If this is the case, this means that your particular package has never had a version bump by the lets-version library.
  *
  * @param {string[]} [names]
- * @param {string} [preid]
+ * @param {ReleaseAsPresets} [releaseAs='auto']
+ * @param {string} [preid='']
  * @param {boolean} [forceAll=false]
  * @param {boolean} [noFetchTags=false]
  * @param {object} [opts]
@@ -243,7 +310,8 @@ export async function getRecommendedBumpsByPackage(
  */
 export async function applyRecommendedBumpsByPackage(
   names,
-  preid,
+  releaseAs = ReleaseAsPresets.AUTO,
+  preid = '',
   forceAll = false,
   noFetchTags = false,
   opts,
@@ -271,7 +339,14 @@ export async function applyRecommendedBumpsByPackage(
 
   if (!allPackages.length) return [];
 
-  const recommendedBumpsInfo = await getRecommendedBumpsByPackage(names, preid, forceAll, noFetchTags, fixedCWD);
+  const recommendedBumpsInfo = await getRecommendedBumpsByPackage(
+    names,
+    releaseAs,
+    preid,
+    forceAll,
+    noFetchTags,
+    fixedCWD,
+  );
   const { bumps: presyncBumps } = recommendedBumpsInfo;
 
   const presyncBumpsByPackageName = new Map(presyncBumps.map(b => [b.packageInfo.name, b]));
@@ -285,6 +360,7 @@ export async function applyRecommendedBumpsByPackage(
     presyncBumps,
     presyncBumpsByPackageName,
     allPackages,
+    releaseAs,
     preid,
     updatePeer,
     updateOptional,

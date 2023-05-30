@@ -13,6 +13,7 @@ import {
   ChangelogUpdate,
   ChangelogUpdateEntry,
   ConventionalCommitType,
+  GitConventional,
 } from './types.mjs';
 
 /**
@@ -52,6 +53,9 @@ export async function getChangelogUpdateForPackageInfo(opts) {
   /** @type {ChangelogUpdate[]} */
   const out = [];
 
+  /** @type {Set<string>} */
+  const processedConventionalForPackageName = new Set();
+
   for (const [packageName, commits] of conventionalByPackageName.entries()) {
     const bumpRecommendation = bumpsByPackageName.get(packageName);
     if (!bumpRecommendation) {
@@ -80,6 +84,7 @@ export async function getChangelogUpdateForPackageInfo(opts) {
       // these should be commits only scoped to this specific package
       const existingForEntry = toPush.entries[entryType];
 
+      processedConventionalForPackageName.add(packageName);
       toPush.entries = {
         ...toPush.entries,
         [entryType]: new ChangelogUpdateEntry(entryType, [...(existingForEntry?.lines ?? []), c.conventional]),
@@ -87,6 +92,31 @@ export async function getChangelogUpdateForPackageInfo(opts) {
     }
 
     out.push(toPush);
+  }
+
+  // there might be a case where there are more bumps than there are conventionals commits.
+  // this is typically due to an EXACT or forceAll release.
+  // we need to go through and add changelogs for these additional packages
+  for (const bump of opts.bumps) {
+    if (processedConventionalForPackageName.has(bump.packageInfo.name)) continue;
+
+    out.push(
+      new ChangelogUpdate(getFormattedChangelogDate(), bump, {
+        [ChangelogEntryType.MISC]: new ChangelogUpdateEntry(ChangelogEntryType.MISC, [
+          new GitConventional({
+            body: null,
+            breaking: bump.type === BumpType.MAJOR || bump.type === BumpType.EXACT,
+            footer: null,
+            header:
+              bump.type === BumpType.EXACT ? `Version bumped exactly to ${bump.to}` : `Version bump forced for all`,
+            mentions: [],
+            merge: null,
+            notes: [],
+            sha: '',
+          }),
+        ]),
+      }),
+    );
   }
 
   return out;

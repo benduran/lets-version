@@ -1,3 +1,7 @@
+/**
+ * @typedef {import('./types.mjs').ReleaseAsPresets} ReleaseAsPresets
+ */
+
 import semver from 'semver';
 import semverUtils from 'semver-utils';
 
@@ -27,17 +31,22 @@ export function isPackageJSONDependencyKeySupported(key, updatePeer, updateOptio
  * @param {PackageInfo} packageInfo
  * @param {string | null} from
  * @param {BumpType} bumpType
+ * @param {ReleaseAsPresets} releaseAs
  * @param {string} [preid]
  *
  * @returns {BumpRecommendation}
  */
-export function getBumpRecommendationForPackageInfo(packageInfo, from, bumpType, preid) {
-  const newBump = semver.inc(
-    packageInfo.version,
-    preid ? 'prerelease' : bumpType === BumpType.PATCH ? 'patch' : bumpType === BumpType.MINOR ? 'minor' : 'major',
-    undefined,
-    preid,
-  );
+export function getBumpRecommendationForPackageInfo(packageInfo, from, bumpType, releaseAs, preid) {
+  const isExactRelease = Boolean(semver.coerce(releaseAs));
+
+  const newBump = isExactRelease
+    ? releaseAs
+    : semver.inc(
+        packageInfo.version,
+        preid ? 'prerelease' : bumpType === BumpType.PATCH ? 'patch' : bumpType === BumpType.MINOR ? 'minor' : 'major',
+        undefined,
+        preid,
+      );
 
   return new BumpRecommendation(packageInfo, from, (Boolean(from) && newBump) || packageInfo.version, bumpType);
 }
@@ -57,13 +66,14 @@ export function getBumpRecommendationForPackageInfo(packageInfo, from, bumpType,
  * @param {BumpRecommendation[]} bumps
  * @param {Map<string, BumpRecommendation>} bumpsByPackageName
  * @param {PackageInfo[]} allPackages
+ * @param {ReleaseAsPresets} releaseAs
  * @param {string | undefined} preid
  * @param {boolean} updatePeer
  * @param {boolean} updateOptional
  *
  * @returns {SynchronizeBumpsReturnType}
  */
-export function synchronizeBumps(bumps, bumpsByPackageName, allPackages, preid, updatePeer, updateOptional) {
+export function synchronizeBumps(bumps, bumpsByPackageName, allPackages, releaseAs, preid, updatePeer, updateOptional) {
   const clonedBumpsByPackageName = new Map(bumpsByPackageName.entries());
 
   const writeToDisk = new Map(bumps.map(b => [b.packageInfo.name, b.packageInfo]));
@@ -136,7 +146,7 @@ export function synchronizeBumps(bumps, bumpsByPackageName, allPackages, preid, 
           childBumpRec = existingBump;
         } else {
           const childBumpType = parentBumpType.type;
-          childBumpRec = getBumpRecommendationForPackageInfo(p, p.version, childBumpType, preid);
+          childBumpRec = getBumpRecommendationForPackageInfo(p, p.version, childBumpType, releaseAs, preid);
 
           clonedBumpsByPackageName.set(p.name, childBumpRec);
         }
@@ -148,6 +158,7 @@ export function synchronizeBumps(bumps, bumpsByPackageName, allPackages, preid, 
           [childBumpRec],
           clonedBumpsByPackageName,
           allPackages,
+          releaseAs,
           preid,
           updatePeer,
           updateOptional,
