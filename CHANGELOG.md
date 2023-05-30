@@ -1,3 +1,11 @@
+## 0.1.1-beta.13 (2023-05-30)
+
+### 🔀 Miscellaneous 🔀
+
+* Version bump forced for all 
+
+---
+
 ## 0.1.1-beta.12 (2023-05-30)
 
 ### 🛠️ Fixes 🛠️
