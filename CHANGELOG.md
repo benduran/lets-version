@@ -1,3 +1,11 @@
+## 0.1.1-beta.11 (2023-05-30)
+
+### 🛠️ Fixes 🛠️
+
+* fixed exports again (b4cbba14b84bcb2c0b3470c2a5a28b7d087a409d)
+
+---
+
 ## 0.1.1-beta.10 (2023-05-30)
 
 ### 🛠️ Fixes 🛠️
