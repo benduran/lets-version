@@ -178,7 +178,7 @@ async function setupCLI() {
       'Gets a series of recommended version bumps for a specific package or set of packages. NOTE: It is possible for your bump recommendation to not change. If this is the case, this means that your particular package has never had a version bump by the lets-version library.',
       y => getSharedBumpArgs(y),
       async args => {
-        const bumps = await getRecommendedBumpsByPackage(
+        const { bumps } = await getRecommendedBumpsByPackage(
           args.package,
           args.preid,
           args.forceAll,
@@ -217,6 +217,17 @@ async function setupCLI() {
             description: 'If true, skips any confirmation prompts. Useful if you need to automate this process in CI',
             type: 'boolean',
           })
+          .option('dryRun', {
+            default: false,
+            description:
+              'If true, will print the changes that are expected to happen at every step instead of actually writing the changes',
+            type: 'boolean',
+          })
+          .option('noChangelog', {
+            default: false,
+            description: 'If true, will not write CHANGELOG.md updates for each package that has changed',
+            type: 'boolean',
+          })
           .option('noPush', {
             default: false,
             description: 'If true, will not push changes and tags to origin',
@@ -238,7 +249,14 @@ async function setupCLI() {
           args.preid,
           args.forceAll,
           args.noFetchTags,
-          { noPush: args.noPush, updateOptional: args.updateOptional, updatePeer: args.updatePeer, yes: args.yes },
+          {
+            dryRun: args.dryRun,
+            noChangelog: args.noChangelog,
+            noPush: args.noPush,
+            updateOptional: args.updateOptional,
+            updatePeer: args.updatePeer,
+            yes: args.yes,
+          },
           args.cwd,
         );
       },

@@ -3,18 +3,20 @@
  * @typedef {import('./types.mjs').GitCommitWithConventionalAndPackageInfo} GitCommitWithConventionalAndPackageInfo
  * @typedef {import('./types.mjs').PublishTagInfo} PublishTagInfo
  * @typedef {import('type-fest').PackageJson} PackageJson
+ * @typedef {import('./changelog.mjs').GenerateChangelogOpts} GenerateChangelogOpts
  */
 
 import appRootPath from 'app-root-path';
 import { detect as detectPM } from 'detect-package-manager';
-import { execaCommand } from 'execa';
 import fs from 'fs-extra';
 import os from 'os';
+import path from 'path';
 import prompts from 'prompts';
-import semver from 'semver';
-import semverUtils from 'semver-utils';
 
+import { getChangelogUpdateForPackageInfo, getFormattedChangelogDate } from './changelog.mjs';
 import { fixCWD } from './cwd.mjs';
+import { getBumpRecommendationForPackageInfo, synchronizeBumps } from './dependencies.mjs';
+import { execAsync } from './exec.mjs';
 import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPackages } from './getPackages.mjs';
 import {
   formatVersionTagForPackage,
@@ -28,7 +30,15 @@ import {
   gitWorkdirUnclean,
 } from './git.mjs';
 import { conventionalCommitToBumpType } from './parser.mjs';
-import { BumpRecommendation, BumpType, BumpTypeToString, PackageInfo } from './types.mjs';
+import {
+  BumpType,
+  BumpTypeToString,
+  ChangelogEntryType,
+  ChangelogUpdate,
+  ChangelogUpdateEntry,
+  GitConventional,
+  PackageInfo,
+} from './types.mjs';
 
 /**
  * Returns all detected packages for this repository
@@ -136,7 +146,7 @@ export async function getConventionalCommitsByPackage(names, cwd = appRootPath.t
  * @param {boolean} [noFetchTags=false]
  * @param {string} [cwd=appRootPath.toString()]
  *
- * @returns {Promise<BumpRecommendation[]>}
+ * @returns {Promise<GenerateChangelogOpts>}
  */
 export async function getRecommendedBumpsByPackage(
   names,
@@ -145,16 +155,25 @@ export async function getRecommendedBumpsByPackage(
   noFetchTags = false,
   cwd = appRootPath.toString(),
 ) {
-  // args.package, args.preid, args.forceAll, args.noFetchTags, args.cwd
+  /**
+   * @type {GenerateChangelogOpts}
+   */
+  const out = {
+    bumps: [],
+    conventional: [],
+  };
+
   const fixedCWD = fixCWD(cwd);
 
   const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
 
-  if (!filteredPackages) return [];
+  if (!filteredPackages) return out;
 
   const filteredPackagesByName = new Map(filteredPackages.map(p => [p.name, p]));
 
   const conventional = await gitConventionalForAllPackages(filteredPackages, fixedCWD);
+  out.conventional = conventional;
+
   const tagsForPackagesMap = new Map(
     (await getLastKnownPublishTagInfoForAllPackages(filteredPackages, noFetchTags, fixedCWD)).map(t => [
       t.packageName,
@@ -185,9 +204,6 @@ export async function getRecommendedBumpsByPackage(
     }
   }
 
-  /** @type {BumpRecommendation[]} */
-  const out = [];
-
   for (const [packageName, bumpType] of bumpTypeByPackageName.entries()) {
     const packageInfo = filteredPackagesByName.get(packageName);
     if (!packageInfo) {
@@ -195,16 +211,10 @@ export async function getRecommendedBumpsByPackage(
     }
     const tagInfo = tagsForPackagesMap.get(packageName);
 
-    const newBump = semver.inc(
-      packageInfo.version,
-      preid ? 'prerelease' : bumpType === BumpType.PATCH ? 'patch' : bumpType === BumpType.MINOR ? 'minor' : 'major',
-      undefined,
-      preid,
-    );
-
     // preids take precedence above all
     const from = forceAll ? packageInfo.version : preid || tagInfo?.sha ? packageInfo.version : null;
-    out.push(new BumpRecommendation(packageInfo, from, (Boolean(from) && newBump) || packageInfo.version, bumpType));
+
+    out.bumps.push(getBumpRecommendationForPackageInfo(packageInfo, from, bumpType, preid));
   }
 
   return out;
@@ -227,6 +237,8 @@ export async function getRecommendedBumpsByPackage(
  * @param {boolean} [opts.updatePeer=false] - If true, will update any dependent "package.json#peerDependencies" fields
  * @param {boolean} [opts.updateOptional=false] - If true, will update any dependent "package.json#optionalDependencies" fields
  * @param {boolean} [opts.noPush=false] - If true, will prevent pushing any changes to upstream / origin
+ * @param {boolean} [opts.noChangelog=false] - If true, will not write CHANGELOG.md updates for each package that has changed
+ * @param {boolean} [opts.dryRun=false] - If true, will print the changes that are expected to happen at every step instead of actually writing the changes
  * @param {string} [cwd=appRootPath.toString()]
  */
 export async function applyRecommendedBumpsByPackage(
@@ -243,6 +255,10 @@ export async function applyRecommendedBumpsByPackage(
   const updatePeer = opts?.updatePeer || false;
   const updateOptional = opts?.updateOptional || false;
   const noPush = opts?.noPush || false;
+  const noChangelog = opts?.noChangelog || false;
+  const dryRun = opts?.dryRun || false;
+
+  if (dryRun) console.warn('**Dry Run has been enabled**');
 
   const workingDirUnclean = await gitWorkdirUnclean(fixedCWD);
 
@@ -255,23 +271,37 @@ export async function applyRecommendedBumpsByPackage(
 
   if (!allPackages.length) return [];
 
-  const bumps = await getRecommendedBumpsByPackage(names, preid, forceAll, noFetchTags, fixedCWD);
-  const bumpsByPackageName = new Map(bumps.map(b => [b.packageInfo.name, b]));
+  const recommendedBumpsInfo = await getRecommendedBumpsByPackage(names, preid, forceAll, noFetchTags, fixedCWD);
+  const { bumps: presyncBumps } = recommendedBumpsInfo;
 
-  if (!bumps.length) {
+  const presyncBumpsByPackageName = new Map(presyncBumps.map(b => [b.packageInfo.name, b]));
+
+  if (!presyncBumps.length) {
     console.warn('Unable to apply version bumps because no packages need bumping.');
     return [];
   }
 
+  const synchronized = synchronizeBumps(
+    presyncBumps,
+    presyncBumpsByPackageName,
+    allPackages,
+    preid,
+    updatePeer,
+    updateOptional,
+  );
+
+  let requireUserConfirmation = false;
+
+  const message = synchronized.bumps
+    .map(
+      b =>
+        `package: ${b.packageInfo.name}${os.EOL}  bump: ${b.from ? `${b.from} -> ${b.to}` : `First time -> ${b.to}`}${
+          os.EOL
+        }  type: ${BumpTypeToString[b.type]}${os.EOL}  valid: ${b.isValid}`,
+    )
+    .join(`${os.EOL}${os.EOL}`);
   if (!yes) {
-    const message = bumps
-      .map(
-        b =>
-          `package: ${b.packageInfo.name}${os.EOL}  bump: ${b.from ? `${b.from} -> ${b.to}` : `First time -> ${b.to}`}${
-            os.EOL
-          }  type: ${BumpTypeToString[b.type]}${os.EOL}  valid: ${b.isValid}`,
-      )
-      .join(`${os.EOL}${os.EOL}`);
+    requireUserConfirmation = true;
     const response = await prompts([
       {
         message: `The following bumps will be applied:${os.EOL}${os.EOL}${message}${os.EOL}${os.EOL}Do you want to continue?`,
@@ -284,99 +314,170 @@ export async function applyRecommendedBumpsByPackage(
 
   if (!yes) return console.warn('User did not confirm changes. Aborting now.');
 
-  await Promise.all(
-    bumps.map(async b => {
-      // need to read each package.json file, handle the updates, then write the file back
-      b.packageInfo.pkg.version = b.to;
+  // don't want to print the operations message twice, so we track whether a user needed to confirm something
+  if (!requireUserConfirmation) console.info(`Will perform the following updates:${os.EOL}${os.EOL}${message}`);
 
-      // updated the package that needed the bump
-      await fs.writeFile(b.packageInfo.packageJSONPath, JSON.stringify(b.packageInfo.pkg, null, 2), 'utf-8');
+  // await Promise.all(
+  //   bumps.map(async b => {
+  //     // need to read each package.json file, handle the updates, then write the file back
+  //     b.packageInfo.pkg.version = b.to;
 
-      // now we need to loop over EVERY package detected in the repo
-      for (const packageInfo of allPackages) {
-        if (packageInfo.name === b.packageInfo.name) continue;
+  //     // updated the package that needed the bump
+  //     if (dryRun) console.info(`Will update the "version" field in ${b.packageInfo.packageJSONPath} to ${b.to}`);
+  //     else await fs.writeFile(b.packageInfo.packageJSONPath, JSON.stringify(b.packageInfo.pkg, null, 2), 'utf-8');
 
-        for (const key in packageInfo.pkg) {
-          const lowerKey = key.toLowerCase();
-          if (!lowerKey.includes('dependencies')) continue;
-          switch (key) {
-            case 'dependencies':
-            case 'devDependencies':
-            case 'peerDependencies':
-            case 'optionalDependencies': {
-              const canUpdate =
-                (key === 'optionalDependencies' && updateOptional) ||
-                (key === 'peerDependencies' && updatePeer) ||
-                (key !== 'optionalDependencies' && key !== 'peerDependencies');
+  //     // now we need to loop over EVERY package detected in the repo
+  //     for (const packageInfo of allPackages) {
+  //       if (packageInfo.name === b.packageInfo.name) continue;
 
-              if (!canUpdate || !packageInfo.pkg[key]?.[b.packageInfo.name]) continue;
+  //       for (const key in packageInfo.pkg) {
+  //         if (!isPackageJSONDependencyKeySupported(key, updatePeer, updateOptional)) continue;
 
-              // we literally just checked for nullability above, so let's force TSC to ignore
-              // @ts-ignore
-              const existingSemverStr = packageInfo.pkg[key][b.packageInfo.name] || '';
-              const semverDetails = semverUtils.parseRange(existingSemverStr);
-              // if there are more than one semverDetails because user has a complicated range,
-              // we will only take the first one if it's something we can work with in the update.
-              // if it's not something reasonable, it will automatically become "^"
-              const [firstDetail] = semverDetails;
-              let firstDetailOperator = firstDetail?.operator || '^';
-              if (
-                !firstDetailOperator.startsWith('>=') &&
-                !firstDetailOperator.startsWith('^') &&
-                !firstDetailOperator.startsWith('~')
-              ) {
-                firstDetailOperator = '^';
-              }
+  //         // @ts-ignore
+  //         if (!packageInfo.pkg[key]?.[b.packageInfo.name]) continue;
 
-              // IF there's no from, this is the very first lets-version controlled commit operations
-              if (!b.from) continue;
-              const newSemverStr = `${firstDetailOperator}${b.to}`;
+  //         // we literally just checked for nullability above, so let's force TSC to ignore
+  //         // @ts-ignore
+  //         const existingSemverStr = packageInfo.pkg[key][b.packageInfo.name] || '';
+  //         const semverDetails = semverUtils.parseRange(existingSemverStr);
+  //         // if there are more than one semverDetails because user has a complicated range,
+  //         // we will only take the first one if it's something we can work with in the update.
+  //         // if it's not something reasonable, it will automatically become "^"
+  //         const [firstDetail] = semverDetails;
+  //         let firstDetailOperator = firstDetail?.operator || '^';
+  //         if (
+  //           !firstDetailOperator.startsWith('>=') &&
+  //           !firstDetailOperator.startsWith('^') &&
+  //           !firstDetailOperator.startsWith('~')
+  //         ) {
+  //           firstDetailOperator = '^';
+  //         }
 
-              // @ts-ignore
-              packageInfo.pkg[key][b.packageInfo.name] = newSemverStr;
-              await fs.writeFile(
-                packageInfo.packageJSONPath,
-                JSON.stringify({ ...packageInfo.pkg, version: bumpsByPackageName.get(packageInfo.name)?.to }, null, 2),
-                'utf-8',
-              );
-              break;
-            }
-            default:
-              console.warn(`Updating ${key} is not currently supported by the lets-version library`);
-              break;
-          }
-        }
-      }
-    }),
-  );
+  //         // IF there's no from, this is the very first lets-version controlled commit operations
+  //         if (!b.from) continue;
+  //         const newSemverStr = `${firstDetailOperator}${b.to}`;
+
+  //         // @ts-ignore
+  //         packageInfo.pkg[key][b.packageInfo.name] = newSemverStr;
+
+  //         // If the dependent package had an update prior, we need to take the new version update or
+  //         // keep the existing (this is the top-level "version" field for the package, not a "dependencies")
+  //         const version = bumpsByPackageName.get(packageInfo.name)?.to ?? packageInfo.version;
+
+  //         // okay, there might now be a version update we need to apply
+
+  //         if (dryRun) {
+  //           console.info(
+  //             `Will update ${packageInfo.packageJSONPath} because found that "${b.packageInfo.name}" in "${key}" needs to be set to "${newSemverStr}"`,
+  //           );
+  //         } else {
+  //           await fs.writeFile(
+  //             packageInfo.packageJSONPath,
+  //             JSON.stringify({ ...packageInfo.pkg, version }, null, 2),
+  //             'utf-8',
+  //           );
+  //         }
+  //         break;
+  //       }
+  //     }
+  //   }),
+  // );
 
   // install deps to ensure lockfiles are updated
   const pm = await detectPM({ cwd: fixedCWD });
-  await execaCommand(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
+
+  if (dryRun) console.info(`Will run ${pm} install to synchronize lockfiles`);
+  else await execAsync(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
+
+  // generate changelogs
+  if (!noChangelog) {
+    // there may be packages that now need to have changelogs updated
+    // because they're being bumped as the result of dep tree updates.
+    // we need to apply some additional changelogs if that's the casue
+    const changelogInfo = await getChangelogUpdateForPackageInfo({
+      ...recommendedBumpsInfo,
+      bumps: synchronized.bumps,
+    });
+
+    for (const syncbump of synchronized.bumps) {
+      if (presyncBumpsByPackageName.has(syncbump.packageInfo.name)) continue;
+
+      changelogInfo.push(
+        new ChangelogUpdate(getFormattedChangelogDate(), syncbump, {
+          [ChangelogEntryType.MISC]: new ChangelogUpdateEntry(ChangelogEntryType.MISC, [
+            new GitConventional({
+              body: null,
+              breaking: syncbump.type === BumpType.MAJOR,
+              footer: null,
+              header: 'Version bump due to parent version bump',
+              mentions: null,
+              merge: null,
+              notes: [],
+              sha: '',
+            }),
+          ]),
+        }),
+      );
+    }
+
+    // actually write the changelogs
+    await Promise.all(
+      changelogInfo.map(async c => {
+        let existingChangelog = '';
+        const changelogDir = path.dirname(c.changelogPath);
+
+        await fs.ensureDir(changelogDir);
+
+        try {
+          existingChangelog = await fs.readFile(c.changelogPath, 'utf-8');
+        } catch (error) {
+          /* file doesn't exist */
+        }
+        const changelogUpdates = `${c.toString()}${os.EOL}---${os.EOL}${os.EOL}`;
+
+        if (dryRun) {
+          console.info(
+            `Will write the following changelog update to ${c.changelogPath}:${os.EOL}${os.EOL}${changelogUpdates}`,
+          );
+        } else await fs.writeFile(c.changelogPath, `${changelogUpdates}${existingChangelog}`, 'utf-8');
+      }),
+    );
+  }
 
   // commit the stuffs
-  await gitCommit('Version Bump', bumps.map(b => `${b.packageInfo.name}@${b.to}`).join(os.EOL), '', fixedCWD);
+  const header = 'Version Bump';
+  const body = synchronized.bumps.map(b => `${b.packageInfo.name}@${b.to}`).join(os.EOL);
+  if (dryRun) {
+    console.info(
+      `~~~~~${os.EOL}Will create a git commit with the following message:${os.EOL}${os.EOL}${header}${os.EOL}${os.EOL}${body}${os.EOL}~~~~~`,
+    );
+  } else await gitCommit(header, body, '', fixedCWD);
 
   // create all the git tags
   const tagsToPush = await Promise.all(
-    bumps.map(async b => {
+    synchronized.bumps.map(async b => {
       const tag = formatVersionTagForPackage(
         new PackageInfo({
           ...b.packageInfo,
           version: b.to,
         }),
       );
-      gitTag(tag);
+      if (dryRun) console.info(`Will create the following git tag: ${tag}`);
+      else await gitTag(tag, fixedCWD);
+
       return tag;
     }, fixedCWD),
   );
 
   // push to upstream
   if (!noPush) {
-    await gitPush(fixedCWD);
+    if (dryRun) console.info(`Will git push --no-verify all changes made during the version bump operation`);
+    else await gitPush(fixedCWD);
+
     for (const tagToPush of tagsToPush) {
       // push a single tag at a time
-      await gitPushTag(tagToPush, fixedCWD);
+      if (dryRun) console.info(`Will push single git tag "${tagToPush}" to origin`);
+      else await gitPushTag(tagToPush, fixedCWD);
     }
   }
 }

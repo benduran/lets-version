@@ -1,13 +1,13 @@
 /** @typedef {import('./types.mjs').PackageInfo} PackageInfo */
 
 import appRootPath from 'app-root-path';
-import { execaCommand } from 'execa';
 import fs from 'fs-extra';
 import os from 'os';
 import path from 'path';
 import semver from 'semver';
 
 import { fixCWD } from './cwd.mjs';
+import { execAsync } from './exec.mjs';
 import { parseToConventional } from './parser.mjs';
 import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.mjs';
 
@@ -17,7 +17,7 @@ import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } fr
  */
 export async function gitFetchAllTags(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
-  await execaCommand('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'inherit' });
+  await execAsync('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'inherit' });
 }
 
 /**
@@ -26,10 +26,11 @@ export async function gitFetchAllTags(cwd = appRootPath.toString()) {
  * from the dawn of man are returned
  *
  * @param {string | null | undefined} [since=''] - If provided, fetches all commits since this particular git SHA or Tag
+ * @param {string | null | undefined} [relPath=''] - If provided, scopes gitLog to only check for changes within a specific subdirectory
  * @param {string} [cwd=appRootPath.toString] - Where the git logic should run. Defaults to your repository root
  * @returns {Promise<GitCommit[]>}
  */
-export async function gitCommitsSince(since = '', cwd = appRootPath.toString()) {
+export async function gitCommitsSince(since = '', relPath = '', cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   let cmd = 'git --no-pager log';
@@ -39,8 +40,9 @@ export async function gitCommitsSince(since = '', cwd = appRootPath.toString()) 
 
   cmd += ` --format=${DELIMITER}%H${DELIMITER}%an${DELIMITER}%ae${DELIMITER}%ad${DELIMITER}%B${LINE_DELIMITER}`;
   if (since) cmd += ` ${since}..`;
+  if (relPath) cmd += ` -- ${relPath}`;
 
-  const { stdout } = await execaCommand(cmd, { cwd: fixedCWD, stdio: 'pipe' });
+  const { stdout } = await execAsync(cmd, { cwd: fixedCWD, stdio: 'pipe' });
 
   return stdout
     .split(LINE_DELIMITER)
@@ -54,6 +56,8 @@ export async function gitCommitsSince(since = '', cwd = appRootPath.toString()) 
     .filter(commit => Boolean(commit.sha));
 }
 
+/** @type {Array<[string, string]> | null} */
+let remoteTagsCache = null;
 /**
  * Grabs the full list of all tags available on upstream
  *
@@ -62,9 +66,13 @@ export async function gitCommitsSince(since = '', cwd = appRootPath.toString()) 
  * @returns {Promise<Array<[string, string]>>}
  */
 export async function gitRemoteTags(cwd = appRootPath.toString()) {
+  if (remoteTagsCache) return remoteTagsCache;
+
   const fixedCWD = fixCWD(cwd);
 
-  return (await execaCommand('git ls-remote --tags origin', { cwd: fixedCWD, stdio: 'pipe' })).stdout
+  // since this function may be called multiple times in a workflow,
+  // we want to avoid accidentally getting different results
+  remoteTagsCache = (await execAsync('git ls-remote --tags origin', { cwd: fixedCWD, stdio: 'pipe' })).stdout
     .trim()
     .split(os.EOL)
     .filter(Boolean)
@@ -73,8 +81,12 @@ export async function gitRemoteTags(cwd = appRootPath.toString()) {
 
       return [ref.replace('refs/tags/', ''), sha];
     });
+
+  return remoteTagsCache;
 }
 
+/** @type {Array<[string, string]> | null} */
+let localTagsCache = null;
 /**
  * Grabs the full list of all tags available locally
  *
@@ -82,10 +94,14 @@ export async function gitRemoteTags(cwd = appRootPath.toString()) {
  * @returns {Promise<Array<[string, string]>>}
  */
 export async function gitLocalTags(cwd = appRootPath.toString()) {
+  if (localTagsCache) return localTagsCache;
+
   const fixedCWD = fixCWD(cwd);
 
   try {
-    return (await execaCommand('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' })).stdout
+    // since this function may be called multiple times in a workflow,
+    // we want to avoid accidentally getting different results
+    localTagsCache = (await execAsync('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' })).stdout
       .trim()
       .split(os.EOL)
       .filter(Boolean)
@@ -94,6 +110,8 @@ export async function gitLocalTags(cwd = appRootPath.toString()) {
 
         return [ref.replace('refs/tags/', ''), sha];
       });
+
+    return localTagsCache;
   } catch (error) {
     // According to the official git documentation, zero results will cause an exit code of "1"
     // https://git-scm.com/docs/git-show-ref#_examples
@@ -203,7 +221,7 @@ export async function getLastKnownPublishTagInfoForAllPackages(packages, noFetch
 export async function gitAllFilesChangedSinceSha(sha, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  const { stdout } = await execaCommand(`git --no-pager diff --name-only ${sha}..`, { cwd: fixedCWD, stdio: 'pipe' });
+  const { stdout } = await execAsync(`git --no-pager diff --name-only ${sha}..`, { cwd: fixedCWD, stdio: 'pipe' });
   return stdout
     .trim()
     .split(os.EOL)
@@ -242,7 +260,8 @@ export async function gitConventionalForPackage(packageInfo, cwd = appRootPath.t
   const fixedCWD = fixCWD(cwd);
 
   const taginfo = await gitLastKnownPublishTagInfoForPackage(packageInfo, fixedCWD);
-  const results = await gitCommitsSince(taginfo?.sha, fixedCWD);
+  const relPackagePath = path.relative(cwd, packageInfo.packagePath);
+  const results = await gitCommitsSince(taginfo?.sha, relPackagePath, fixedCWD);
   const conventional = parseToConventional(results);
 
   return conventional.map(
@@ -286,7 +305,7 @@ export async function gitCommit(header, body, footer, cwd = appRootPath.toString
   const fixedCWD = fixCWD(cwd);
 
   // add files silently
-  await execaCommand('git add .', { cwd, stdio: 'ignore' });
+  await execAsync('git add .', { cwd, stdio: 'ignore' });
 
   let message = header;
   if (body) message += `${os.EOL}${os.EOL}${body}`;
@@ -298,7 +317,7 @@ export async function gitCommit(header, body, footer, cwd = appRootPath.toString
   await fs.writeFile(tempFilePath, message, 'utf-8');
 
   // commit silently
-  await execaCommand(`git commit -F ${tempFilePath} --no-verify`, { cwd: fixedCWD, stdio: 'ignore' });
+  await execAsync(`git commit -F ${tempFilePath} --no-verify`, { cwd: fixedCWD, stdio: 'ignore' });
 
   // remove the commit msg file
   await fs.remove(tempFilePath);
@@ -312,7 +331,7 @@ export async function gitCommit(header, body, footer, cwd = appRootPath.toString
 export async function gitPush(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  await execaCommand('git push --no-verify', { cwd: fixedCWD, stdio: 'inherit' });
+  await execAsync('git push --no-verify', { cwd: fixedCWD, stdio: 'inherit' });
 }
 
 /**
@@ -324,7 +343,7 @@ export async function gitPush(cwd = appRootPath.toString()) {
 export async function gitPushTag(tag, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  await execaCommand(`git push origin ${tag} --no-verify`, { cwd: fixedCWD, stdio: 'inherit' });
+  await execAsync(`git push origin ${tag} --no-verify`, { cwd: fixedCWD, stdio: 'inherit' });
 }
 
 /**
@@ -336,7 +355,7 @@ export async function gitPushTag(tag, cwd = appRootPath.toString()) {
 export async function gitTag(tag, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  await execaCommand(`git tag ${tag}`, { cwd: fixedCWD, stdio: 'ignore' });
+  await execAsync(`git tag ${tag}`, { cwd: fixedCWD, stdio: 'ignore' });
 }
 
 /**
@@ -349,7 +368,7 @@ export async function gitTag(tag, cwd = appRootPath.toString()) {
 export async function gitWorkdirUnclean(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  const statusResult = (await execaCommand('git status -s', { cwd: fixedCWD, stdio: 'pipe' })).stdout.trim();
+  const statusResult = (await execAsync('git status -s', { cwd: fixedCWD, stdio: 'pipe' })).stdout.trim();
 
   // split by newlines, just in case
   return statusResult.split(os.EOL).filter(Boolean).length > 0;

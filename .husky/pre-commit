@@ -3,3 +3,4 @@
 
 # Perform lint and typechecking
 npx lint-staged
+npm test

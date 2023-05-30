@@ -13,6 +13,25 @@ import {
 } from './types.mjs';
 
 /**
+ * Given a full commit message, attempts to determine if it is a breaking change
+ *
+ * @param {string} msg
+ *
+ */
+function extractCommit(msg) {
+  const looseConventionalFormat = /^([a-z0-9-]+)(\([a-z0-9-]+\))?(!)?:\s?(.+)((\n|\r\n){2}(BREAKING CHANGE:)\s?.+)?$/im;
+
+  const things = looseConventionalFormat.exec(msg);
+  const [, , , bang = '', subject = '', , breakingFooter = ''] = things ?? [];
+
+  return {
+    bang,
+    breakingFooter,
+    subject,
+  };
+}
+
+/**
  * Given an array of already parsed commits, attempts
  * to use the official conventional commits parser
  * to map details into an enriched Commit object
@@ -24,10 +43,10 @@ export function parseToConventional(commits) {
   const mergePattern =
     /^merge\s+(branch|tag|commit|pull\srequest|remote-tracking\s+branch)\s+'([^']+)'(?:\s+of\s+(.*))?$/i;
 
-  const breakingChangePattern = /(\w+(!)\s?:)|(BREAKING\sCHANGE:\s.+)/g;
-
   return commits.map(c => {
     const details = conventionalParser(c.message, { mergeCorrespondence: ['sourceType', 'source'], mergePattern });
+    const extracted = extractCommit(c.message);
+
     return new GitCommitWithConventional(
       c.author,
       c.date,
@@ -37,7 +56,7 @@ export function parseToConventional(commits) {
       new GitConventional({
         body: details.body,
         // breaking change can exist in any of these, but we'll do a top-down precedence
-        breaking: breakingChangePattern.test(details.header || details.body || details.footer || ''),
+        breaking: extracted.bang.length > 0 || extracted.breakingFooter.length > 0,
         footer: details.footer,
         header: details.header,
         mentions: details.mentions,
@@ -46,7 +65,8 @@ export function parseToConventional(commits) {
         // references: details.references,
         // revert: details.revert,
         scope: details.scope,
-        subject: details.subject,
+        sha: c.sha,
+        subject: details.subject || extracted.subject,
         type: details.type,
       }),
     );
