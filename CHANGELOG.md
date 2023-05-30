@@ -1,3 +1,11 @@
+## 0.1.1-beta.7 (2023-05-29)
+
+### ✨ Features ✨
+
+* added releaseAs and autosync (a8824c62d404390af2b420384eaeace9f5e4941a)
+
+---
+
 ## 0.1.1-beta.6 (2023-05-29)
 
 ### 🛠️ Fixes 🛠️
