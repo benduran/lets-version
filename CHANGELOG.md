@@ -1,3 +1,11 @@
+## 0.1.1-beta.9 (2023-05-29)
+
+### 🛠️ Fixes 🛠️
+
+* fixed return types (b8213a028f07676a13db80f7c0a889b4beec8fb0)
+
+---
+
 ## 0.1.1-beta.8 (2023-05-29)
 
 ### ✨ Features ✨
