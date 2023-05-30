@@ -55,7 +55,7 @@ const getSharedVersionYargs = yargs =>
     })
     .option('noFetchAll', {
       default: false,
-      description: 'If true, will not fetch information from remote via "git fetch origin --all"',
+      description: 'If true, will not fetch information from remote via "git fetch origin"',
       type: 'boolean',
     })
     .option('noFetchTags', {
