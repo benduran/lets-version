@@ -123,18 +123,19 @@ export async function getChangedPackagesSinceBump(names, noFetchTags = false, cw
  * and returns them represented as Conventional Commits objects.
  *
  * @param {string[]} [names]
+ * @param {boolean} [noFetchAll=false]
  * @param {string} [cwd=appRootPath.toString()]
  *
  * @returns {Promise<GitCommitWithConventionalAndPackageInfo[]>}
  */
-export async function getConventionalCommitsByPackage(names, cwd = appRootPath.toString()) {
+export async function getConventionalCommitsByPackage(names, noFetchAll = false, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
 
   if (!filteredPackages.length) return [];
 
-  return gitConventionalForAllPackages(filteredPackages, fixedCWD);
+  return gitConventionalForAllPackages(filteredPackages, noFetchAll, fixedCWD);
 }
 
 /**
@@ -156,6 +157,7 @@ export async function getConventionalCommitsByPackage(names, cwd = appRootPath.t
  * @param {ReleaseAsPresets} [releaseAs='auto']
  * @param {string} [preid='']
  * @param {boolean} [forceAll=false]
+ * @param {boolean} [noFetchAll=false]
  * @param {boolean} [noFetchTags=false]
  * @param {boolean} [updatePeer=false]
  * @param {boolean} [updateOptional=false]
@@ -168,6 +170,7 @@ export async function getRecommendedBumpsByPackage(
   releaseAs = ReleaseAsPresets.AUTO,
   preid = '',
   forceAll = false,
+  noFetchAll = false,
   noFetchTags = false,
   updatePeer = false,
   updateOptional = false,
@@ -190,7 +193,7 @@ export async function getRecommendedBumpsByPackage(
 
   const filteredPackagesByName = new Map(filteredPackages.map(p => [p.name, p]));
 
-  const conventional = await gitConventionalForAllPackages(filteredPackages, fixedCWD);
+  const conventional = await gitConventionalForAllPackages(filteredPackages, noFetchAll, fixedCWD);
   out.conventional = conventional;
 
   const tagsForPackagesMap = new Map(
@@ -323,6 +326,7 @@ export async function getRecommendedBumpsByPackage(
  * @param {ReleaseAsPresets} [releaseAs='auto']
  * @param {string} [preid='']
  * @param {boolean} [forceAll=false]
+ * @param {boolean} [noFetchAll=false]
  * @param {boolean} [noFetchTags=false]
  * @param {object} [opts]
  * @param {boolean} [opts.yes=false] - If true, skips all user confirmations
@@ -340,6 +344,7 @@ export async function applyRecommendedBumpsByPackage(
   releaseAs = ReleaseAsPresets.AUTO,
   preid = '',
   forceAll = false,
+  noFetchAll = false,
   noFetchTags = false,
   opts,
   cwd = appRootPath.toString(),
@@ -371,6 +376,7 @@ export async function applyRecommendedBumpsByPackage(
     releaseAs,
     preid,
     forceAll,
+    noFetchAll,
     noFetchTags,
     updatePeer,
     updateOptional,

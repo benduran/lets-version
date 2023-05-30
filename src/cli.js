@@ -53,6 +53,11 @@ const getSharedVersionYargs = yargs =>
       description: 'One or more packages to check. You can specify multiple by doing -p <name1> -p <name2> -p <name3>',
       type: 'array',
     })
+    .option('noFetchAll', {
+      default: false,
+      description: 'If true, will not fetch information from remote via "git fetch origin --all"',
+      type: 'boolean',
+    })
     .option('noFetchTags', {
       default: false,
       description:
@@ -189,6 +194,7 @@ async function setupCLI() {
           args.releaseAs,
           args.preid,
           args.forceAll,
+          args.noFetchAll,
           args.noFetchTags,
           args.cwd,
         );
@@ -256,6 +262,7 @@ async function setupCLI() {
           args.releaseAs,
           args.preid,
           args.forceAll,
+          args.noFetchAll,
           args.noFetchTags,
           {
             dryRun: args.dryRun,

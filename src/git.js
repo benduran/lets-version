@@ -12,6 +12,17 @@ import { parseToConventional } from './parser.js';
 import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.js';
 
 /**
+ *
+ *
+ * @param {string} [cwd=appRootPath.toString()]
+ */
+export async function gitFetchAll(cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  await execAsync('git fetch origin --all', { cwd: fixedCWD, stdio: 'inherit' });
+}
+
+/**
  * Pulls in all tags from origin and forces local to be updated
  * @param {string} [cwd=appRootPath.toString()]
  */
@@ -252,13 +263,15 @@ export async function getAllFilesChangedSinceTagInfos(tagInfos, cwd = appRootPat
  * for a single, parsed package info
  *
  * @param {PackageInfo} packageInfo
+ * @param {boolean} [noFetchAll=false]
  * @param {string} [cwd=appRootPath.toString()]
  *
  * @returns {Promise<GitCommitWithConventionalAndPackageInfo[]>}
  */
-export async function gitConventionalForPackage(packageInfo, cwd = appRootPath.toString()) {
+export async function gitConventionalForPackage(packageInfo, noFetchAll = false, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
+  if (!noFetchAll) await gitFetchAll(fixedCWD);
   const taginfo = await gitLastKnownPublishTagInfoForPackage(packageInfo, fixedCWD);
   const relPackagePath = path.relative(cwd, packageInfo.packagePath);
   const results = await gitCommitsSince(taginfo?.sha, relPackagePath, fixedCWD);
@@ -283,14 +296,15 @@ export async function gitConventionalForPackage(packageInfo, cwd = appRootPath.t
  * for all provided packages
  *
  * @param {PackageInfo[]} packageInfos
+ * @param {boolean} [noFetchAll=false]
  * @param {string} [cwd=appRootPath.toString()]
  *
  * @returns {Promise<GitCommitWithConventionalAndPackageInfo[]>}
  */
-export async function gitConventionalForAllPackages(packageInfos, cwd = appRootPath.toString()) {
+export async function gitConventionalForAllPackages(packageInfos, noFetchAll = false, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  return (await Promise.all(packageInfos.map(async p => gitConventionalForPackage(p, fixedCWD)))).flat();
+  return (await Promise.all(packageInfos.map(async p => gitConventionalForPackage(p, noFetchAll, fixedCWD)))).flat();
 }
 
 /**
