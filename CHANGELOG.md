@@ -1,3 +1,11 @@
+## 0.1.1-beta.10 (2023-05-30)
+
+### 🛠️ Fixes 🛠️
+
+* fixed module exports (f1ebc5f629b78028fbcaefc661a1e4aacdb00930)
+
+---
+
 ## 0.1.1-beta.9 (2023-05-29)
 
 ### 🛠️ Fixes 🛠️
