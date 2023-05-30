@@ -4,6 +4,7 @@
  * @typedef {import('./types.mjs').PublishTagInfo} PublishTagInfo
  * @typedef {import('type-fest').PackageJson} PackageJson
  * @typedef {import('./changelog.mjs').GenerateChangelogOpts} GenerateChangelogOpts
+ * @typedef {import('./dependencies.mjs').SynchronizeBumpsReturnType} SynchronizeBumpsReturnType
  */
 
 import appRootPath from 'app-root-path';
@@ -147,9 +148,9 @@ export async function getConventionalCommitsByPackage(names, cwd = appRootPath.t
  * @param {string} [preid='']
  * @param {boolean} [forceAll=false]
  * @param {boolean} [noFetchTags=false]
+ * @param {boolean} [updatePeer=false]
+ * @param {boolean} [updateOptional=false]
  * @param {string} [cwd=appRootPath.toString()]
- *
- * @returns {Promise<GenerateChangelogOpts>}
  */
 export async function getRecommendedBumpsByPackage(
   names,
@@ -157,6 +158,8 @@ export async function getRecommendedBumpsByPackage(
   preid = '',
   forceAll = false,
   noFetchTags = false,
+  updatePeer = false,
+  updateOptional = false,
   cwd = appRootPath.toString(),
 ) {
   /**
@@ -169,9 +172,10 @@ export async function getRecommendedBumpsByPackage(
 
   const fixedCWD = fixCWD(cwd);
 
-  const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
+  const allPackages = await getPackages(fixedCWD);
+  const filteredPackages = await filterPackagesByNames(allPackages, names, fixedCWD);
 
-  if (!filteredPackages) return out;
+  if (!filteredPackages) return { bumps: [], bumpsByPackageName: new Map(), conventional: [], packages: [] };
 
   const filteredPackagesByName = new Map(filteredPackages.map(p => [p.name, p]));
 
@@ -283,7 +287,17 @@ export async function getRecommendedBumpsByPackage(
     out.bumps.push(getBumpRecommendationForPackageInfo(packageInfo, from, bumpType, releaseAs, preid));
   }
 
-  return out;
+  const synchronized = synchronizeBumps(
+    out.bumps,
+    new Map(out.bumps.map(b => [b.packageInfo.name, b])),
+    allPackages,
+    releaseAs,
+    preid,
+    updatePeer,
+    updateOptional,
+  );
+
+  return { ...synchronized, conventional };
 }
 
 /**
@@ -339,32 +353,22 @@ export async function applyRecommendedBumpsByPackage(
 
   if (!allPackages.length) return [];
 
-  const recommendedBumpsInfo = await getRecommendedBumpsByPackage(
+  const synchronized = await getRecommendedBumpsByPackage(
     names,
     releaseAs,
     preid,
     forceAll,
     noFetchTags,
+    updatePeer,
+    updateOptional,
     fixedCWD,
   );
-  const { bumps: presyncBumps } = recommendedBumpsInfo;
+  const { bumpsByPackageName: presyncBumpsByPackageName } = synchronized;
 
-  const presyncBumpsByPackageName = new Map(presyncBumps.map(b => [b.packageInfo.name, b]));
-
-  if (!presyncBumps.length) {
+  if (!synchronized.bumps.length) {
     console.warn('Unable to apply version bumps because no packages need bumping.');
     return [];
   }
-
-  const synchronized = synchronizeBumps(
-    presyncBumps,
-    presyncBumpsByPackageName,
-    allPackages,
-    releaseAs,
-    preid,
-    updatePeer,
-    updateOptional,
-  );
 
   let requireUserConfirmation = false;
 
@@ -414,7 +418,7 @@ export async function applyRecommendedBumpsByPackage(
     // because they're being bumped as the result of dep tree updates.
     // we need to apply some additional changelogs if that's the casue
     const changelogInfo = await getChangelogUpdateForPackageInfo({
-      ...recommendedBumpsInfo,
+      conventional: synchronized.conventional,
       bumps: synchronized.bumps,
     });
 
@@ -499,4 +503,6 @@ export async function applyRecommendedBumpsByPackage(
       else await gitPushTag(tagToPush, fixedCWD);
     }
   }
+
+  return synchronized;
 }
