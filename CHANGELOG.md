@@ -1,3 +1,11 @@
+## 0.1.1-beta.8 (2023-05-29)
+
+### ✨ Features ✨
+
+* made two bump-related functions have the same return type (d38bd8e878ed5330b84af00ea2dc2b8275ccfcef)
+
+---
+
 ## 0.1.1-beta.7 (2023-05-29)
 
 ### ✨ Features ✨
