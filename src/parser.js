@@ -1,5 +1,5 @@
 /**
- * @typedef {import('./types.mjs').GitCommit} GitCommit
+ * @typedef {import('./types.js').GitCommit} GitCommit
  */
 
 import { sync as conventionalParser } from 'conventional-commits-parser';
@@ -10,7 +10,7 @@ import {
   GitCommitWithConventional,
   GitConventional,
   GitConventionalNote,
-} from './types.mjs';
+} from './types.js';
 
 /**
  * Given a full commit message, attempts to determine if it is a breaking change

@@ -1,11 +1,11 @@
 /**
- * @typedef {import('./types.mjs').ReleaseAsPresets} ReleaseAsPresets
+ * @typedef {import('./types.js').ReleaseAsPresets} ReleaseAsPresets
  */
 
 import semver from 'semver';
 import semverUtils from 'semver-utils';
 
-import { BumpRecommendation, BumpType, PackageInfo } from './types.mjs';
+import { BumpRecommendation, BumpType, PackageInfo } from './types.js';
 
 /**
  * Checks whether or not a package.json key is allowed to be updated / managed by "lets-version"

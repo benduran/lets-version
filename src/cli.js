@@ -20,8 +20,8 @@ import {
   getLastVersionTagsByPackageName,
   getRecommendedBumpsByPackage,
   listPackages,
-} from './lets-version.mjs';
-import { BumpTypeToString } from './types.mjs';
+} from './lets-version.js';
+import { BumpTypeToString } from './types.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 

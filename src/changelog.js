@@ -1,12 +1,12 @@
 /**
- * @typedef {import('./types.mjs').PackageInfo} PackageInfo
- * @typedef {import('./types.mjs').BumpRecommendation} BumpRecommendation
- * @typedef {import('./types.mjs').GitCommitWithConventionalAndPackageInfo} GitCommitWithConventionalAndPackageInfo
+ * @typedef {import('./types.js').PackageInfo} PackageInfo
+ * @typedef {import('./types.js').BumpRecommendation} BumpRecommendation
+ * @typedef {import('./types.js').GitCommitWithConventionalAndPackageInfo} GitCommitWithConventionalAndPackageInfo
  */
 
 import dayjs from 'dayjs';
 
-import { conventionalCommitToBumpType } from './parser.mjs';
+import { conventionalCommitToBumpType } from './parser.js';
 import {
   BumpType,
   ChangelogEntryType,
@@ -14,7 +14,7 @@ import {
   ChangelogUpdateEntry,
   ConventionalCommitType,
   GitConventional,
-} from './types.mjs';
+} from './types.js';
 
 /**
  * @typedef {Object} GenerateChangelogOpts

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { conventionalCommitToBumpType, parseToConventional } from '../parser.mjs';
-import { BumpType, GitCommit } from '../types.mjs';
+import { conventionalCommitToBumpType, parseToConventional } from '../parser.js';
+import { BumpType, GitCommit } from '../types.js';
 
 describe('parser.mjs tests', () => {
   const sampleCommits = [

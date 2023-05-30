@@ -4,10 +4,10 @@ import { detect as detectPackageManager } from 'detect-package-manager';
 import { promises as fs } from 'fs';
 import path from 'path';
 
-import { fixCWD } from './cwd.mjs';
-import { execAsync } from './exec.mjs';
-import { PackageInfo } from './types.mjs';
-import { detectIfMonorepo } from './workspaces.mjs';
+import { fixCWD } from './cwd.js';
+import { execAsync } from './exec.js';
+import { PackageInfo } from './types.js';
+import { detectIfMonorepo } from './workspaces.js';
 
 /** @typedef {import('type-fest').PackageJson} PackageJson */
 

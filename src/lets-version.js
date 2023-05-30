@@ -1,11 +1,11 @@
 /**
- * @typedef {import('./types.mjs').GitCommitWithConventional} GitCommitWithConventional
- * @typedef {import('./types.mjs').BumpRecommendation} BumpRecommendation
- * @typedef {import('./types.mjs').GitCommitWithConventionalAndPackageInfo} GitCommitWithConventionalAndPackageInfo
- * @typedef {import('./types.mjs').PublishTagInfo} PublishTagInfo
+ * @typedef {import('./types.js').GitCommitWithConventional} GitCommitWithConventional
+ * @typedef {import('./types.js').BumpRecommendation} BumpRecommendation
+ * @typedef {import('./types.js').GitCommitWithConventionalAndPackageInfo} GitCommitWithConventionalAndPackageInfo
+ * @typedef {import('./types.js').PublishTagInfo} PublishTagInfo
  * @typedef {import('type-fest').PackageJson} PackageJson
- * @typedef {import('./changelog.mjs').GenerateChangelogOpts} GenerateChangelogOpts
- * @typedef {import('./dependencies.mjs').SynchronizeBumpsReturnType} SynchronizeBumpsReturnType
+ * @typedef {import('./changelog.js').GenerateChangelogOpts} GenerateChangelogOpts
+ * @typedef {import('./dependencies.js').SynchronizeBumpsReturnType} SynchronizeBumpsReturnType
  */
 
 import appRootPath from 'app-root-path';
@@ -16,11 +16,11 @@ import path from 'path';
 import prompts from 'prompts';
 import semver from 'semver';
 
-import { getChangelogUpdateForPackageInfo, getFormattedChangelogDate } from './changelog.mjs';
-import { fixCWD } from './cwd.mjs';
-import { getBumpRecommendationForPackageInfo, synchronizeBumps } from './dependencies.mjs';
-import { execAsync } from './exec.mjs';
-import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPackages } from './getPackages.mjs';
+import { getChangelogUpdateForPackageInfo, getFormattedChangelogDate } from './changelog.js';
+import { fixCWD } from './cwd.js';
+import { getBumpRecommendationForPackageInfo, synchronizeBumps } from './dependencies.js';
+import { execAsync } from './exec.js';
+import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPackages } from './getPackages.js';
 import {
   formatVersionTagForPackage,
   getAllFilesChangedSinceTagInfos,
@@ -31,8 +31,8 @@ import {
   gitPushTag,
   gitTag,
   gitWorkdirUnclean,
-} from './git.mjs';
-import { conventionalCommitToBumpType } from './parser.mjs';
+} from './git.js';
+import { conventionalCommitToBumpType } from './parser.js';
 import {
   BumpType,
   BumpTypeToString,
@@ -42,7 +42,7 @@ import {
   GitConventional,
   PackageInfo,
   ReleaseAsPresets,
-} from './types.mjs';
+} from './types.js';
 
 /**
  * Returns all detected packages for this repository

@@ -4,7 +4,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import yaml from 'yaml';
 
-import { fixCWD } from './cwd.mjs';
+import { fixCWD } from './cwd.js';
 
 /**
  * Attempts to detect whether this repository is a multi-package monorepo.

@@ -1,4 +1,4 @@
-/** @typedef {import('./types.mjs').PackageInfo} PackageInfo */
+/** @typedef {import('./types.js').PackageInfo} PackageInfo */
 
 import appRootPath from 'app-root-path';
 import fs from 'fs-extra';
@@ -6,10 +6,10 @@ import os from 'os';
 import path from 'path';
 import semver from 'semver';
 
-import { fixCWD } from './cwd.mjs';
-import { execAsync } from './exec.mjs';
-import { parseToConventional } from './parser.mjs';
-import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.mjs';
+import { fixCWD } from './cwd.js';
+import { execAsync } from './exec.js';
+import { parseToConventional } from './parser.js';
+import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.js';
 
 /**
  * Pulls in all tags from origin and forces local to be updated
