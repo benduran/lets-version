@@ -1,3 +1,17 @@
+## 0.1.1-beta.14 (2023-05-30)
+
+### 🔀 Miscellaneous 🔀
+
+* fixed fetch command (80314456698266dcdaffd1e3e1f81e0a0e9a7434)
+
+
+
+### ✨ Features ✨
+
+* added auto fetching of all information from remote (cc5af205480f2262fa084a9d9e56ec39e55c0ebf)
+
+---
+
 ## 0.1.1-beta.13 (2023-05-30)
 
 ### 🔀 Miscellaneous 🔀
