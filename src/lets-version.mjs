@@ -317,71 +317,14 @@ export async function applyRecommendedBumpsByPackage(
   // don't want to print the operations message twice, so we track whether a user needed to confirm something
   if (!requireUserConfirmation) console.info(`Will perform the following updates:${os.EOL}${os.EOL}${message}`);
 
-  // await Promise.all(
-  //   bumps.map(async b => {
-  //     // need to read each package.json file, handle the updates, then write the file back
-  //     b.packageInfo.pkg.version = b.to;
-
-  //     // updated the package that needed the bump
-  //     if (dryRun) console.info(`Will update the "version" field in ${b.packageInfo.packageJSONPath} to ${b.to}`);
-  //     else await fs.writeFile(b.packageInfo.packageJSONPath, JSON.stringify(b.packageInfo.pkg, null, 2), 'utf-8');
-
-  //     // now we need to loop over EVERY package detected in the repo
-  //     for (const packageInfo of allPackages) {
-  //       if (packageInfo.name === b.packageInfo.name) continue;
-
-  //       for (const key in packageInfo.pkg) {
-  //         if (!isPackageJSONDependencyKeySupported(key, updatePeer, updateOptional)) continue;
-
-  //         // @ts-ignore
-  //         if (!packageInfo.pkg[key]?.[b.packageInfo.name]) continue;
-
-  //         // we literally just checked for nullability above, so let's force TSC to ignore
-  //         // @ts-ignore
-  //         const existingSemverStr = packageInfo.pkg[key][b.packageInfo.name] || '';
-  //         const semverDetails = semverUtils.parseRange(existingSemverStr);
-  //         // if there are more than one semverDetails because user has a complicated range,
-  //         // we will only take the first one if it's something we can work with in the update.
-  //         // if it's not something reasonable, it will automatically become "^"
-  //         const [firstDetail] = semverDetails;
-  //         let firstDetailOperator = firstDetail?.operator || '^';
-  //         if (
-  //           !firstDetailOperator.startsWith('>=') &&
-  //           !firstDetailOperator.startsWith('^') &&
-  //           !firstDetailOperator.startsWith('~')
-  //         ) {
-  //           firstDetailOperator = '^';
-  //         }
-
-  //         // IF there's no from, this is the very first lets-version controlled commit operations
-  //         if (!b.from) continue;
-  //         const newSemverStr = `${firstDetailOperator}${b.to}`;
-
-  //         // @ts-ignore
-  //         packageInfo.pkg[key][b.packageInfo.name] = newSemverStr;
-
-  //         // If the dependent package had an update prior, we need to take the new version update or
-  //         // keep the existing (this is the top-level "version" field for the package, not a "dependencies")
-  //         const version = bumpsByPackageName.get(packageInfo.name)?.to ?? packageInfo.version;
-
-  //         // okay, there might now be a version update we need to apply
-
-  //         if (dryRun) {
-  //           console.info(
-  //             `Will update ${packageInfo.packageJSONPath} because found that "${b.packageInfo.name}" in "${key}" needs to be set to "${newSemverStr}"`,
-  //           );
-  //         } else {
-  //           await fs.writeFile(
-  //             packageInfo.packageJSONPath,
-  //             JSON.stringify({ ...packageInfo.pkg, version }, null, 2),
-  //             'utf-8',
-  //           );
-  //         }
-  //         break;
-  //       }
-  //     }
-  //   }),
-  // );
+  // flush package.json updates out to disk
+  await Promise.all(
+    synchronized.bumps.map(async b => {
+      if (dryRun) {
+        console.info(`Will write package.json updates for ${b.packageInfo.name} to ${b.packageInfo.packageJSONPath}`);
+      } else fs.writeFile(b.packageInfo.packageJSONPath, JSON.stringify(b.packageInfo.pkg, null, 2), 'utf-8');
+    }),
+  );
 
   // install deps to ensure lockfiles are updated
   const pm = await detectPM({ cwd: fixedCWD });

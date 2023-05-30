@@ -72,11 +72,19 @@ export function synchronizeBumps(bumps, bumpsByPackageName, allPackages, preid, 
     const toWrite = writeToDisk.get(bump.packageInfo.name);
     if (!toWrite) continue;
 
+    const version = semver.gt(bump.to, toWrite.version) ? bump.to : toWrite.version;
+    bump.packageInfo.version = bump.to;
+    bump.packageInfo.pkg.version = bump.to;
     writeToDisk.set(
       toWrite.name,
       new PackageInfo({
         ...toWrite,
-        version: semver.gt(bump.to, toWrite.version) ? bump.to : toWrite.version,
+        // @ts-ignore
+        pkg: {
+          ...toWrite.pkg,
+          version,
+        },
+        version,
       }),
     );
   }
@@ -132,6 +140,10 @@ export function synchronizeBumps(bumps, bumpsByPackageName, allPackages, preid, 
 
           clonedBumpsByPackageName.set(p.name, childBumpRec);
         }
+
+        // @ts-ignore
+        childBumpRec.packageInfo.pkg[key][updatedParent.name] = newSemverStr;
+
         const recursedResults = synchronizeBumps(
           [childBumpRec],
           clonedBumpsByPackageName,
