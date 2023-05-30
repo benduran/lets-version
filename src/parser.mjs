@@ -17,15 +17,18 @@ import {
  *
  * @param {string} msg
  *
- * @returns {boolean}
  */
-function commitHasBreakingChange(msg) {
-  const looseConventionalFormat = /^([a-z0-9-]+)(\([a-z0-9-]+\))?(!)?:\s?.+((\n|\r\n){2}(BREAKING CHANGE:)\s?.+)?$/im;
+function extractCommit(msg) {
+  const looseConventionalFormat = /^([a-z0-9-]+)(\([a-z0-9-]+\))?(!)?:\s?(.+)((\n|\r\n){2}(BREAKING CHANGE:)\s?.+)?$/im;
 
   const things = looseConventionalFormat.exec(msg);
-  const [, , , bang, , , breakingFooter] = things ?? [];
+  const [, , , bang = '', subject = '', , breakingFooter = ''] = things ?? [];
 
-  return (bang?.length ?? 0) > 0 || (breakingFooter?.length ?? 0) > 0;
+  return {
+    bang,
+    breakingFooter,
+    subject,
+  };
 }
 
 /**
@@ -42,6 +45,8 @@ export function parseToConventional(commits) {
 
   return commits.map(c => {
     const details = conventionalParser(c.message, { mergeCorrespondence: ['sourceType', 'source'], mergePattern });
+    const extracted = extractCommit(c.message);
+
     return new GitCommitWithConventional(
       c.author,
       c.date,
@@ -51,7 +56,7 @@ export function parseToConventional(commits) {
       new GitConventional({
         body: details.body,
         // breaking change can exist in any of these, but we'll do a top-down precedence
-        breaking: commitHasBreakingChange(details.header || details.body || details.footer || ''),
+        breaking: extracted.bang.length > 0 || extracted.breakingFooter.length > 0,
         footer: details.footer,
         header: details.header,
         mentions: details.mentions,
@@ -61,7 +66,7 @@ export function parseToConventional(commits) {
         // revert: details.revert,
         scope: details.scope,
         sha: c.sha,
-        subject: details.subject,
+        subject: details.subject || extracted.subject,
         type: details.type,
       }),
     );
