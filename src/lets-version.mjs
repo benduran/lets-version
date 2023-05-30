@@ -1,5 +1,6 @@
 /**
  * @typedef {import('./types.mjs').GitCommitWithConventional} GitCommitWithConventional
+ * @typedef {import('./types.mjs').BumpRecommendation} BumpRecommendation
  * @typedef {import('./types.mjs').GitCommitWithConventionalAndPackageInfo} GitCommitWithConventionalAndPackageInfo
  * @typedef {import('./types.mjs').PublishTagInfo} PublishTagInfo
  * @typedef {import('type-fest').PackageJson} PackageJson
@@ -137,6 +138,14 @@ export async function getConventionalCommitsByPackage(names, cwd = appRootPath.t
 }
 
 /**
+ * @typedef {Object} GetRecommendedBumpsByPackageReturnType
+ * @property {BumpRecommendation[]} bumps
+ * @property {Map<string, BumpRecommendation>} bumpsByPackageName
+ * @property {PackageInfo[]} packages
+ * @property {GitCommitWithConventionalAndPackageInfo[]} conventional
+ */
+
+/**
  * Given an optional list of package names, parses the git history
  * since the last bump operation and suggests a bump.
  *
@@ -151,6 +160,8 @@ export async function getConventionalCommitsByPackage(names, cwd = appRootPath.t
  * @param {boolean} [updatePeer=false]
  * @param {boolean} [updateOptional=false]
  * @param {string} [cwd=appRootPath.toString()]
+ *
+ * @returns {Promise<GetRecommendedBumpsByPackageReturnType>}
  */
 export async function getRecommendedBumpsByPackage(
   names,
@@ -321,6 +332,8 @@ export async function getRecommendedBumpsByPackage(
  * @param {boolean} [opts.noChangelog=false] - If true, will not write CHANGELOG.md updates for each package that has changed
  * @param {boolean} [opts.dryRun=false] - If true, will print the changes that are expected to happen at every step instead of actually writing the changes
  * @param {string} [cwd=appRootPath.toString()]
+ *
+ * @returns {Promise<GetRecommendedBumpsByPackageReturnType | null>}
  */
 export async function applyRecommendedBumpsByPackage(
   names,
@@ -346,12 +359,12 @@ export async function applyRecommendedBumpsByPackage(
 
   if (workingDirUnclean) {
     console.warn('Unable to apply version bumps because', fixedCWD, 'has uncommitted changes');
-    return [];
+    return null;
   }
 
   const allPackages = await getPackages(fixedCWD);
 
-  if (!allPackages.length) return [];
+  if (!allPackages.length) return null;
 
   const synchronized = await getRecommendedBumpsByPackage(
     names,
@@ -367,7 +380,7 @@ export async function applyRecommendedBumpsByPackage(
 
   if (!synchronized.bumps.length) {
     console.warn('Unable to apply version bumps because no packages need bumping.');
-    return [];
+    return null;
   }
 
   let requireUserConfirmation = false;
@@ -392,7 +405,10 @@ export async function applyRecommendedBumpsByPackage(
     yes = response.yes;
   }
 
-  if (!yes) return console.warn('User did not confirm changes. Aborting now.');
+  if (!yes) {
+    console.warn('User did not confirm changes. Aborting now.');
+    return null;
+  }
 
   // don't want to print the operations message twice, so we track whether a user needed to confirm something
   if (!requireUserConfirmation) console.info(`Will perform the following updates:${os.EOL}${os.EOL}${message}`);
