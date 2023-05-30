@@ -13,6 +13,22 @@ import {
 } from './types.mjs';
 
 /**
+ * Given a full commit message, attempts to determine if it is a breaking change
+ *
+ * @param {string} msg
+ *
+ * @returns {boolean}
+ */
+function commitHasBreakingChange(msg) {
+  const looseConventionalFormat = /^([a-z0-9-]+)(\([a-z0-9-]+\))?(!)?:\s?.+((\n|\r\n){2}(BREAKING CHANGE:)\s?.+)?$/im;
+
+  const things = looseConventionalFormat.exec(msg);
+  const [, , , bang, , , breakingFooter] = things ?? [];
+
+  return (bang?.length ?? 0) > 0 || (breakingFooter?.length ?? 0) > 0;
+}
+
+/**
  * Given an array of already parsed commits, attempts
  * to use the official conventional commits parser
  * to map details into an enriched Commit object
@@ -23,8 +39,6 @@ import {
 export function parseToConventional(commits) {
   const mergePattern =
     /^merge\s+(branch|tag|commit|pull\srequest|remote-tracking\s+branch)\s+'([^']+)'(?:\s+of\s+(.*))?$/i;
-
-  const breakingChangePattern = /(\w+(!)\s?:)|(BREAKING\sCHANGE:\s.+)/g;
 
   return commits.map(c => {
     const details = conventionalParser(c.message, { mergeCorrespondence: ['sourceType', 'source'], mergePattern });
@@ -37,7 +51,7 @@ export function parseToConventional(commits) {
       new GitConventional({
         body: details.body,
         // breaking change can exist in any of these, but we'll do a top-down precedence
-        breaking: breakingChangePattern.test(details.header || details.body || details.footer || ''),
+        breaking: commitHasBreakingChange(details.header || details.body || details.footer || ''),
         footer: details.footer,
         header: details.header,
         mentions: details.mentions,
