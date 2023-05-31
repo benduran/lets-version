@@ -57,5 +57,3 @@ export async function upsertChangeset(filePath = DEFAULT_CHANGESET_FILE_PATH, cw
 
   return update;
 }
-
-upsertChangeset().then(r => console.info(JSON.stringify(r, null, 2)));
