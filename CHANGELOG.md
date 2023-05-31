@@ -1,3 +1,11 @@
+## 0.1.1-oneoff.1 (2023-05-30)
+
+### 🛠️ Fixes 🛠️
+
+* workaround NPM bug with double npm installs (bd1254af438f94eedb5c3e44ad90bb2903787512)
+
+---
+
 ## 0.1.1-oneoff.0 (2023-05-30)
 
 ### 🛠️ Fixes 🛠️
