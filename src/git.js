@@ -12,14 +12,26 @@ import { parseToConventional } from './parser.js';
 import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.js';
 
 /**
- *
+ * Fetches all tracking information from origin.
+ * Most importantly, this tries to detect whether we're currently
+ * in a shallow clone. If we are, it unshallows the clone
+ * and proceeds
  *
  * @param {string} [cwd=appRootPath.toString()]
  */
 export async function gitFetchAll(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  await execAsync('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' });
+  let isShallow = false;
+  try {
+    const stat = await fs.stat(path.join(fixedCWD, '.git', 'shallow'));
+    isShallow = stat.isFile();
+  } catch (error) {
+    /* no-op */
+  }
+
+  if (isShallow) await execAsync('git fetch --unshallow origin', { cwd: fixedCWD, stdio: 'ignore' });
+  else await execAsync('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' });
 }
 
 /**
