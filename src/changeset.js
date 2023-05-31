@@ -16,7 +16,7 @@ const LOCKFILE_PATH = path.join(os.tmpdir(), '__let-version-post-commit-lock__')
 /**
  * Given a git commit that was literally just committed (we're in a post-commit hook execution phase),
  * gets the commit message and list of changed files and updated the tracked
- * changeset lets-version needs to version bump in the future
+ * changeset lets-version needs to version bump in the futures
  *
  * @param {string} [filePath]
  * @param {string} [cwd=appRootPath.toString()]
