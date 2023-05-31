@@ -1,3 +1,11 @@
+## 0.1.2-beta.1 (2023-05-30)
+
+### 🔀 Miscellaneous 🔀
+
+* make git pull operations quieter (954b8d4f2dba06578438e4218bfba37d8a397aa0)
+
+---
+
 ## 0.1.2-beta.0 (2023-05-30)
 
 ### 🔀 Miscellaneous 🔀
