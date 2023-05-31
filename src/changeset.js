@@ -48,6 +48,8 @@ export async function upsertChangeset(filePath = DEFAULT_CHANGESET_FILE_PATH, cw
     }
   } catch (error) {}
 
+  await fs.writeFile(LOCKFILE_PATH, 'LOCK', 'utf-8');
+
   await fs.writeFile(filePath, LZString.compress(JSON.stringify(Array.from(duplicatesRemoved.values()))), 'utf-8');
 
   await gitAdd([path.relative(fixedCWD, filePath)], fixedCWD);
