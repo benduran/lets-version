@@ -1,3 +1,11 @@
+## 0.1.1-beta.1 (2023-05-30)
+
+### 🔀 Miscellaneous 🔀
+
+* Merge pull request #2 from benduran/bduran/sleep-before-install (e4321cf58a3c687f2e2104785b7514827afdef4e)
+
+---
+
 ## 0.1.1-oneoff.1 (2023-05-30)
 
 ### 🛠️ Fixes 🛠️
