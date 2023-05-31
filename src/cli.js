@@ -21,6 +21,7 @@ import {
   getLastVersionTagsByPackageName,
   getRecommendedBumpsByPackage,
   listPackages,
+  postCommit,
 } from './lets-version.js';
 import { BumpTypeToString } from './types.js';
 
@@ -287,7 +288,11 @@ async function setupCLI() {
           type: 'string',
         }),
       async args => {
-        // NOTE: We will do ever
+        const result = await postCommit(args.file, args.cwd);
+
+        if (args.json) return console.info(JSON.stringify(result, null, 2));
+
+        return; // TODO: pretty print
       },
     )
     .help();

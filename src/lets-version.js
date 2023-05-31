@@ -17,6 +17,7 @@ import prompts from 'prompts';
 import semver from 'semver';
 
 import { getChangelogUpdateForPackageInfo, getFormattedChangelogDate } from './changelog.js';
+import { upsertChangeset } from './changeset.js';
 import { fixCWD } from './cwd.js';
 import { getBumpRecommendationForPackageInfo, synchronizeBumps } from './dependencies.js';
 import { execAsync } from './exec.js';
@@ -539,4 +540,14 @@ export async function applyRecommendedBumpsByPackage(
   }
 
   return synchronized;
+}
+
+/**
+ * Runs the changeset post-commit hook
+ *
+ * @param {string} filePath
+ * @param {string} [cwd=appRootPath.toString()]
+ */
+export async function postCommit(filePath, cwd = appRootPath.toString()) {
+  return upsertChangeset(filePath, fixCWD(cwd));
 }
