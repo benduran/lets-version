@@ -1,3 +1,11 @@
+## 0.1.2-beta.2 (2023-05-31)
+
+### 🛠️ Fixes 🛠️
+
+* unshallow a shallow clone and fetch all remote info (c5ad94c01517b12efe85c35b4fc2b9a1590206a2)
+
+---
+
 ## 0.1.2-beta.1 (2023-05-30)
 
 ### 🔀 Miscellaneous 🔀
