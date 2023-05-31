@@ -432,7 +432,19 @@ export async function applyRecommendedBumpsByPackage(
   const pm = await detectPM({ cwd: fixedCWD });
 
   if (dryRun) console.info(`Will run ${pm} install to synchronize lockfiles`);
-  else await execAsync(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
+  else {
+    /**
+     * As of 5/30/2023, there is an open bug with NPM that causes "npm ci" to fail
+     * due to some internal race condition where lockfiles need a subsequent
+     * npm install to flush out all the changes.
+     * https://github.com/npm/cli/issues/4859#issuecomment-1120018666
+     * and
+     * https://github.com/npm/cli/issues/4942
+     */
+    const syncLockfiles = () => execAsync(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
+    await syncLockfiles();
+    await syncLockfiles();
+  }
 
   // generate changelogs
   if (!noChangelog) {
