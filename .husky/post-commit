@@ -1,4 +1,4 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-node ./src/cli.js post-commit
+node --inspect-brk ./src/cli.js post-commit
