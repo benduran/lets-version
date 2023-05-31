@@ -1,3 +1,11 @@
+## 0.1.2-beta.3 (2023-05-31)
+
+### ✨ Features ✨
+
+* cache fetch operations to a single per bump operation execution (71c9e7bd22d3f7350f1011d9e88a27c58931eaca)
+
+---
+
 ## 0.1.2-beta.2 (2023-05-31)
 
 ### 🛠️ Fixes 🛠️
