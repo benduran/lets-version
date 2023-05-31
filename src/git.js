@@ -11,6 +11,8 @@ import { execAsync } from './exec.js';
 import { parseToConventional } from './parser.js';
 import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.js';
 
+/** @type {ReturnType<execAsync> | null} */
+let cachedFetchAllPromise = null;
 /**
  * Fetches all tracking information from origin.
  * Most importantly, this tries to detect whether we're currently
@@ -22,6 +24,8 @@ import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } fr
 export async function gitFetchAll(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
+  if (cachedFetchAllPromise) return cachedFetchAllPromise;
+
   let isShallow = false;
   try {
     const stat = await fs.stat(path.join(fixedCWD, '.git', 'shallow'));
@@ -30,17 +34,25 @@ export async function gitFetchAll(cwd = appRootPath.toString()) {
     /* no-op */
   }
 
-  if (isShallow) await execAsync('git fetch --unshallow origin', { cwd: fixedCWD, stdio: 'ignore' });
-  else await execAsync('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' });
+  if (isShallow) cachedFetchAllPromise = execAsync('git fetch --unshallow origin', { cwd: fixedCWD, stdio: 'ignore' });
+  else cachedFetchAllPromise = execAsync('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' });
+
+  return cachedFetchAllPromise;
 }
 
+/** @type {ReturnType<execAsync> | null} */
+let cachedFetchTagsPromise = null;
 /**
  * Pulls in all tags from origin and forces local to be updated
  * @param {string} [cwd=appRootPath.toString()]
  */
 export async function gitFetchAllTags(cwd = appRootPath.toString()) {
+  if (cachedFetchTagsPromise) return cachedFetchTagsPromise;
+
   const fixedCWD = fixCWD(cwd);
-  await execAsync('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'ignore' });
+  cachedFetchTagsPromise = execAsync('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'ignore' });
+
+  return cachedFetchTagsPromise;
 }
 
 /**
