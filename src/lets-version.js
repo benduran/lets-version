@@ -43,6 +43,7 @@ import {
   PackageInfo,
   ReleaseAsPresets,
 } from './types.js';
+import { sleep } from './util.js';
 
 /**
  * Returns all detected packages for this repository
@@ -430,6 +431,11 @@ export async function applyRecommendedBumpsByPackage(
 
   // install deps to ensure lockfiles are updated
   const pm = await detectPM({ cwd: fixedCWD });
+
+  // sometimes, all of the package.json files haven't been flushed out to disk yet
+  // (this is dependent upon OS). We'll delay a few seconds before attempting to continue
+  // with the PM install command
+  await sleep(5 * 1000);
 
   if (dryRun) console.info(`Will run ${pm} install to synchronize lockfiles`);
   else await execAsync(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
