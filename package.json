@@ -41,8 +41,8 @@
   },
   "homepage": "https://github.com/benduran/lets-version#readme",
   "devDependencies": {
-    "@commitlint/cli": "^17.6.3",
-    "@commitlint/config-conventional": "^17.6.3",
+    "@commitlint/cli": "^17.6.5",
+    "@commitlint/config-conventional": "^17.6.5",
     "@types/conventional-commits-parser": "^3.0.3",
     "@types/fs-extra": "^11.0.1",
     "@types/prompts": "^2.4.4",
@@ -54,10 +54,10 @@
     "lint-staged": "^13.2.2",
     "npm-run-all": "^4.1.5",
     "tsup": "^6.7.0",
-    "type-fest": "^3.11.0",
+    "type-fest": "^3.11.1",
     "typescript": "^5.0.4",
     "vite": "^4.3.9",
-    "vitest": "^0.31.1"
+    "vitest": "^0.31.2"
   },
   "dependencies": {
     "@npmcli/map-workspaces": "^3.0.4",
