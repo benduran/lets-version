@@ -19,7 +19,7 @@ import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } fr
 export async function gitFetchAll(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  await execAsync('git fetch origin', { cwd: fixedCWD, stdio: 'inherit' });
+  await execAsync('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' });
 }
 
 /**
@@ -28,7 +28,7 @@ export async function gitFetchAll(cwd = appRootPath.toString()) {
  */
 export async function gitFetchAllTags(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
-  await execAsync('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'inherit' });
+  await execAsync('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'ignore' });
 }
 
 /**
