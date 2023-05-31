@@ -546,8 +546,9 @@ export async function applyRecommendedBumpsByPackage(
  * Runs the changeset post-commit hook
  *
  * @param {string} filePath
+ * @param {boolean} compress
  * @param {string} [cwd=appRootPath.toString()]
  */
-export async function postCommit(filePath, cwd = appRootPath.toString()) {
-  return upsertChangeset(filePath, fixCWD(cwd));
+export async function postCommit(filePath, compress, cwd = appRootPath.toString()) {
+  return upsertChangeset(filePath, compress, fixCWD(cwd));
 }

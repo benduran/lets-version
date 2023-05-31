@@ -19,9 +19,14 @@ const LOCKFILE_PATH = path.join(os.tmpdir(), '__let-version-post-commit-lock__')
  * changeset lets-version needs to version bump in the futures
  *
  * @param {string} [filePath]
+ * @param {boolean} [compress]
  * @param {string} [cwd=appRootPath.toString()]
  */
-export async function upsertChangeset(filePath = DEFAULT_CHANGESET_FILE_PATH, cwd = appRootPath.toString()) {
+export async function upsertChangeset(
+  filePath = DEFAULT_CHANGESET_FILE_PATH,
+  compress = false,
+  cwd = appRootPath.toString(),
+) {
   const fixedCWD = fixCWD(cwd);
 
   const commitsSince = await gitCommitsSince(await gitRevParse('HEAD~1', fixedCWD), undefined, fixedCWD);
@@ -31,7 +36,8 @@ export async function upsertChangeset(filePath = DEFAULT_CHANGESET_FILE_PATH, cw
 
   await fs.ensureFile(filePath);
 
-  const inflatedChangesetStr = LZString.decompress((await fs.readFile(filePath, 'utf-8')).trim());
+  const changesetFileContents = (await fs.readFile(filePath, 'utf-8')).trim();
+  const inflatedChangesetStr = compress ? LZString.decompress(changesetFileContents) : changesetFileContents;
 
   const existingChangeset = inflatedChangesetStr ? JSON.parse(inflatedChangesetStr) : null;
 
@@ -50,7 +56,8 @@ export async function upsertChangeset(filePath = DEFAULT_CHANGESET_FILE_PATH, cw
 
   await fs.writeFile(LOCKFILE_PATH, 'LOCK', 'utf-8');
 
-  await fs.writeFile(filePath, LZString.compress(JSON.stringify(Array.from(duplicatesRemoved.values()))), 'utf-8');
+  const changesetToWrite = JSON.stringify(Array.from(duplicatesRemoved.values()));
+  await fs.writeFile(filePath, compress ? LZString.compress(changesetToWrite) : changesetToWrite, 'utf-8');
 
   await gitAdd([path.relative(fixedCWD, filePath)], fixedCWD);
   await gitAmend(commitDetails.message);

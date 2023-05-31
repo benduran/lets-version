@@ -282,13 +282,20 @@ async function setupCLI() {
       'post-commit',
       'To be run in a git post-commit hook, this command will parse the commit message, grab all the changed files, create a lets-version changeset file, then amend your commit to include this file. This file will keep track of changes between version bump events. When a version bump occurs, this file will be consumed until the next change occur',
       y =>
-        getSharedYargs(y).option('file', {
-          default: DEFAULT_CHANGESET_FILE_PATH,
-          description: 'Path to the file that will build up changesets. File will need to be source controlled.',
-          type: 'string',
-        }),
+        getSharedYargs(y)
+          .option('file', {
+            default: DEFAULT_CHANGESET_FILE_PATH,
+            description: 'Path to the file that will build up changesets. File will need to be source controlled.',
+            type: 'string',
+          })
+          .option('compress', {
+            alias: 'c',
+            default: false,
+            description: 'If true, compresses the changeset file using LZ compression',
+            type: 'boolean',
+          }),
       async args => {
-        const result = await postCommit(args.file, args.cwd);
+        const result = await postCommit(args.file, args.compress, args.cwd);
 
         if (args.json) return console.info(JSON.stringify(result, null, 2));
 
