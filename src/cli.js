@@ -12,6 +12,7 @@ import { fileURLToPath } from 'url';
 import createCLI from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
+import { DEFAULT_CHANGESET_FILE_PATH } from './changeset.js';
 import {
   applyRecommendedBumpsByPackage,
   getChangedFilesSinceBump,
@@ -274,6 +275,19 @@ async function setupCLI() {
           },
           args.cwd,
         );
+      },
+    )
+    .command(
+      'post-commit',
+      'To be run in a git post-commit hook, this command will parse the commit message, grab all the changed files, create a lets-version changeset file, then amend your commit to include this file. This file will keep track of changes between version bump events. When a version bump occurs, this file will be consumed until the next change occur',
+      y =>
+        getSharedYargs(y).option('file', {
+          default: DEFAULT_CHANGESET_FILE_PATH,
+          description: 'Path to the file that will build up changesets. File will need to be source controlled.',
+          type: 'string',
+        }),
+      async args => {
+        // NOTE: We will do ever
       },
     )
     .help();

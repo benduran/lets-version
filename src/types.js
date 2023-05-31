@@ -4,6 +4,24 @@ import os from 'os';
 import path from 'path';
 
 /**
+ * Represents a file that was changed in a git commit
+ */
+export class CommitFileChange {
+  /**
+   * @param {string} filePath
+   * @param {string} operation
+   */
+  constructor(filePath, operation) {
+    /** @type {string} */
+    this.filePath = filePath;
+
+    /** @type {'A' | 'C' | 'D' | 'M' | 'R' | 'T'} */
+    // @ts-ignore
+    this.operation = operation;
+  }
+}
+
+/**
  * Represents a raw git commit with no conventional commits connection
  * (basically straight from "git log")
  */
@@ -14,12 +32,16 @@ export class GitCommit {
    * @param {string} email - Author's email
    * @param {string} message - Raw commit message
    * @param {string} sha - Unique hash for the commit
+   * @param {CommitFileChange[]} changes
    */
-  constructor(author, date, email, message, sha) {
+  constructor(author, date, email, message, sha, changes) {
     /**
      * @type {string}
      */
     this.author = author;
+
+    /** @type {CommitFileChange[]} */
+    this.changes = changes;
 
     /**
      * @type {string}
@@ -56,10 +78,11 @@ export class GitCommitWithPackageInfo extends GitCommit {
    * @param {string} email - Author's email
    * @param {string} message - Raw commit message
    * @param {string} sha - Unique hash for the commit
+   * @param {CommitFileChange[]} changes - All files changed as part of this commit
    * @param {PackageInfo} packageInfo - Parsed packageInfo
    */
-  constructor(author, date, email, message, sha, packageInfo) {
-    super(author, date, email, message, sha);
+  constructor(author, date, email, message, sha, changes, packageInfo) {
+    super(author, date, email, message, sha, changes);
 
     /** @type {PackageInfo} */
     this.packageInfo = packageInfo;
@@ -192,10 +215,11 @@ export class GitCommitWithConventional extends GitCommit {
    * @param {string} email - Author's email
    * @param {string} message - Raw commit message
    * @param {string} sha - Unique hash for the commit
+   * @param {CommitFileChange[]} changes - All files changed as part of this commit
    * @param {GitConventional} conventional - Parsed conventional commit information
    */
-  constructor(author, date, email, message, sha, conventional) {
-    super(author, date, email, message, sha);
+  constructor(author, date, email, message, sha, changes, conventional) {
+    super(author, date, email, message, sha, changes);
 
     /**
      * @type {GitConventional}
@@ -216,11 +240,12 @@ export class GitCommitWithConventionalAndPackageInfo extends GitCommitWithConven
    * @param {string} email - Author's email
    * @param {string} message - Raw commit message
    * @param {string} sha - Unique hash for the commit
+   * @param {CommitFileChange[]} changes - All files changed as part of this commit
    * @param {GitConventional} conventional - Parsed conventional commit information
    * @param {PackageInfo} packageInfo - Parsed package info
    */
-  constructor(author, date, email, message, sha, conventional, packageInfo) {
-    super(author, date, email, message, sha, conventional);
+  constructor(author, date, email, message, sha, changes, conventional, packageInfo) {
+    super(author, date, email, message, sha, changes, conventional);
 
     /** @type {PackageInfo} */
     this.packageInfo = packageInfo;

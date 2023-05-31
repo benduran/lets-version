@@ -9,10 +9,30 @@ import semver from 'semver';
 import { fixCWD } from './cwd.js';
 import { execAsync } from './exec.js';
 import { parseToConventional } from './parser.js';
-import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.js';
+import { CommitFileChange, GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.js';
 
 /**
+ * @typedef {Object} ChangedFile
+ * @property {'A' | 'C' | 'D' | 'M' | 'R' | 'T'} operation
+ * @property {string} filePath
+ */
+
+/**
+ * Pass through for rev-parse
  *
+ * @param {string} selector
+ * @param {string} [cwd=appRootPath.toString()]
+ */
+export async function gitRevParse(selector, cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  const result = await execAsync(`git rev-parse ${selector}`, { cwd: fixedCWD, stdio: 'pipe' });
+
+  return result.stdout.trim();
+}
+
+/**
+ * Fetches all information from origin to help populate a shallow-cloned repo
  *
  * @param {string} [cwd=appRootPath.toString()]
  */
@@ -55,16 +75,34 @@ export async function gitCommitsSince(since = '', relPath = '', cwd = appRootPat
 
   const { stdout } = await execAsync(cmd, { cwd: fixedCWD, stdio: 'pipe' });
 
-  return stdout
-    .split(LINE_DELIMITER)
-    .filter(Boolean)
-    .map(line => {
-      const trimmed = line.trim();
+  return Promise.all(
+    stdout
+      .split(LINE_DELIMITER)
+      .filter(Boolean)
+      .map(line => {
+        const trimmed = line.trim();
 
-      const [sha = '', author = '', email = '', date = '', message = ''] = trimmed.split(DELIMITER).filter(Boolean);
-      return new GitCommit(author, date, email, message, sha);
-    })
-    .filter(commit => Boolean(commit.sha));
+        const [sha = '', author = '', email = '', date = '', message = ''] = trimmed.split(DELIMITER).filter(Boolean);
+        return new GitCommit(author, date, email, message, sha, []);
+      })
+      .filter(commit => Boolean(commit.sha))
+      .map(async commit => {
+        const filesChangedResult = await execAsync(`git --no-pager diff --name-status ${commit.sha}~1..${commit.sha}`, {
+          cwd: fixedCWD,
+          stdio: 'pipe',
+        });
+
+        commit.changes = filesChangedResult.stdout
+          .trim()
+          .split(os.EOL)
+          .filter(Boolean)
+          .map(line => {
+            const [operation = '', filePath = ''] = line.split(/\s+/);
+            return new CommitFileChange(filePath, operation);
+          });
+        return commit;
+      }),
+  );
 }
 
 /** @type {Array<[string, string]> | null} */
@@ -275,6 +313,7 @@ export async function gitConventionalForPackage(packageInfo, noFetchAll = false,
   const taginfo = await gitLastKnownPublishTagInfoForPackage(packageInfo, fixedCWD);
   const relPackagePath = path.relative(cwd, packageInfo.packagePath);
   const results = await gitCommitsSince(taginfo?.sha, relPackagePath, fixedCWD);
+  const filesChangedBySha = new Map(results.map(r => [r.sha, r.changes]));
   const conventional = parseToConventional(results);
 
   return conventional.map(
@@ -285,6 +324,7 @@ export async function gitConventionalForPackage(packageInfo, noFetchAll = false,
         c.email,
         c.message,
         c.sha,
+        filesChangedBySha.get(c.sha) ?? [],
         c.conventional,
         packageInfo,
       ),
@@ -308,6 +348,57 @@ export async function gitConventionalForAllPackages(packageInfos, noFetchAll = f
 }
 
 /**
+ * Returns a list of all files that are about to be committed (have been staged)
+ *
+ * @param {string} [cwd=appRootPath.toString()]
+ * @returns {Promise<string[]>}
+ */
+export async function gitStagedChanges(cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  const result = await execAsync('git --no-pager diff --cached --name-only', { cwd: fixedCWD, stdio: 'pipe' });
+
+  return result.stdout.trim().split(os.EOL).filter(Boolean);
+}
+
+/**
+ * Stages one or more files. If files is undefined, all are added
+ *
+ * @param {string[]} [files]
+ * @param {string} [cwd=appRootPath.toString()]
+ */
+export async function gitAdd(files, cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  if (!files) {
+    await execAsync('git add .', { cwd: fixedCWD, stdio: 'ignore' });
+    return;
+  }
+  await Promise.all(
+    files.map(async fp => {
+      const fpToStage = path.isAbsolute(fp) ? path.relative(fixedCWD, fp) : fp;
+      await execAsync(`git add ${fpToStage}`, { cwd: fixedCWD, stdio: 'ignore' });
+    }),
+  );
+}
+
+/**
+ * Amends an existing git commit
+ *
+ * @param {string} message
+ * @param {string} [cwd=appRootPath.toString()]
+ */
+export async function gitAmend(message, cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  // write temp file to use as the git commit message
+  const tempFilePath = path.join(os.tmpdir(), '__lets-version-commit-msg__');
+  await fs.ensureFile(tempFilePath);
+  await fs.writeFile(tempFilePath, message, 'utf-8');
+  await execAsync(`git commit --amend -F ${tempFilePath} --no-verify`, { cwd: fixedCWD, stdio: 'ignore' });
+}
+
+/**
  * Creates a git commit, based on whatever changes are active
  *
  * @param {string} header
@@ -319,7 +410,7 @@ export async function gitCommit(header, body, footer, cwd = appRootPath.toString
   const fixedCWD = fixCWD(cwd);
 
   // add files silently
-  await execAsync('git add .', { cwd, stdio: 'ignore' });
+  await gitAdd(undefined, fixedCWD);
 
   let message = header;
   if (body) message += `${os.EOL}${os.EOL}${body}`;
