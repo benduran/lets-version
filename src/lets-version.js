@@ -181,7 +181,7 @@ export async function getRecommendedBumpsByPackage(
    */
   const out = {
     bumps: [],
-    conventional: [],
+    commits: [],
   };
 
   const fixedCWD = fixCWD(cwd);
@@ -194,7 +194,7 @@ export async function getRecommendedBumpsByPackage(
   const filteredPackagesByName = new Map(filteredPackages.map(p => [p.name, p]));
 
   const conventional = await gitConventionalForAllPackages(filteredPackages, noFetchAll, fixedCWD);
-  out.conventional = conventional;
+  out.commits = conventional;
 
   const tagsForPackagesMap = new Map(
     (await getLastKnownPublishTagInfoForAllPackages(filteredPackages, noFetchTags, fixedCWD)).map(t => [
@@ -452,7 +452,7 @@ export async function applyRecommendedBumpsByPackage(
     // because they're being bumped as the result of dep tree updates.
     // we need to apply some additional changelogs if that's the casue
     const changelogInfo = await getChangelogUpdateForPackageInfo({
-      conventional: synchronized.conventional,
+      commits: synchronized.conventional,
       bumps: synchronized.bumps,
     });
 

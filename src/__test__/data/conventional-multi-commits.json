@@ -1,0 +1,40 @@
+[
+  {
+    "author": "benduran",
+    "changes": [
+      {
+        "filePath": ".lets-version-changes",
+        "operation": "D"
+      },
+      {
+        "filePath": "src/changeset.js",
+        "operation": "M"
+      },
+      {
+        "filePath": "src/cli.js",
+        "operation": "M"
+      },
+      {
+        "filePath": "src/lets-version.js",
+        "operation": "M"
+      }
+    ],
+    "date": "Tue May 30 21:53:48 2023 -0700",
+    "email": "stratodyne@gmail.com",
+    "message": "chore: added optional compression",
+    "sha": "2c8f1b0cc4c710c01e73f245b621419caf54ea62"
+  },
+  {
+    "author": "benduran",
+    "changes": [
+      {
+        "filePath": "src/changeset.js",
+        "operation": "M"
+      }
+    ],
+    "date": "Tue May 30 21:54:27 2023 -0700",
+    "email": "stratodyne@gmail.com",
+    "message": "chore: menial change",
+    "sha": "cfd30e93361ed40fd7e0392c34eb6383355e9637"
+  }
+]
