@@ -78,5 +78,6 @@
       "eslint",
       "npm run typecheck:staged --"
     ]
-  }
+  },
+  "force": "111"
 }
