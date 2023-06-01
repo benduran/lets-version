@@ -1,3 +1,12 @@
+## 0.1.2-beta.4 (2023-06-01)
+
+### 🔀 Miscellaneous 🔀
+
+* revert unshallowing and print warning instead (28523f199c262edab64eefab1f0d1624e5dffa1a)
+* force bump (f5309af5d7369710c4ae2646be88cd4f1c92b4c2)
+
+---
+
 ## 0.1.2-beta.3 (2023-05-31)
 
 ### ✨ Features ✨
