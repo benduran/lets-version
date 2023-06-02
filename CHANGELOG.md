@@ -1,3 +1,11 @@
+## 0.1.2-beta.6 (2023-06-02)
+
+### 🛠️ Fixes 🛠️
+
+* bug where releaseAs wasn't being respected and used as a preid (001d2efd15f1400e28e53af0e0a218b86566218d)
+
+---
+
 ## 0.1.2-beta.5 (2023-06-02)
 
 ### 🔀 Miscellaneous 🔀
