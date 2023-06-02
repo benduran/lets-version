@@ -19,7 +19,7 @@ import {
 /**
  * @typedef {Object} GenerateChangelogOpts
  * @property {BumpRecommendation[]} bumps
- * @property {GitCommitWithConventionalAndPackageInfo[]} conventional
+ * @property {GitCommitWithConventionalAndPackageInfo[]} commits
  */
 
 /**
@@ -45,7 +45,7 @@ export async function getChangelogUpdateForPackageInfo(opts) {
 
   /** @type {Map<string, GitCommitWithConventionalAndPackageInfo[]>} */
   const conventionalByPackageName = new Map();
-  for (const c of opts.conventional) {
+  for (const c of opts.commits) {
     const existing = conventionalByPackageName.get(c.packageInfo.name) ?? [];
     conventionalByPackageName.set(c.packageInfo.name, [...existing, c]);
   }
