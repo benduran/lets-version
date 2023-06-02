@@ -1,11 +1,7 @@
-/**
- * @typedef {import('./types.js').ReleaseAsPresets} ReleaseAsPresets
- */
-
 import semver from 'semver';
 import semverUtils from 'semver-utils';
 
-import { BumpRecommendation, BumpType, PackageInfo } from './types.js';
+import { BumpRecommendation, BumpType, PackageInfo, ReleaseAsPresets } from './types.js';
 
 /**
  * Checks whether or not a package.json key is allowed to be updated / managed by "lets-version"
@@ -31,7 +27,7 @@ export function isPackageJSONDependencyKeySupported(key, updatePeer, updateOptio
  * @param {PackageInfo} packageInfo
  * @param {string | null} from
  * @param {BumpType} bumpType
- * @param {ReleaseAsPresets} releaseAs
+ * @param {ReleaseAsPresets} [releaseAs]
  * @param {string} [preid]
  *
  * @returns {BumpRecommendation}
@@ -39,16 +35,55 @@ export function isPackageJSONDependencyKeySupported(key, updatePeer, updateOptio
 export function getBumpRecommendationForPackageInfo(packageInfo, from, bumpType, releaseAs, preid) {
   const isExactRelease = Boolean(semver.coerce(releaseAs));
 
+  let isPrerelease = false;
+  let bumpTypeToUse = bumpType;
+  if (isExactRelease) bumpTypeToUse = BumpType.EXACT;
+  else {
+    switch (releaseAs) {
+      case ReleaseAsPresets.ALPHA:
+      case ReleaseAsPresets.BETA:
+        isPrerelease = true;
+        bumpTypeToUse = BumpType.PRERELEASE;
+        break;
+      case ReleaseAsPresets.MAJOR:
+        bumpTypeToUse = BumpType.MAJOR;
+        break;
+      case ReleaseAsPresets.MINOR:
+        bumpTypeToUse = BumpType.MINOR;
+        break;
+      case ReleaseAsPresets.PATCH:
+        bumpTypeToUse = BumpType.PATCH;
+        break;
+      default:
+        break;
+    }
+  }
+
+  if (preid) isPrerelease = true;
+
   const newBump = isExactRelease
     ? releaseAs
     : semver.inc(
         packageInfo.version,
-        preid ? 'prerelease' : bumpType === BumpType.PATCH ? 'patch' : bumpType === BumpType.MINOR ? 'minor' : 'major',
+        isPrerelease
+          ? 'prerelease'
+          : bumpTypeToUse === BumpType.PATCH
+          ? 'patch'
+          : bumpTypeToUse === BumpType.MINOR
+          ? 'minor'
+          : 'major',
         undefined,
         preid,
       );
 
-  return new BumpRecommendation(packageInfo, from, (Boolean(from) && newBump) || packageInfo.version, bumpType);
+  const fromToUse = isPrerelease || releaseAs ? packageInfo.version : from;
+
+  return new BumpRecommendation(
+    packageInfo,
+    fromToUse,
+    Boolean(fromToUse) && newBump ? newBump : packageInfo.version,
+    bumpTypeToUse,
+  );
 }
 
 /**
