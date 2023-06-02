@@ -1,3 +1,13 @@
+## 0.1.2-beta.5 (2023-06-02)
+
+### 🔀 Miscellaneous 🔀
+
+* added version bump logic tests (31fd6bdf42d7765e4b49c91a476d9b73318cfc3e)
+* Merge branch 'main' into bduran/tests (691a208013d59a7aa42606ece99bae13c18d6887)
+* added changelog tests (ac5f7fa4485ac57899963f2481699b71d6d7627a)
+
+---
+
 ## 0.1.2-beta.4 (2023-06-01)
 
 ### 🔀 Miscellaneous 🔀
