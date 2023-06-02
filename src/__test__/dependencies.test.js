@@ -114,5 +114,20 @@ describe('dependencies.js tests', () => {
     expect(bump8.packageInfo).toBe(pinfo);
     expect(bump8.to).toBe(semver.inc(pjson.version ?? '', 'prerelease', undefined, 'bloop'));
     expect(bump8.type).toBe(BumpType.PRERELEASE);
+
+    // Package may have already been published, so the "from" should not be null
+    const pjsonWithDifferentVersion = { ...pinfo, version: '4.2.7' };
+    const bump9 = getBumpRecommendationForPackageInfo(
+      pjsonWithDifferentVersion,
+      pjsonWithDifferentVersion.version,
+      BumpType.PRERELEASE,
+      ReleaseAsPresets.BETA,
+      '',
+    );
+    expect(bump9.from).toBe(pjsonWithDifferentVersion.version);
+    expect(bump9.isValid).toBeTruthy();
+    expect(bump9.packageInfo).toBe(pjsonWithDifferentVersion);
+    expect(bump9.to).toBe(semver.inc(pjsonWithDifferentVersion.version ?? '', 'prerelease', undefined, 'beta'));
+    expect(bump9.type).toBe(BumpType.PRERELEASE);
   });
 });

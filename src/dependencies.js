@@ -44,6 +44,7 @@ export function getBumpRecommendationForPackageInfo(packageInfo, from, bumpType,
       case ReleaseAsPresets.BETA:
         isPrerelease = true;
         bumpTypeToUse = BumpType.PRERELEASE;
+        preid = preid || releaseAs;
         break;
       case ReleaseAsPresets.MAJOR:
         bumpTypeToUse = BumpType.MAJOR;
