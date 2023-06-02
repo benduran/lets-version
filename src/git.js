@@ -16,8 +16,7 @@ let cachedFetchAllPromise = null;
 /**
  * Fetches all tracking information from origin.
  * Most importantly, this tries to detect whether we're currently
- * in a shallow clone. If we are, it unshallows the clone
- * and proceeds
+ * in a shallow clone.
  *
  * @param {string} [cwd=appRootPath.toString()]
  */
@@ -34,8 +33,13 @@ export async function gitFetchAll(cwd = appRootPath.toString()) {
     /* no-op */
   }
 
-  if (isShallow) cachedFetchAllPromise = execAsync('git fetch --unshallow origin', { cwd: fixedCWD, stdio: 'ignore' });
-  else cachedFetchAllPromise = execAsync('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' });
+  if (isShallow) {
+    console.warn(
+      `Current git repository is a **SHALLOW CLONE**. Limited git history may be available, which may result in "lets-version" version bump failures due to missing or incomplete git history.`,
+    );
+  }
+
+  cachedFetchAllPromise = execAsync('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' });
 
   return cachedFetchAllPromise;
 }
