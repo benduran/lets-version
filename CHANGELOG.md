@@ -1,3 +1,11 @@
+## 0.1.2-beta.7 (2023-06-07)
+
+### ✨ Features ✨
+
+* added ability to add a unique git hash to the versions (6aa88522be1e33ef30a3e52169e8e8615388104d)
+
+---
+
 ## 0.1.2-beta.6 (2023-06-02)
 
 ### 🛠️ Fixes 🛠️
