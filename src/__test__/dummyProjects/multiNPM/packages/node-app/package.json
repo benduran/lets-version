@@ -1,0 +1,8 @@
+{
+  "private": true,
+  "name": "node-app",
+  "version": "0.0.0",
+  "dependencies": {
+    "shared-utils": "^0.0.0"
+  }
+}
