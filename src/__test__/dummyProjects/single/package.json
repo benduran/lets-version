@@ -1,0 +1,10 @@
+{
+  "private": true,
+  "name": "single-package",
+  "description": "This is a single package that would like to have its versions managed",
+  "version": "0.1.0",
+  "main": "src/index.js",
+  "dependencies": {
+    "lodash-es": "^4"
+  }
+}
