@@ -415,3 +415,16 @@ export async function gitWorkdirUnclean(cwd = appRootPath.toString()) {
   // split by newlines, just in case
   return statusResult.split(os.EOL).filter(Boolean).length > 0;
 }
+
+/**
+ * Gets the current shortened commit SHA
+ *
+ * @param {string} [cwd=appRootPath.toString()]
+ */
+export async function gitCurrentSHA(cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  const result = (await execAsync('git rev-parse --short HEAD', { cwd: fixedCWD, stdio: 'pipe' })).stdout.trim();
+
+  return result;
+}

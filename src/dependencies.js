@@ -1,6 +1,9 @@
+import appRootPath from 'app-root-path';
 import semver from 'semver';
 import semverUtils from 'semver-utils';
 
+import { fixCWD } from './cwd.js';
+import { gitCurrentSHA } from './git.js';
 import { BumpRecommendation, BumpType, PackageInfo, ReleaseAsPresets } from './types.js';
 
 /**
@@ -29,10 +32,21 @@ export function isPackageJSONDependencyKeySupported(key, updatePeer, updateOptio
  * @param {BumpType} bumpType
  * @param {ReleaseAsPresets} [releaseAs]
  * @param {string} [preid]
+ * @param {boolean} [uniqify]
+ * @param {string} [cwd=appRooPath.toString()]
  *
- * @returns {BumpRecommendation}
+ * @returns {Promise<BumpRecommendation>}
  */
-export function getBumpRecommendationForPackageInfo(packageInfo, from, bumpType, releaseAs, preid) {
+export async function getBumpRecommendationForPackageInfo(
+  packageInfo,
+  from,
+  bumpType,
+  releaseAs,
+  preid,
+  uniqify,
+  cwd = appRootPath.toString(),
+) {
+  const fixedCWD = fixCWD(cwd);
   const isExactRelease = Boolean(semver.coerce(releaseAs));
 
   let isPrerelease = false;
@@ -78,13 +92,13 @@ export function getBumpRecommendationForPackageInfo(packageInfo, from, bumpType,
       );
 
   const fromToUse = isPrerelease || releaseAs ? packageInfo.version : from;
+  let to = Boolean(fromToUse) && newBump ? newBump : packageInfo.version;
 
-  return new BumpRecommendation(
-    packageInfo,
-    fromToUse,
-    Boolean(fromToUse) && newBump ? newBump : packageInfo.version,
-    bumpTypeToUse,
-  );
+  if (uniqify) {
+    to += `.${await gitCurrentSHA(fixedCWD)}`;
+  }
+
+  return new BumpRecommendation(packageInfo, fromToUse, to, bumpTypeToUse);
 }
 
 /**
@@ -104,12 +118,25 @@ export function getBumpRecommendationForPackageInfo(packageInfo, from, bumpType,
  * @param {PackageInfo[]} allPackages
  * @param {ReleaseAsPresets} releaseAs
  * @param {string | undefined} preid
+ * @param {boolean} uniqify
  * @param {boolean} updatePeer
  * @param {boolean} updateOptional
+ * @param {string} [cwd=appRootPath.toString()]
  *
- * @returns {SynchronizeBumpsReturnType}
+ * @returns {Promise<SynchronizeBumpsReturnType>}
  */
-export function synchronizeBumps(bumps, bumpsByPackageName, allPackages, releaseAs, preid, updatePeer, updateOptional) {
+export async function synchronizeBumps(
+  bumps,
+  bumpsByPackageName,
+  allPackages,
+  releaseAs,
+  preid,
+  uniqify,
+  updatePeer,
+  updateOptional,
+  cwd = appRootPath.toString(),
+) {
+  const fixedCWD = fixCWD(cwd);
   const clonedBumpsByPackageName = new Map(bumpsByPackageName.entries());
 
   const writeToDisk = new Map(bumps.map(b => [b.packageInfo.name, b.packageInfo]));
@@ -182,7 +209,15 @@ export function synchronizeBumps(bumps, bumpsByPackageName, allPackages, release
           childBumpRec = existingBump;
         } else {
           const childBumpType = parentBumpType.type;
-          childBumpRec = getBumpRecommendationForPackageInfo(p, p.version, childBumpType, releaseAs, preid);
+          childBumpRec = await getBumpRecommendationForPackageInfo(
+            p,
+            p.version,
+            childBumpType,
+            releaseAs,
+            preid,
+            uniqify,
+            fixedCWD,
+          );
 
           clonedBumpsByPackageName.set(p.name, childBumpRec);
         }
@@ -190,14 +225,16 @@ export function synchronizeBumps(bumps, bumpsByPackageName, allPackages, release
         // @ts-ignore
         childBumpRec.packageInfo.pkg[key][updatedParent.name] = newSemverStr;
 
-        const recursedResults = synchronizeBumps(
+        const recursedResults = await synchronizeBumps(
           [childBumpRec],
           clonedBumpsByPackageName,
           allPackages,
           releaseAs,
           preid,
+          uniqify,
           updatePeer,
           updateOptional,
+          fixedCWD,
         );
 
         recursedResults.packages.forEach(r => writeToDisk.set(r.name, r));

@@ -156,6 +156,7 @@ export async function getConventionalCommitsByPackage(names, noFetchAll = false,
  * @param {string[]} [names]
  * @param {ReleaseAsPresets} [releaseAs='auto']
  * @param {string} [preid='']
+ * @param {boolean} [uniqify=false]
  * @param {boolean} [forceAll=false]
  * @param {boolean} [noFetchAll=false]
  * @param {boolean} [noFetchTags=false]
@@ -169,6 +170,7 @@ export async function getRecommendedBumpsByPackage(
   names,
   releaseAs = ReleaseAsPresets.AUTO,
   preid = '',
+  uniqify = false,
   forceAll = false,
   noFetchAll = false,
   noFetchTags = false,
@@ -298,17 +300,21 @@ export async function getRecommendedBumpsByPackage(
     // preids take precedence above all
     const from = forceAll || preid || isExactRelease || tagInfo?.sha ? packageInfo.version : null;
 
-    out.bumps.push(getBumpRecommendationForPackageInfo(packageInfo, from, bumpType, releaseAs, preid));
+    out.bumps.push(
+      await getBumpRecommendationForPackageInfo(packageInfo, from, bumpType, releaseAs, preid, uniqify, fixedCWD),
+    );
   }
 
-  const synchronized = synchronizeBumps(
+  const synchronized = await synchronizeBumps(
     out.bumps,
     new Map(out.bumps.map(b => [b.packageInfo.name, b])),
     allPackages,
     releaseAs,
     preid,
+    uniqify,
     updatePeer,
     updateOptional,
+    fixedCWD,
   );
 
   return { ...synchronized, conventional };
@@ -325,6 +331,7 @@ export async function getRecommendedBumpsByPackage(
  * @param {string[]} [names]
  * @param {ReleaseAsPresets} [releaseAs='auto']
  * @param {string} [preid='']
+ * @param {boolean} [uniqify=false]
  * @param {boolean} [forceAll=false]
  * @param {boolean} [noFetchAll=false]
  * @param {boolean} [noFetchTags=false]
@@ -343,6 +350,7 @@ export async function applyRecommendedBumpsByPackage(
   names,
   releaseAs = ReleaseAsPresets.AUTO,
   preid = '',
+  uniqify = false,
   forceAll = false,
   noFetchAll = false,
   noFetchTags = false,
@@ -375,6 +383,7 @@ export async function applyRecommendedBumpsByPackage(
     names,
     releaseAs,
     preid,
+    uniqify,
     forceAll,
     noFetchAll,
     noFetchTags,

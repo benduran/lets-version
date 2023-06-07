@@ -82,6 +82,12 @@ const getSharedBumpArgs = yargs =>
         'The "prerelease identifier" to use as a prefix for the "prerelease" part of a semver. Like the rc in 1.2.0-rc.8. If this is specified, a bump type of "prerelease" will always take place, causing any "--releaseAs" setting to be ignored.',
       type: 'string',
     })
+    .option('uniqify', {
+      default: false,
+      description:
+        'If true, will append the git SHA at version bunp time to the end of the version number (while maintaining valid semver)',
+      type: 'boolean',
+    })
     .option('forceAll', {
       default: false,
       description:
@@ -261,6 +267,7 @@ async function setupCLI() {
           args.package,
           args.releaseAs,
           args.preid,
+          args.uniqify,
           args.forceAll,
           args.noFetchAll,
           args.noFetchTags,
