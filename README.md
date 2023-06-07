@@ -8,6 +8,29 @@ If you have been relying on [lerna](https://www.npmjs.com/package/lerna) to auto
 ---
 ## Example
 
+```bash
+npx lets-version apply-bumps
+
+? The following bumps will be applied:
+
+package: my-app
+  bump: 0.0.0 -> 0.0.1
+  type: PATCH
+  valid: true
+
+package: node-app
+  bump: 0.0.0 -> 0.0.1
+  type: PATCH
+  valid: true
+
+package: shared-utils
+  bump: 0.0.0 -> 0.0.1
+  type: PATCH
+  valid: true
+
+Do you want to continue? › (y/N)
+```
+
 ---
 
 ## CLI Documentation
