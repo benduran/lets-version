@@ -1,3 +1,24 @@
+## 0.2.0 (2023-06-07)
+
+### 📖 Docs 📖
+
+* updated readme again (d1cda645ba33a7923b71d927f0f9f58cff781e13)
+* updated readme (b3e7ff865ffddbc352eecb37944e0d9523fea884)
+
+
+
+### 🔀 Miscellaneous 🔀
+
+* added a bunch of variants of dummy projects (fb53c7139555e60486b5729233bd566dcf8db9de)
+* added yarn single package project (91e5d6ddbc227775add52fc905828034eded4e5d)
+* added PNPM dummy project (aaa61ac3f40003c5cff5203831695f3641f7a39e)
+* added single npm project sample (c72e0eea589f6fb6fdd437dbda74bca90e417ed9)
+* added single package dummy project (7838906184906d32a3ddbf7a9b7fa4df38eba7b8)
+* added CWD test coverage (b51b55ce2895ec588029e225257e8547edaa9653)
+* added test coverage reporting (5d2eb71ed09cc5252aab15ce1d581c7d829c47fe)
+
+---
+
 ## 0.1.2-beta.7 (2023-06-07)
 
 ### ✨ Features ✨
