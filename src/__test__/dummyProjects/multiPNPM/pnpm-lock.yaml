@@ -1,0 +1,33 @@
+lockfileVersion: '6.1'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+importers:
+
+  .: {}
+
+  packages/my-app:
+    dependencies:
+      shared-utils:
+        specifier: ^0.0.0
+        version: link:../shared-utils
+
+  packages/node-app:
+    dependencies:
+      shared-utils:
+        specifier: ^0.0.0
+        version: link:../shared-utils
+
+  packages/shared-utils:
+    dependencies:
+      lodash-es:
+        specifier: 4.17.21
+        version: 4.17.21
+
+packages:
+
+  /lodash-es@4.17.21:
+    resolution: {integrity: sha512-mKnC+QJ9pWVzv+C4/U3rRsHapFfHvQFoFB92e52xeyGMcX6/OlIl78je1u8vePzYZSkkogMPJ2yjxxsb89cxyw==}
+    dev: false
