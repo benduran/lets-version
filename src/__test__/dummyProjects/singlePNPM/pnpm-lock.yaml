@@ -1,0 +1,16 @@
+lockfileVersion: '6.1'
+
+settings:
+  autoInstallPeers: true
+  excludeLinksFromLockfile: false
+
+dependencies:
+  lodash-es:
+    specifier: ^4
+    version: 4.0.0
+
+packages:
+
+  /lodash-es@4.0.0:
+    resolution: {integrity: sha512-NKvn04kotMp2q7yiqqcDNLpjYf/oyJxU43DUflo+t1zAvENx9z6bahPaaalpbY1+O2bWLwsosYxx9gaiiPtcRQ==}
+    dev: false
