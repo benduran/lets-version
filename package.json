@@ -17,9 +17,10 @@
     "lint": "eslint --no-error-on-unmatched-pattern './src/**/*.{tsx,ts,jsx,js,mjs}'",
     "lint:fix": "npm run lint -- --fix",
     "start": "node src/cli.js",
-    "test": "vitest run --coverage",
-    "test:watch": "vitest --coverage",
-    "test:watch:ui": "vitest --coverage --ui",
+    "test": "vitest run",
+    "test:coverage": "vitest run",
+    "test:watch": "vitest",
+    "test:watch:ui": "vitest --ui",
     "typecheck": "tsc --project ./tsconfig.json",
     "typecheck:staged": "tsc --noEmit --allowJs --skipLibCheck"
   },

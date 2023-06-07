@@ -21,9 +21,23 @@ describe('lets-version.js tests', () => {
   const singleYarnProjectPath = path.resolve(__dirname, './dummyProjects/singleYarn');
   const singlePNPMProjectPath = path.resolve(__dirname, './dummyProjects/singlePNPM');
 
-  it('Should list the only package in a single-package repository', async () => {
+  it('Should list the only package in a single-package NPM repository', async () => {
     const pjson = await readPJSON(singleNPMProjectPath);
     const results = await listPackages(singleNPMProjectPath);
+    expect(results.length).toBe(1);
+    expect(results[0]?.pkg).toStrictEqual(pjson);
+  });
+
+  it('Should list the only package in a single-package PNPM repository', async () => {
+    const pjson = await readPJSON(singlePNPMProjectPath);
+    const results = await listPackages(singlePNPMProjectPath);
+    expect(results.length).toBe(1);
+    expect(results[0]?.pkg).toStrictEqual(pjson);
+  });
+
+  it('Should list the only package in a single-package Yarn repository', async () => {
+    const pjson = await readPJSON(singleYarnProjectPath);
+    const results = await listPackages(singleYarnProjectPath);
     expect(results.length).toBe(1);
     expect(results[0]?.pkg).toStrictEqual(pjson);
   });
