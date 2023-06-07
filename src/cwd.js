@@ -9,5 +9,5 @@ import path from 'path';
  * @returns {string}
  */
 export function fixCWD(cwd) {
-  return path.isAbsolute(cwd) ? cwd : path.join(process.cwd(), cwd);
+  return path.isAbsolute(cwd) ? cwd : path.resolve(path.join(process.cwd(), cwd));
 }
