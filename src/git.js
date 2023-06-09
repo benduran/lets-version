@@ -10,6 +10,7 @@ import { fixCWD } from './cwd.js';
 import { execAsync } from './exec.js';
 import { parseToConventional } from './parser.js';
 import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.js';
+import { chunkArray } from './util.js';
 
 /** @type {ReturnType<execAsync> | null} */
 let cachedFetchAllPromise = null;
@@ -239,6 +240,10 @@ export async function getLastKnownPublishTagInfoForAllPackages(packages, noFetch
 
   if (!noFetchTags) await gitFetchAllTags(fixedCWD);
 
+  // warm up the tags cache
+  await gitRemoteTags(fixedCWD);
+  await gitLocalTags(fixedCWD);
+
   return Promise.all(
     packages.map(async p => {
       const result = await gitLastKnownPublishTagInfoForPackage(p, fixedCWD);
@@ -386,6 +391,23 @@ export async function gitPushTag(tag, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   await execAsync(`git push origin ${tag} --no-verify`, { cwd: fixedCWD, stdio: 'inherit' });
+}
+
+/**
+ * Git pushes multiple tags at the same time
+ *
+ * @param {string[]} tags
+ * @param {string} [cwd=appRootPath.toString()]
+ */
+export async function gitPushTags(tags, cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  // only push 5 at a time
+  const chunkedTags = chunkArray(tags);
+
+  for (const chunk of chunkedTags) {
+    await Promise.all(chunk.map(async tag => gitPushTag(tag, fixedCWD)));
+  }
 }
 
 /**

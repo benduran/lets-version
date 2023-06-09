@@ -28,7 +28,7 @@ import {
   gitCommit,
   gitConventionalForAllPackages,
   gitPush,
-  gitPushTag,
+  gitPushTags,
   gitTag,
   gitWorkdirUnclean,
 } from './git.js';
@@ -442,6 +442,7 @@ export async function applyRecommendedBumpsByPackage(
 
   if (dryRun) console.info(`Will run ${pm} install to synchronize lockfiles`);
   else {
+    let didSyncLockFiles = false;
     /**
      * As of 5/30/2023, there is an open bug with NPM that causes "npm ci" to fail
      * due to some internal race condition where lockfiles need a subsequent
@@ -450,9 +451,21 @@ export async function applyRecommendedBumpsByPackage(
      * and
      * https://github.com/npm/cli/issues/4942
      */
-    const syncLockfiles = () => execAsync(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
+    const syncLockfiles = async () => {
+      try {
+        await execAsync(`${pm} install`, { cwd: fixedCWD, stdio: 'ignore' });
+        didSyncLockFiles = true;
+      } catch (error) {
+        didSyncLockFiles = false;
+      }
+    };
     await syncLockfiles();
     await syncLockfiles();
+
+    if (!didSyncLockFiles) {
+      console.error('Failed to synchronize lock files. Aborting remaining operations');
+      process.exit(1);
+    }
   }
 
   // generate changelogs
@@ -540,11 +553,8 @@ export async function applyRecommendedBumpsByPackage(
     if (dryRun) console.info(`Will git push --no-verify all changes made during the version bump operation`);
     else await gitPush(fixedCWD);
 
-    for (const tagToPush of tagsToPush) {
-      // push a single tag at a time
-      if (dryRun) console.info(`Will push single git tag "${tagToPush}" to origin`);
-      else await gitPushTag(tagToPush, fixedCWD);
-    }
+    if (dryRun) console.info(`Will push the following git tags: ${tagsToPush.join(' ')}`);
+    else await gitPushTags(tagsToPush, fixedCWD);
   }
 
   return synchronized;

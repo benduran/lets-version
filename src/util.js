@@ -10,3 +10,24 @@ export function sleep(amount) {
     setTimeout(() => resolve(), amount);
   });
 }
+
+/**
+ * Given an input array,
+ * reduces it to a 2D array
+ * where each index is a certain chunk size
+ *
+ * @param {any[]} arr
+ * @param {number} [size=5]
+ *
+ * @returns {any[][]}
+ */
+export function chunkArray(arr, size = 5) {
+  /** @type {any[][]} */
+  const out = [];
+
+  for (let i = 0; i < arr.length; i += size) {
+    out.push(arr.slice(i, i + size));
+  }
+
+  return out;
+}
