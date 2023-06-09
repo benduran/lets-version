@@ -240,6 +240,10 @@ export async function getLastKnownPublishTagInfoForAllPackages(packages, noFetch
 
   if (!noFetchTags) await gitFetchAllTags(fixedCWD);
 
+  // warm up the tags cache
+  await gitRemoteTags(fixedCWD);
+  await gitLocalTags(fixedCWD);
+
   return Promise.all(
     packages.map(async p => {
       const result = await gitLastKnownPublishTagInfoForPackage(p, fixedCWD);

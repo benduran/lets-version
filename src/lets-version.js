@@ -43,7 +43,6 @@ import {
   PackageInfo,
   ReleaseAsPresets,
 } from './types.js';
-import { sleep } from './util.js';
 
 /**
  * Returns all detected packages for this repository
@@ -443,8 +442,6 @@ export async function applyRecommendedBumpsByPackage(
 
   if (dryRun) console.info(`Will run ${pm} install to synchronize lockfiles`);
   else {
-    // first, delay a few seconds to let everything flush to disk (depending on OS)
-    await sleep(2000);
     let didSyncLockFiles = false;
     /**
      * As of 5/30/2023, there is an open bug with NPM that causes "npm ci" to fail
