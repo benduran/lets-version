@@ -1,3 +1,26 @@
+## 0.3.0 (2023-06-09)
+
+### 🔀 Miscellaneous 🔀
+
+* Version Bump (cb1629050af013d55a40cb8f460cff07c51ec854)
+* removed the sleep and warm up tags cache for perf reasons (e54cb0b4f8a659724b9e7182ecb687b147bad481)
+* Version Bump (56aefb09cf6d1e885f5b4d3a2a9f41f26c9c52e3)
+* Version Bump (1f3faf0c7dc7422e4c570c78479ed02294c6ec2a)
+
+
+
+### ✨ Features ✨
+
+* chunk tag pushing operation for better performance (78e0a5c04350752a7dbde89d6c470aba933cdadf)
+
+
+
+### 🛠️ Fixes 🛠️
+
+* sleep before applying bumps and don't fail on npm install (39c69832f2460a9965aff946dc0b34718c677928)
+
+---
+
 ## 0.2.1 (2023-06-09)
 
 ### 🔀 Miscellaneous 🔀

@@ -1,6 +1,6 @@
 {
   "name": "@better-builds/lets-version",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "A package that reads your conventional commits and git history and recommends (or applies) a SemVer version bump for you",
   "exports": "./dist/lets-version.js",
   "bin": "./dist/cli.js",
