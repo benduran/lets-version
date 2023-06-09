@@ -1,3 +1,11 @@
+## 0.2.1-beta.1 (2023-06-09)
+
+### ✨ Features ✨
+
+* chunk tag pushing operation for better performance (78e0a5c04350752a7dbde89d6c470aba933cdadf)
+
+---
+
 ## 0.2.1-beta.0 (2023-06-09)
 
 ### 🛠️ Fixes 🛠️
