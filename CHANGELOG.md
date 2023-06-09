@@ -1,3 +1,11 @@
+## 0.2.1-beta.2 (2023-06-09)
+
+### 🔀 Miscellaneous 🔀
+
+* removed the sleep and warm up tags cache for perf reasons (e54cb0b4f8a659724b9e7182ecb687b147bad481)
+
+---
+
 ## 0.2.1-beta.1 (2023-06-09)
 
 ### ✨ Features ✨
