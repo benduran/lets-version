@@ -28,7 +28,7 @@ import {
   gitCommit,
   gitConventionalForAllPackages,
   gitPush,
-  gitPushTag,
+  gitPushTags,
   gitTag,
   gitWorkdirUnclean,
 } from './git.js';
@@ -556,11 +556,8 @@ export async function applyRecommendedBumpsByPackage(
     if (dryRun) console.info(`Will git push --no-verify all changes made during the version bump operation`);
     else await gitPush(fixedCWD);
 
-    for (const tagToPush of tagsToPush) {
-      // push a single tag at a time
-      if (dryRun) console.info(`Will push single git tag "${tagToPush}" to origin`);
-      else await gitPushTag(tagToPush, fixedCWD);
-    }
+    if (dryRun) console.info(`Will push the following git tags: ${tagsToPush.join(' ')}`);
+    else await gitPushTags(tagsToPush, fixedCWD);
   }
 
   return synchronized;
