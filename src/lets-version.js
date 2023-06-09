@@ -43,6 +43,7 @@ import {
   PackageInfo,
   ReleaseAsPresets,
 } from './types.js';
+import { sleep } from './util.js';
 
 /**
  * Returns all detected packages for this repository
@@ -442,6 +443,9 @@ export async function applyRecommendedBumpsByPackage(
 
   if (dryRun) console.info(`Will run ${pm} install to synchronize lockfiles`);
   else {
+    // first, delay a few seconds to let everything flush to disk (depending on OS)
+    await sleep(2000);
+    let didSyncLockFiles = false;
     /**
      * As of 5/30/2023, there is an open bug with NPM that causes "npm ci" to fail
      * due to some internal race condition where lockfiles need a subsequent
@@ -450,9 +454,21 @@ export async function applyRecommendedBumpsByPackage(
      * and
      * https://github.com/npm/cli/issues/4942
      */
-    const syncLockfiles = () => execAsync(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
+    const syncLockfiles = async () => {
+      try {
+        await execAsync(`${pm} install`, { cwd: fixedCWD, stdio: 'ignore' });
+        didSyncLockFiles = true;
+      } catch (error) {
+        didSyncLockFiles = false;
+      }
+    };
     await syncLockfiles();
     await syncLockfiles();
+
+    if (!didSyncLockFiles) {
+      console.error('Failed to synchronize lock files. Aborting remaining operations');
+      process.exit(1);
+    }
   }
 
   // generate changelogs
