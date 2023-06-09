@@ -1,3 +1,11 @@
+## 0.2.1-beta.0 (2023-06-09)
+
+### 🛠️ Fixes 🛠️
+
+* sleep before applying bumps and don't fail on npm install (39c69832f2460a9965aff946dc0b34718c677928)
+
+---
+
 ## 0.2.0 (2023-06-07)
 
 ### 📖 Docs 📖
