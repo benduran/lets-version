@@ -22,6 +22,7 @@ import {
   listPackages,
 } from './lets-version.js';
 import { BumpTypeToString } from './types.js';
+import { readChangeLogLineFormatterFile } from './util.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -261,8 +262,16 @@ async function setupCLI() {
             default: false,
             description: 'If true, will update any dependent "package.json#optionalDependencies" fields',
             type: 'boolean',
+          })
+          .option('changelogLineFormatterPath', {
+            default: undefined,
+            description:
+              'Path to a file to use as a custom changelog line formatter, the file must return a default export of a function that accepts a single argument of type "ChangelogLineFormatterArgs" and returns a string',
+            type: 'string',
           }),
       async args => {
+        const formatter = await readChangeLogLineFormatterFile(args.changelogLineFormatterPath);
+
         await applyRecommendedBumpsByPackage(
           args.package,
           args.releaseAs,
@@ -278,6 +287,7 @@ async function setupCLI() {
             updateOptional: args.updateOptional,
             updatePeer: args.updatePeer,
             yes: args.yes,
+            changelogLineFormatter: formatter,
           },
           args.cwd,
         );
