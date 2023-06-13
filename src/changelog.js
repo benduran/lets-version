@@ -2,6 +2,7 @@
  * @typedef {import('./types.js').PackageInfo} PackageInfo
  * @typedef {import('./types.js').BumpRecommendation} BumpRecommendation
  * @typedef {import('./types.js').GitCommitWithConventionalAndPackageInfo} GitCommitWithConventionalAndPackageInfo
+ * @typedef {import('./types.js').ChangeLogLineFormatter} ChangeLogLineFormatter
  */
 
 import dayjs from 'dayjs';
@@ -20,6 +21,7 @@ import {
  * @typedef {Object} GenerateChangelogOpts
  * @property {BumpRecommendation[]} bumps
  * @property {GitCommitWithConventionalAndPackageInfo[]} commits
+ * @property {ChangeLogLineFormatter} [lineFormatter]
  */
 
 /**
@@ -87,7 +89,11 @@ export async function getChangelogUpdateForPackageInfo(opts) {
       processedConventionalForPackageName.add(packageName);
       toPush.entries = {
         ...toPush.entries,
-        [entryType]: new ChangelogUpdateEntry(entryType, [...(existingForEntry?.lines ?? []), c.conventional]),
+        [entryType]: new ChangelogUpdateEntry(
+          entryType,
+          [...(existingForEntry?.lines ?? []), c.conventional],
+          opts.lineFormatter,
+        ),
       };
     }
 
@@ -102,19 +108,23 @@ export async function getChangelogUpdateForPackageInfo(opts) {
 
     out.push(
       new ChangelogUpdate(getFormattedChangelogDate(), bump, {
-        [ChangelogEntryType.MISC]: new ChangelogUpdateEntry(ChangelogEntryType.MISC, [
-          new GitConventional({
-            body: null,
-            breaking: bump.type === BumpType.MAJOR || bump.type === BumpType.EXACT,
-            footer: null,
-            header:
-              bump.type === BumpType.EXACT ? `Version bumped exactly to ${bump.to}` : `Version bump forced for all`,
-            mentions: [],
-            merge: null,
-            notes: [],
-            sha: '',
-          }),
-        ]),
+        [ChangelogEntryType.MISC]: new ChangelogUpdateEntry(
+          ChangelogEntryType.MISC,
+          [
+            new GitConventional({
+              body: null,
+              breaking: bump.type === BumpType.MAJOR || bump.type === BumpType.EXACT,
+              footer: null,
+              header:
+                bump.type === BumpType.EXACT ? `Version bumped exactly to ${bump.to}` : `Version bump forced for all`,
+              mentions: [],
+              merge: null,
+              notes: [],
+              sha: '',
+            }),
+          ],
+          opts.lineFormatter,
+        ),
       }),
     );
   }

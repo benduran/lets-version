@@ -3,6 +3,7 @@
  * @typedef {import('./types.js').BumpRecommendation} BumpRecommendation
  * @typedef {import('./types.js').GitCommitWithConventionalAndPackageInfo} GitCommitWithConventionalAndPackageInfo
  * @typedef {import('./types.js').PublishTagInfo} PublishTagInfo
+ * @typedef {import('./types.js').ChangeLogLineFormatter} ChangeLogLineFormatter
  * @typedef {import('type-fest').PackageJson} PackageJson
  * @typedef {import('./changelog.js').GenerateChangelogOpts} GenerateChangelogOpts
  * @typedef {import('./dependencies.js').SynchronizeBumpsReturnType} SynchronizeBumpsReturnType
@@ -342,6 +343,7 @@ export async function getRecommendedBumpsByPackage(
  * @param {boolean} [opts.noPush=false] - If true, will prevent pushing any changes to upstream / origin
  * @param {boolean} [opts.noChangelog=false] - If true, will not write CHANGELOG.md updates for each package that has changed
  * @param {boolean} [opts.dryRun=false] - If true, will print the changes that are expected to happen at every step instead of actually writing the changes
+ * @param {ChangeLogLineFormatter} [opts.changelogLineFormatter] - If provided, will be used to format the changelog line for each package that has changed
  * @param {string} [cwd=appRootPath.toString()]
  *
  * @returns {Promise<GetRecommendedBumpsByPackageReturnType | null>}
@@ -476,6 +478,7 @@ export async function applyRecommendedBumpsByPackage(
     const changelogInfo = await getChangelogUpdateForPackageInfo({
       commits: synchronized.conventional,
       bumps: synchronized.bumps,
+      lineFormatter: opts?.changelogLineFormatter,
     });
 
     for (const syncbump of synchronized.bumps) {
@@ -483,18 +486,22 @@ export async function applyRecommendedBumpsByPackage(
 
       changelogInfo.push(
         new ChangelogUpdate(getFormattedChangelogDate(), syncbump, {
-          [ChangelogEntryType.MISC]: new ChangelogUpdateEntry(ChangelogEntryType.MISC, [
-            new GitConventional({
-              body: null,
-              breaking: syncbump.type === BumpType.MAJOR,
-              footer: null,
-              header: 'Version bump due to parent version bump',
-              mentions: null,
-              merge: null,
-              notes: [],
-              sha: '',
-            }),
-          ]),
+          [ChangelogEntryType.MISC]: new ChangelogUpdateEntry(
+            ChangelogEntryType.MISC,
+            [
+              new GitConventional({
+                body: null,
+                breaking: syncbump.type === BumpType.MAJOR,
+                footer: null,
+                header: 'Version bump due to parent version bump',
+                mentions: null,
+                merge: null,
+                notes: [],
+                sha: '',
+              }),
+            ],
+            opts?.changelogLineFormatter,
+          ),
         }),
       );
     }

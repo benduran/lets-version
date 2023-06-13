@@ -1,11 +1,15 @@
 # lets-version
+
 A package that reads your conventional commits and git history and recommends (or applies) a SemVer version bump for you. Supports single-package repositories, as well as multi-package repositories!
 
 ---
+
 ## What is this package intending to be?
+
 If you have been relying on [lerna](https://www.npmjs.com/package/lerna) to automate your package version number managements, based on your commit history, or if you just want a hands-off way of applying version bumps to your `package.json` files in CI before you publish, this is the package for you!
 
 ---
+
 ## Example
 
 ```bash
@@ -34,6 +38,7 @@ Do you want to continue? › (y/N)
 ---
 
 ## CLI Documentation
+
 ```bash
 lets-version [command]
 
@@ -81,6 +86,7 @@ Options:
 ```
 
 ### `ls`
+
 Lists all detected packages for this repository.
 
 ```bash
@@ -99,6 +105,7 @@ Options:
 ```
 
 ### `last-version-tag`
+
 Gets the last tag used when version bumping for a specific package. If no package is specified, all found tags for each package detected are returned.
 
 ```bash
@@ -126,6 +133,7 @@ Options:
 ```
 
 ### `changed-files-since-bump`
+
 Gets a list of all files that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.
 
 ```bash
@@ -154,6 +162,7 @@ Options:
 ```
 
 ### `changed-packages-since-bump`
+
 Gets a list of all packages that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.
 
 ```bash
@@ -182,6 +191,7 @@ Options:
 ```
 
 ### `get-conventional-since-bump`
+
 Parsed git commits for a specific package or packages, using the official Conventional Commits parser
 
 ```bash
@@ -209,6 +219,7 @@ Options:
 ```
 
 ### `get-bumps`
+
 Gets a series of recommended version bumps for a specific package or set of packages. NOTE: It is possible for your bump recommendation to not change. If this is the case, this means that your particular package has never had a version bump by the lets-version library.
 
 ```bash
@@ -255,6 +266,7 @@ Options:
 ```
 
 ### `apply-bumps`
+
 Gets a series of recommended version bumps for a specific package or set of packages, applies the version bumps, and updates all repository dependents to match the version that has been updated.
 
 ```bash
@@ -312,6 +324,7 @@ Options:
       --updateOptional  If true, will update any dependent "package.json#optiona
                         lDependencies" fields         [boolean] [default: false]
 ```
+
 ---
 
 ## Node API
@@ -319,81 +332,91 @@ Options:
 The Node API is a 1:1 match for the CLI API, and can be used in its place. All exported functions accept the same arguments and product the same results. There are some additional functions that are available when using the Node API, if you're interested in exploring
 
 ### `listPackages(cwd)`
+
 Returns all detected packages for this repository
 
-* Parameters
-  * `cwd?: string` - Defaults to `appRootPath.toString()`
+- Parameters
+  - `cwd?: string` - Defaults to `appRootPath.toString()`
 
 ### `getLastVersionTagsByPackageName(names, noFetchTags, cwd)`
+
 Given an optional array of package names, reads the latest git tag that was used in a previous version bump operation.
 
-* Parameters
-  * `names?: string[]` - Defaults to `[]`
-  * `noFetchTags?: boolean` - Defaults to `false`
-  * `cwd?: string` - Defaults to `appRootPath.toString()`
+- Parameters
+  - `names?: string[]` - Defaults to `[]`
+  - `noFetchTags?: boolean` - Defaults to `false`
+  - `cwd?: string` - Defaults to `appRootPath.toString()`
 
 ### `getChangedFilesSinceBump(names, noFetchTags, cwd)`
+
 Gets a list of all files that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.
 
-* Parameters
-  * `names?: string[]` - Defaults to `[]`
-  * `noFetchTags?: boolean` - Defaults to `false`
-  * `cwd?: string` - Defaults to `appRootPath.toString()`
+- Parameters
+  - `names?: string[]` - Defaults to `[]`
+  - `noFetchTags?: boolean` - Defaults to `false`
+  - `cwd?: string` - Defaults to `appRootPath.toString()`
 
 ### `getChangedPackagesSinceBump(names, noFetchTags, cwd)`
+
 Gets a list of all packages that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.
 
-* Parameters
-  * `names?: string[]` - Defaults to `[]`
-  * `noFetchTags?: boolean` - Defaults to `false`
-  * `cwd?: string` - Defaults to `appRootPath.toString()`
+- Parameters
+  - `names?: string[]` - Defaults to `[]`
+  - `noFetchTags?: boolean` - Defaults to `false`
+  - `cwd?: string` - Defaults to `appRootPath.toString()`
 
 ### `getConventionalCommitsByPackage(names, cwd = appRootPath.toString())`
+
 Parses commits since last publish for a specific package or set of packages and returns them represented as Conventional Commits objects.
 
-* Parameters
-  * `names?: string[]` - Defaults to `[]`
-  * `cwd?: string` - Defaults to `appRootPath.toString()`
+- Parameters
+  - `names?: string[]` - Defaults to `[]`
+  - `cwd?: string` - Defaults to `appRootPath.toString()`
 
 ### `getRecommendedBumpsByPackage(names, releaseAs, preid, uniqify, forceAll, noFetchAll, noFetchTags, updatePeer, updateOptional, cwd)`
+
 Given an optional list of package names, parses the git history since the last bump operation and suggests a bump.
 NOTE: It is possible for your bump recommendation to not change. If this is the case, this means that your particular package has never had a version bump by the lets-version library.
 
-* Parameters
-  * `names?: string[]` - Defaults to `undefined`
-  * `releaseAs?: ReleaseAsPresets` - Defaults to `ReleaseAsPresets.AUTO`
-  * `preid?: string` - Defaults to `undefined`
-  * `uniqify?: boolean` - Defaults to `false`
-  * `forceAll?: boolean` - Defaults to `false`
-  * `noFetchAll?: boolean` - Defaults to `false`
-  * `noFetchTags?: boolean` - Defaults to `false`
-  * `updatePeer?: boolean` - Defaults to `false`
-  * `updateOptional?: boolean` - Defaults to `false`
-  * `cwd?: string` - Defaults to `appRootPath.toString()`
+- Parameters
+  - `names?: string[]` - Defaults to `undefined`
+  - `releaseAs?: ReleaseAsPresets` - Defaults to `ReleaseAsPresets.AUTO`
+  - `preid?: string` - Defaults to `undefined`
+  - `uniqify?: boolean` - Defaults to `false`
+  - `forceAll?: boolean` - Defaults to `false`
+  - `noFetchAll?: boolean` - Defaults to `false`
+  - `noFetchTags?: boolean` - Defaults to `false`
+  - `updatePeer?: boolean` - Defaults to `false`
+  - `updateOptional?: boolean` - Defaults to `false`
+  - `cwd?: string` - Defaults to `appRootPath.toString()`
 
 ### `applyRecommendedBumpsByPackage(names, releaseAs, preid, uniqify, forceAll, noFetchAll, noFetchTags, opts, cwd)`
+
 Given an optional list of package names, parses the git history since the last bump operation, suggest a bump and applies it, also updating any dependent package.json files across your repository.
 NOTE: It is possible for your bump recommendation to not change. If this is the case, this means that your particular package has never had a version bump by the lets-version library.
 
-* Parameters
-  * `names?: string[]` - Defaults to `undefined`
-  * `releaseAs?: ReleaseAsPresets` - Defaults to `ReleaseAsPresets.AUTO`
-  * `preid?: string` - Defaults to `undefined`
-  * `uniqify?: boolean` - Defaults to `false`
-  * `forceAll?: boolean` - Defaults to `false`
-  * `noFetchAll?: boolean` - Defaults to `false`
-  * `noFetchTags?: boolean` - Defaults to `false`
-  * `opts?: { yes?: boolean; updatePeer?: boolean; updateOptional?: boolean; noPush?: boolean; noChangelog?: boolean; dryRun?: boolean }` - Defaults to:
-    * `opts.yes` - If true, skips all user confirmations - Defaults to `false`
-    * `opts.updatePeer` - If true, will update any dependent "package.json#peerDependencies" fields - Defaults to `false`
-    * `opts.updateOptional` - If true, will update any dependent `"package.json#optionalDependencies"` fields - Defaults to `false`
-    * `opts.noPush` - If true, will prevent pushing any changes to upstream / origin - Defaults to `false`
-    * `opts.noChangelog` - If true, will not write CHANGELOG.md updates for each package that has changed. Defaults to `false`.
-    * `opts.dryRun` - If true, will print the changes that are expected to happen at every step instead of actually writing the changes. Defaults to `false`.
-  * `cwd?: string` - Defaults to `appRootPath.toString()`
+- Parameters
+  - `names?: string[]` - Defaults to `undefined`
+  - `releaseAs?: ReleaseAsPresets` - Defaults to `ReleaseAsPresets.AUTO`
+  - `preid?: string` - Defaults to `undefined`
+  - `uniqify?: boolean` - Defaults to `false`
+  - `forceAll?: boolean` - Defaults to `false`
+  - `noFetchAll?: boolean` - Defaults to `false`
+  - `noFetchTags?: boolean` - Defaults to `false`
+  - `opts?: { yes?: boolean; updatePeer?: boolean; updateOptional?: boolean; noPush?: boolean; noChangelog?: boolean; dryRun?: boolean; changelogLineFormatterPath?: string }` - Defaults to:
+    - `opts.yes` - If true, skips all user confirmations - Defaults to `false`
+    - `opts.updatePeer` - If true, will update any dependent "package.json#peerDependencies" fields - Defaults to `false`
+    - `opts.updateOptional` - If true, will update any dependent `"package.json#optionalDependencies"` fields - Defaults to `false`
+    - `opts.noPush` - If true, will prevent pushing any changes to upstream / origin - Defaults to `false`
+    - `opts.noChangelog` - If true, will not write CHANGELOG.md updates for each package that has changed. Defaults to `false`.
+    - `opts.dryRun` - If true, will print the changes that are expected to happen at every step instead of actually writing the changes. Defaults to `false`.
+    - `opts.changelogLineFormatterPath` - Path to a file to use as a custom changelog line formatter, the file must return a default export of a function that accepts a single argument of type "ChangelogLineFormatterArgs" and returns a string. Defaults to `undefined`.
+  - `cwd?: string` - Defaults to `appRootPath.toString()`
+
 ---
 
 ## Get started contributing
+
 1. Clone this repo
 2. Run `./repo-setup.sh`
 3. Happy hacking! ⌨️

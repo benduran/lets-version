@@ -404,6 +404,14 @@ export class BumpRecommendation {
 }
 
 /**
+ * A custom formatter that will take in a single commit line and return a formatted string
+ *
+ * @callback ChangeLogLineFormatter
+ * @param {GitConventional} line - The individual line to format
+ * @returns {string | null} The formatted line or null if you want to ignore the line
+ */
+
+/**
  * Represents a single type of changelog update
  * that should be included as part of a larger "ChangelogUpdate."
  * This individual entry should be written to a CHANGELOG.md file
@@ -413,13 +421,27 @@ export class ChangelogUpdateEntry {
   /**
    * @param {ChangelogEntryType} type
    * @param {GitConventional[]} lines
+   * @param {ChangeLogLineFormatter | null} formatter
    */
-  constructor(type, lines) {
+  constructor(type, lines, formatter = null) {
     /** @type {ChangelogEntryType} */
     this.type = type;
 
     /** @type {GitConventional[]} */
     this.lines = lines;
+
+    /** @type {ChangeLogLineFormatter} */
+    this.formatter = formatter || this.defaultFormatter;
+  }
+
+  /**
+   * Default formatter, will format each individual line of the changelog
+   *
+   * @param {GitConventional} line
+   * @returns {string}
+   */
+  defaultFormatter(line) {
+    return `- ${line.subject || line.header} ${line.sha ? `(${line.sha})` : ''}`;
   }
 
   /**
@@ -431,7 +453,8 @@ export class ChangelogUpdateEntry {
    */
   toString() {
     return `### ${this.type}${os.EOL}${os.EOL}${this.lines
-      .map(l => `* ${l.subject || l.header} ${l.sha ? `(${l.sha})` : ''}`)
+      .map(l => this.formatter(l))
+      .filter(Boolean)
       .join(os.EOL)}`;
   }
 }
