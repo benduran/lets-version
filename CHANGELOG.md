@@ -1,3 +1,17 @@
+## 0.4.0 (2023-06-13)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #3 from jgodi/main (75f9993131ee3785bc5aa7828861bcdf2555929d)
+
+
+
+### ✨ Features ✨
+
+- adding a way to pass a custom line formatter to the changelog (95ae0a5725abd0610770e80f704cdb5dd1a90f94)
+
+---
+
 ## 0.3.0 (2023-06-09)
 
 ### 🔀 Miscellaneous 🔀
