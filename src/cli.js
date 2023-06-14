@@ -22,7 +22,7 @@ import {
   listPackages,
 } from './lets-version.js';
 import { BumpTypeToString } from './types.js';
-import { readChangeLogLineFormatterFile } from './util.js';
+import { loadDefaultExportFunction } from './util.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -266,11 +266,18 @@ async function setupCLI() {
           .option('changelogLineFormatterPath', {
             default: undefined,
             description:
-              'Path to a file to use as a custom changelog line formatter, the file must return a default export of a function that accepts a single argument of type "ChangelogLineFormatterArgs" and returns a string',
+              'Path to a file to use as a custom changelog line formatter, the file must return a default export of a function that accepts a single argument of type "ChangelogLineFormatterArgs" and returns a string or null',
+            type: 'string',
+          })
+          .option('changelogEntryFormatterPath', {
+            default: undefined,
+            description:
+              'Path to a file to use as a custom changelog entry formatter, the file must return a default export of a function that accepts an array of change log entries and returns the full changelog entry string',
             type: 'string',
           }),
       async args => {
-        const formatter = await readChangeLogLineFormatterFile(args.changelogLineFormatterPath);
+        const changelogLineFormatter = await loadDefaultExportFunction(args.changelogLineFormatterPath);
+        const changelogEntryFormatter = await loadDefaultExportFunction(args.changelogEntryFormatterPath);
 
         await applyRecommendedBumpsByPackage(
           args.package,
@@ -287,7 +294,8 @@ async function setupCLI() {
             updateOptional: args.updateOptional,
             updatePeer: args.updatePeer,
             yes: args.yes,
-            changelogLineFormatter: formatter,
+            changelogLineFormatter,
+            changelogEntryFormatter,
           },
           args.cwd,
         );

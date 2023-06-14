@@ -1,5 +1,6 @@
 /**
  * @typedef {import('./types.js').ChangeLogLineFormatter} ChangeLogLineFormatter
+ * @typedef {import('./types.js').ChangeLogEntryFormatter} ChangeLogEntryFormatter
  */
 
 import fs from 'fs-extra';
@@ -40,19 +41,17 @@ export function chunkArray(arr, size = 5) {
 }
 
 /**
- * Attempts to read the supplied path to a file that exports a ChangeLogLineFormatter
+ * Attempts to read the supplied path to a file that exports a default function
  *
- * @param {string | undefined} formatterPath
- *
- * @returns {Promise<ChangeLogLineFormatter | undefined>}
+ * @param {string | undefined} filePath
  */
-export async function readChangeLogLineFormatterFile(formatterPath) {
-  if (formatterPath) {
-    const resolvedFormatterPath = path.resolve(process.cwd(), formatterPath);
-    const isFile = fs.statSync(resolvedFormatterPath, { throwIfNoEntry: false })?.isFile() || false;
+export async function loadDefaultExportFunction(filePath) {
+  if (filePath) {
+    const resolvedFilePath = path.resolve(process.cwd(), filePath);
+    const isFile = fs.statSync(resolvedFilePath, { throwIfNoEntry: false })?.isFile() || false;
 
     if (isFile) {
-      const result = await import(resolvedFormatterPath);
+      const result = await import(resolvedFilePath);
       return result.default;
     }
   }

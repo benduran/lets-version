@@ -411,6 +411,7 @@ NOTE: It is possible for your bump recommendation to not change. If this is the 
     - `opts.noChangelog` - If true, will not write CHANGELOG.md updates for each package that has changed. Defaults to `false`.
     - `opts.dryRun` - If true, will print the changes that are expected to happen at every step instead of actually writing the changes. Defaults to `false`.
     - `opts.changelogLineFormatterPath` - Path to a file to use as a custom changelog line formatter, the file must return a default export of a function that accepts a single argument of type "ChangelogLineFormatterArgs" and returns a string. Defaults to `undefined`.
+    - `opts.changelogEntryFormatterPath` - Path to a file to use as a custom changelog entry formatter, the file must return a default export of a function that accepts an array of change log entries and returns the full changelog entry string. Defaults to `undefined`.
   - `cwd?: string` - Defaults to `appRootPath.toString()`
 
 ---
