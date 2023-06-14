@@ -369,6 +369,7 @@ export async function getRecommendedBumpsByPackage(opts) {
  * @property {boolean} [noChangelog=false] - If true, will not write CHANGELOG.md updates for each package that has changed
  * @property {boolean} [dryRun=false] - If true, will print the changes that are expected to happen at every step instead of actually writing the changes
  * @property {string} [cwd=appRootPath.toString()]
+ * @property {LetsVersionConfig} [customConfig]
  */
 
 /**
@@ -385,6 +386,7 @@ export async function getRecommendedBumpsByPackage(opts) {
  */
 export async function applyRecommendedBumpsByPackage(opts) {
   const {
+    customConfig: customConfigOverride,
     cwd = appRootPath.toString(),
     dryRun = false,
     forceAll = false,
@@ -402,7 +404,7 @@ export async function applyRecommendedBumpsByPackage(opts) {
   } = opts ?? {};
   const fixedCWD = fixCWD(cwd);
 
-  const customConfig = await readLetsVersionConfig(fixedCWD);
+  const customConfig = customConfigOverride ?? (await readLetsVersionConfig(fixedCWD));
 
   let yes = opts?.yes || false;
 
