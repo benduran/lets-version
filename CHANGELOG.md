@@ -1,3 +1,27 @@
+## 0.4.1-beta.0 (2023-06-14)
+
+### 🚨 Breaking Changes 🚨
+
+- moved to reading a letsVersion.config.mjs file (d236d5ddb51aa108871f9c3ec5de61dd4d021424)
+
+
+
+### 🔀 Miscellaneous 🔀
+
+- Merge remote-tracking branch 'origin/main' into bduran/rollup-changelog (341c6a68406d40ec36c6a549cad16ea3378bf58f)
+- add a flag to allow users to customize the entry cha… (9d84faba7e68f5b18895b0a88095b9455a20adf8)
+- moved to a data structure to handle the aggregate view of the hangelog (6de6cd99a867284d170dc4e3f987ec0004aa2cc0)
+- tweaked the markdown header (faa3cddd1e8ca46e0c81ec78a5d5bb110f2ce126)
+- removed some extraneous files from the build (07b3636a5095b24a8aba08af171f7f7674ced9b2)
+
+
+
+### ✨ Features ✨
+
+- add a flag to allow users to customize the entry changelog entry (a5f0b857890e168ccb63f5620de9fb6d81a9c95a)
+
+---
+
 ## 0.4.0 (2023-06-13)
 
 ### 🔀 Miscellaneous 🔀
