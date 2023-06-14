@@ -37,6 +37,7 @@ import { conventionalCommitToBumpType } from './parser.js';
 import {
   BumpType,
   BumpTypeToString,
+  ChangelogAggregateUpdate,
   ChangelogEntryType,
   ChangelogUpdate,
   ChangelogUpdateEntry,
@@ -569,22 +570,27 @@ export async function applyRecommendedBumpsByPackage(opts) {
         (synchronized.packages.length === 1 && !synchronized.packages[0]?.root) || synchronized.packages.length > 1;
 
       if (continueWithRollupChangelog) {
-        const rollupChangelogPath = path.join(fixedCWD, 'CHANGELOG.md');
-        await fs.ensureFile(rollupChangelogPath);
+        const changelogUpdates = new ChangelogAggregateUpdate(fixedCWD, getFormattedChangelogDate(), changelogInfo);
+        if (!dryRun) await fs.ensureFile(changelogUpdates.changelogPath);
 
-        const existingChangelog = await fs.readFile(rollupChangelogPath, 'utf-8');
-        const changelogUpdates = changelogInfo.reduce((prev, c) => {
-          let update = `# ${c.bumpRecommendation.packageInfo.name} Updates${os.EOL}${os.EOL}`;
-          update += `${c.toString()}${os.EOL}${os.EOL}`;
-
-          return `${update}${prev}`;
-        }, '');
+        let existingChangelog = '';
+        try {
+          existingChangelog = await fs.readFile(changelogUpdates.changelogPath, 'utf-8');
+        } catch (error) {}
 
         if (dryRun) {
           console.info(
-            `Will write the following rollup changelog updated to ${rollupChangelogPath}:${os.EOL}${os.EOL}${changelogUpdates}`,
+            `Will write the following rollup changelog updated to ${changelogUpdates.changelogPath}:${os.EOL}${
+              os.EOL
+            }${changelogUpdates.toString()}`,
           );
-        } else await fs.writeFile(rollupChangelogPath, `${changelogUpdates}${existingChangelog}`, 'utf-8');
+        } else {
+          await fs.writeFile(
+            changelogUpdates.changelogPath,
+            `${changelogUpdates.toString()}${existingChangelog}`,
+            'utf-8',
+          );
+        }
       }
     }
   }
