@@ -8,6 +8,7 @@
  * @typedef {import('type-fest').PackageJson} PackageJson
  * @typedef {import('./changelog.js').GenerateChangelogOpts} GenerateChangelogOpts
  * @typedef {import('./dependencies.js').SynchronizeBumpsReturnType} SynchronizeBumpsReturnType
+ * @typedef {import('./readUserConfig.js').LetsVersionConfig} LetsVersionConfig
  */
 
 import appRootPath from 'app-root-path';
@@ -35,7 +36,7 @@ import {
   gitWorkdirUnclean,
 } from './git.js';
 import { conventionalCommitToBumpType } from './parser.js';
-import { readLetsVersionConfig } from './readUserConfig.js';
+import { defineLetsVersionConfig, readLetsVersionConfig } from './readUserConfig.js';
 import {
   BumpType,
   BumpTypeToString,
@@ -47,6 +48,8 @@ import {
   PackageInfo,
   ReleaseAsPresets,
 } from './types.js';
+
+export { defineLetsVersionConfig };
 
 /**
  * @typedef {Object} AllCommandsBaseOpts
