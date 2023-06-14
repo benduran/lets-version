@@ -4,16 +4,16 @@
   "description": "A package that reads your conventional commits and git history and recommends (or applies) a SemVer version bump for you",
   "exports": "./dist/lets-version.js",
   "bin": "./dist/cli.js",
-  "type": "module",
   "typings": "./dist/lets-version.d.ts",
   "types": "./dist/lets-version.d.ts",
+  "type": "module",
   "files": [
-    "./dist/"
+    "dist/"
   ],
   "scripts": {
     "build": "run-s clean compile",
     "clean": "rm -rf ./dist",
-    "compile": "tsc --project ./tsconfig.json",
+    "compile": "tsc --project ./tsconfig.build.json",
     "lint": "eslint --no-error-on-unmatched-pattern './src/**/*.{tsx,ts,jsx,js,mjs}'",
     "lint:fix": "npm run lint -- --fix",
     "start": "node src/cli.js",

@@ -46,28 +46,39 @@ import {
 } from './types.js';
 
 /**
+ * @typedef {Object} AllCommandsBaseOpts
+ * @property {string} [cwd=appRootPath.toString()]
+ */
+
+/**
  * Returns all detected packages for this repository
  *
- * @param {string} [cwd=appRootPath.toString()]
+ * @param {AllCommandsBaseOpts} [opts]
  * @returns {Promise<PackageInfo[]>}
  */
-export async function listPackages(cwd = appRootPath.toString()) {
-  const fixedCWD = fixCWD(cwd);
+export async function listPackages(opts) {
+  const fixedCWD = fixCWD(opts?.cwd || appRootPath.toString());
 
   return filterPackagesByNames(await getPackages(fixedCWD), undefined, fixedCWD);
 }
 
 /**
+ * @typedef {Object} GetLastVersionTagsByPackageNameOpts
+ * @property {string} [cwd=appRootPath.toString()]
+ * @property {string[]} [names]
+ * @property {boolean} [noFetchTags=false]
+ */
+
+/**
  * Given an optional array of package names, reads the latest
  * git tag that was used in a previous version bump operation.
  *
- * @param {string[]} [names]
- * @param {boolean} [noFetchTags=false]
- * @param {string} [cwd=appRootPath.toString()]
+ * @param {GetLastVersionTagsByPackageNameOpts} [opts]
  *
  * @returns {Promise<PublishTagInfo[]>}
  */
-export async function getLastVersionTagsByPackageName(names, noFetchTags = false, cwd = appRootPath.toString()) {
+export async function getLastVersionTagsByPackageName(opts) {
+  const { names, noFetchTags = false, cwd = appRootPath.toString() } = opts ?? {};
   const fixedCWD = fixCWD(cwd);
 
   const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
@@ -81,12 +92,11 @@ export async function getLastVersionTagsByPackageName(names, noFetchTags = false
  * Gets a list of all files that have changed since the last publish for a specific package or set of packages.
  * If no results are returned, it likely means that there was not a previous version tag detected in git.
  *
- * @param {string[]} [names]
- * @param {boolean} [noFetchTags=false]
- * @param {string} [cwd=appRootPath.toString()]
+ * @param {GetLastVersionTagsByPackageNameOpts} [opts]
  * @returns {Promise<string[]>}
  */
-export async function getChangedFilesSinceBump(names, noFetchTags = false, cwd = appRootPath.toString()) {
+export async function getChangedFilesSinceBump(opts) {
+  const { names, noFetchTags = false, cwd = appRootPath.toString() } = opts ?? {};
   const fixedCWD = fixCWD(cwd);
   const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
 
@@ -100,13 +110,13 @@ export async function getChangedFilesSinceBump(names, noFetchTags = false, cwd =
 /**
  * Gets a list of all packages that have changed since the last publish for a specific package or set of packages.
  * If no results are returned, it likely means that there was not a previous version tag detected in git.
- * @param {string[]} [names]
- * @param {boolean} [noFetchTags]
- * @param {string} [cwd=appRootPath.toString()]
+ *
+ * @param {GetLastVersionTagsByPackageNameOpts} [opts]
  *
  * @returns {Promise<PackageInfo[]>}
  */
-export async function getChangedPackagesSinceBump(names, noFetchTags = false, cwd = appRootPath.toString()) {
+export async function getChangedPackagesSinceBump(opts) {
+  const { names, noFetchTags = false, cwd = appRootPath.toString() } = opts ?? {};
   const fixedCWD = fixCWD(cwd);
 
   const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
@@ -120,16 +130,23 @@ export async function getChangedPackagesSinceBump(names, noFetchTags = false, cw
 }
 
 /**
+ * @typedef {Object} GetConventionalCommitsByPackageOpts
+ * @property {string} [cwd=appRootPath.toString()]
+ * @property {string[]} [names]
+ * @property {boolean} [noFetchTags=false]
+ * @property {boolean} [noFetchAll=false]
+ */
+
+/**
  * Parses commits since last publish for a specific package or set of packages
  * and returns them represented as Conventional Commits objects.
  *
- * @param {string[]} [names]
- * @param {boolean} [noFetchAll=false]
- * @param {string} [cwd=appRootPath.toString()]
+ * @param {GetConventionalCommitsByPackageOpts} [opts]
  *
  * @returns {Promise<GitCommitWithConventionalAndPackageInfo[]>}
  */
-export async function getConventionalCommitsByPackage(names, noFetchAll = false, cwd = appRootPath.toString()) {
+export async function getConventionalCommitsByPackage(opts) {
+  const { names, noFetchAll = false, cwd = appRootPath.toString() } = opts ?? {};
   const fixedCWD = fixCWD(cwd);
 
   const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
@@ -148,37 +165,45 @@ export async function getConventionalCommitsByPackage(names, noFetchAll = false,
  */
 
 /**
+ * @typedef {Object} GetRecommendedBumpsByPackageOpts
+ * @property {string[]} [names]
+ * @property {ReleaseAsPresets} [releaseAs='auto']
+ * @property {string} [preid='']
+ * @property {boolean} [uniqify=false]
+ * @property {boolean} [forceAll=false]
+ * @property {boolean} [noFetchAll=false]
+ * @property {boolean} [noFetchTags=false]
+ * @property {boolean} [updatePeer=false]
+ * @property {boolean} [updateOptional=false]
+ * @property {string} [cwd=appRootPath.toString()]
+ */
+
+/**
  * Given an optional list of package names, parses the git history
  * since the last bump operation and suggests a bump.
  *
  * NOTE: It is possible for your bump recommendation to not change.
  * If this is the case, this means that your particular package has never had a version bump by the lets-version library.
  *
- * @param {string[]} [names]
- * @param {ReleaseAsPresets} [releaseAs='auto']
- * @param {string} [preid='']
- * @param {boolean} [uniqify=false]
- * @param {boolean} [forceAll=false]
- * @param {boolean} [noFetchAll=false]
- * @param {boolean} [noFetchTags=false]
- * @param {boolean} [updatePeer=false]
- * @param {boolean} [updateOptional=false]
- * @param {string} [cwd=appRootPath.toString()]
+ * @param {GetRecommendedBumpsByPackageOpts} [opts]
  *
  * @returns {Promise<GetRecommendedBumpsByPackageReturnType>}
  */
-export async function getRecommendedBumpsByPackage(
-  names,
-  releaseAs = ReleaseAsPresets.AUTO,
-  preid = '',
-  uniqify = false,
-  forceAll = false,
-  noFetchAll = false,
-  noFetchTags = false,
-  updatePeer = false,
-  updateOptional = false,
-  cwd = appRootPath.toString(),
-) {
+export async function getRecommendedBumpsByPackage(opts) {
+  const {
+    names,
+    releaseAs = ReleaseAsPresets.AUTO,
+    uniqify = false,
+    forceAll = false,
+    noFetchAll = false,
+    noFetchTags = false,
+    updatePeer = false,
+    updateOptional = false,
+    cwd = appRootPath.toString(),
+  } = opts ?? {};
+
+  let preid = opts?.preid || '';
+
   /**
    * @type {GenerateChangelogOpts}
    */
@@ -322,6 +347,25 @@ export async function getRecommendedBumpsByPackage(
 }
 
 /**
+ * @typedef {Object} ApplyRecommendedBumpsByPackageOpts
+ * @property {string[]} [names]
+ * @property {ReleaseAsPresets} [releaseAs='auto']
+ * @property {string} [preid='']
+ * @property {boolean} [uniqify=false]
+ * @property {boolean} [forceAll=false]
+ * @property {boolean} [noFetchAll=false]
+ * @property {boolean} [noFetchTags=false]
+ * @property {boolean} [yes=false] - If true, skips all user confirmations
+ * @property {boolean} [updatePeer=false] - If true, will update any dependent "package.json#peerDependencies" fields
+ * @property {boolean} [updateOptional=false] - If true, will update any dependent "package.json#optionalDependencies" fields
+ * @property {boolean} [noPush=false] - If true, will prevent pushing any changes to upstream / origin
+ * @property {boolean} [noChangelog=false] - If true, will not write CHANGELOG.md updates for each package that has changed
+ * @property {boolean} [dryRun=false] - If true, will print the changes that are expected to happen at every step instead of actually writing the changes
+ * @property {ChangeLogLineFormatter} [changelogLineFormatter] - If provided, will be used to format the changelog line for each package that has changed
+ * @property {string} [cwd=appRootPath.toString()]
+ */
+
+/**
  * Given an optional list of package names, parses the git history
  * since the last bump operation, suggest a bump and applies it, also
  * updating any dependent package.json files across your repository.
@@ -329,44 +373,29 @@ export async function getRecommendedBumpsByPackage(
  * NOTE: It is possible for your bump recommendation to not change.
  * If this is the case, this means that your particular package has never had a version bump by the lets-version library.
  *
- * @param {string[]} [names]
- * @param {ReleaseAsPresets} [releaseAs='auto']
- * @param {string} [preid='']
- * @param {boolean} [uniqify=false]
- * @param {boolean} [forceAll=false]
- * @param {boolean} [noFetchAll=false]
- * @param {boolean} [noFetchTags=false]
- * @param {object} [opts]
- * @param {boolean} [opts.yes=false] - If true, skips all user confirmations
- * @param {boolean} [opts.updatePeer=false] - If true, will update any dependent "package.json#peerDependencies" fields
- * @param {boolean} [opts.updateOptional=false] - If true, will update any dependent "package.json#optionalDependencies" fields
- * @param {boolean} [opts.noPush=false] - If true, will prevent pushing any changes to upstream / origin
- * @param {boolean} [opts.noChangelog=false] - If true, will not write CHANGELOG.md updates for each package that has changed
- * @param {boolean} [opts.dryRun=false] - If true, will print the changes that are expected to happen at every step instead of actually writing the changes
- * @param {ChangeLogLineFormatter} [opts.changelogLineFormatter] - If provided, will be used to format the changelog line for each package that has changed
- * @param {string} [cwd=appRootPath.toString()]
+ * @param {ApplyRecommendedBumpsByPackageOpts} [opts]
  *
  * @returns {Promise<GetRecommendedBumpsByPackageReturnType | null>}
  */
-export async function applyRecommendedBumpsByPackage(
-  names,
-  releaseAs = ReleaseAsPresets.AUTO,
-  preid = '',
-  uniqify = false,
-  forceAll = false,
-  noFetchAll = false,
-  noFetchTags = false,
-  opts,
-  cwd = appRootPath.toString(),
-) {
+export async function applyRecommendedBumpsByPackage(opts) {
+  const {
+    names,
+    releaseAs = ReleaseAsPresets.AUTO,
+    preid = '',
+    uniqify = false,
+    forceAll = false,
+    noFetchAll = false,
+    noFetchTags = false,
+    cwd = appRootPath.toString(),
+    updateOptional = false,
+    updatePeer = false,
+    noPush = false,
+    noChangelog = false,
+    dryRun = false,
+  } = opts ?? {};
   const fixedCWD = fixCWD(cwd);
 
   let yes = opts?.yes || false;
-  const updatePeer = opts?.updatePeer || false;
-  const updateOptional = opts?.updateOptional || false;
-  const noPush = opts?.noPush || false;
-  const noChangelog = opts?.noChangelog || false;
-  const dryRun = opts?.dryRun || false;
 
   if (dryRun) console.warn('**Dry Run has been enabled**');
 
@@ -381,7 +410,8 @@ export async function applyRecommendedBumpsByPackage(
 
   if (!allPackages.length) return null;
 
-  const synchronized = await getRecommendedBumpsByPackage(
+  const synchronized = await getRecommendedBumpsByPackage({
+    cwd: fixedCWD,
     names,
     releaseAs,
     preid,
@@ -391,8 +421,7 @@ export async function applyRecommendedBumpsByPackage(
     noFetchTags,
     updatePeer,
     updateOptional,
-    fixedCWD,
-  );
+  });
   const { bumpsByPackageName: presyncBumpsByPackageName } = synchronized;
 
   if (!synchronized.bumps.length) {

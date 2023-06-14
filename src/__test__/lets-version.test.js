@@ -56,14 +56,14 @@ describe('lets-version.js tests', () => {
 
   it('Should list the only package in a single-package NPM repository', async () => {
     const pjson = await readPJSON(singleNPMProjectPath);
-    const results = await listPackages(singleNPMProjectPath);
+    const results = await listPackages({ cwd: singleNPMProjectPath });
     expect(results.length).toBe(1);
     expect(results[0]?.pkg).toStrictEqual(pjson);
   });
 
   it('Should list the only package in a multi-package NPM repository', async () => {
     const allPjsons = await readAllPJSONs(multiNPMProjectPath);
-    const results = await listPackages(multiNPMProjectPath);
+    const results = await listPackages({ cwd: multiNPMProjectPath });
     expect(results.length).toBe(3);
 
     for (let i = 0; i < results.length; i++) {
@@ -75,14 +75,14 @@ describe('lets-version.js tests', () => {
 
   it('Should list the only package in a single-package PNPM repository', async () => {
     const pjson = await readPJSON(singlePNPMProjectPath);
-    const results = await listPackages(singlePNPMProjectPath);
+    const results = await listPackages({ cwd: singlePNPMProjectPath });
     expect(results.length).toBe(1);
     expect(results[0]?.pkg).toStrictEqual(pjson);
   });
 
   it('Should list the only package in a multi-package PNPM repository', async () => {
     const allPjsons = await readAllPJSONs(multiPNPMProjectPath);
-    const results = await listPackages(multiPNPMProjectPath);
+    const results = await listPackages({ cwd: multiPNPMProjectPath });
     expect(results.length).toBe(3);
 
     for (let i = 0; i < results.length; i++) {
@@ -94,14 +94,14 @@ describe('lets-version.js tests', () => {
 
   it('Should list the only package in a single-package Yarn repository', async () => {
     const pjson = await readPJSON(singleYarnProjectPath);
-    const results = await listPackages(singleYarnProjectPath);
+    const results = await listPackages({ cwd: singleYarnProjectPath });
     expect(results.length).toBe(1);
     expect(results[0]?.pkg).toStrictEqual(pjson);
   });
 
   it('Should list the only package in a multi-package Yarn repository', async () => {
     const allPjsons = await readAllPJSONs(multiYarnProjectPath);
-    const results = await listPackages(multiYarnProjectPath);
+    const results = await listPackages({ cwd: multiYarnProjectPath });
     expect(results.length).toBe(3);
 
     for (let i = 0; i < results.length; i++) {
