@@ -1,3 +1,11 @@
+## 0.4.1-beta.1 (2023-06-14)
+
+### 🛠️ Fixes 🛠️
+
+- fixed missing config-related exports (b6d70497a93042fab53da216c6d93791a2b658b4)
+
+---
+
 ## 0.4.1-beta.0 (2023-06-14)
 
 ### 🚨 Breaking Changes 🚨
