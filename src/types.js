@@ -346,11 +346,32 @@ export const BumpType = {
  * @enum {string}
  */
 export const ChangelogEntryType = {
-  BREAKING: '🚨 Breaking Changes 🚨',
-  DOCS: '📖 Docs 📖',
-  FEATURES: '✨ Features ✨',
-  FIXES: '🛠️ Fixes 🛠️',
-  MISC: '🔀 Miscellaneous 🔀',
+  BREAKING: 'BREAKING',
+  DOCS: 'DOCS',
+  FEATURES: 'FEATURES',
+  FIXES: 'FIXES',
+  MISC: 'MISC',
+};
+
+/**
+ * Will return the renderer that will be used for the
+ * changelog entry type
+ *
+ * @param {ChangelogEntryType} type
+ */
+export const getChangelogEntryTypeRenderer = type => {
+  switch (type) {
+    case ChangelogEntryType.BREAKING:
+      return '🚨 Breaking Changes 🚨';
+    case ChangelogEntryType.DOCS:
+      return '📖 Docs 📖';
+    case ChangelogEntryType.FEATURES:
+      return '✨ Features ✨';
+    case ChangelogEntryType.FIXES:
+      return '🛠️ Fixes 🛠️';
+    default:
+      return '🔀 Miscellaneous 🔀';
+  }
 };
 
 /**
@@ -404,6 +425,15 @@ export class BumpRecommendation {
 }
 
 /**
+ * A custom formatter that will take in all of the changes for a version and output what the change
+ * log entry should look like
+ *
+ * @callback ChangeLogEntryFormatter
+ * @param {ChangelogUpdate} updates - The updates to be included in the changelog entry for a version
+ * @returns {string} The formatted line to represent the entire changelog entry for a version
+ */
+
+/**
  * A custom formatter that will take in a single commit line and return a formatted string
  *
  * @callback ChangeLogLineFormatter
@@ -452,7 +482,7 @@ export class ChangelogUpdateEntry {
    * @returns {string}
    */
   toString() {
-    return `### ${this.type}${os.EOL}${os.EOL}${this.lines
+    return `### ${getChangelogEntryTypeRenderer(this.type)}${os.EOL}${os.EOL}${this.lines
       .map(l => this.formatter(l))
       .filter(Boolean)
       .join(os.EOL)}`;

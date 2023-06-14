@@ -4,6 +4,7 @@
  * @typedef {import('./types.js').GitCommitWithConventionalAndPackageInfo} GitCommitWithConventionalAndPackageInfo
  * @typedef {import('./types.js').PublishTagInfo} PublishTagInfo
  * @typedef {import('./types.js').ChangeLogLineFormatter} ChangeLogLineFormatter
+ * @typedef {import('./types.js').ChangeLogEntryFormatter} ChangeLogEntryFormatter
  * @typedef {import('type-fest').PackageJson} PackageJson
  * @typedef {import('./changelog.js').GenerateChangelogOpts} GenerateChangelogOpts
  * @typedef {import('./dependencies.js').SynchronizeBumpsReturnType} SynchronizeBumpsReturnType
@@ -364,6 +365,7 @@ export async function getRecommendedBumpsByPackage(opts) {
  * @property {boolean} [noChangelog=false] - If true, will not write CHANGELOG.md updates for each package that has changed
  * @property {boolean} [dryRun=false] - If true, will print the changes that are expected to happen at every step instead of actually writing the changes
  * @property {ChangeLogLineFormatter} [changelogLineFormatter] - If provided, will be used to format the changelog line for each package that has changed
+ * @property {ChangeLogEntryFormatter} [changelogEntryFormatter] - If provided, will be used to format the changelog line for each package that has changed
  * @property {string} [cwd=appRootPath.toString()]
  */
 
@@ -551,7 +553,9 @@ export async function applyRecommendedBumpsByPackage(opts) {
         } catch (error) {
           /* file doesn't exist */
         }
-        const changelogUpdates = `${c.toString()}${os.EOL}---${os.EOL}${os.EOL}`;
+        const changelogUpdates = opts?.changelogEntryFormatter
+          ? opts.changelogEntryFormatter(c)
+          : `${c.toString()}${os.EOL}---${os.EOL}${os.EOL}`;
 
         if (dryRun) {
           console.info(
