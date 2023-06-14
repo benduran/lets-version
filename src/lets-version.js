@@ -35,6 +35,7 @@ import {
   gitWorkdirUnclean,
 } from './git.js';
 import { conventionalCommitToBumpType } from './parser.js';
+import { readLetsVersionConfig } from './readUserConfig.js';
 import {
   BumpType,
   BumpTypeToString,
@@ -364,8 +365,6 @@ export async function getRecommendedBumpsByPackage(opts) {
  * @property {boolean} [rollupChangelog=false] - If true, in addition to updating changelog files for all packages that will be bumped, creates a "rollup" CHANGELOG.md at the root of the repo that contains an aggregate of changes
  * @property {boolean} [noChangelog=false] - If true, will not write CHANGELOG.md updates for each package that has changed
  * @property {boolean} [dryRun=false] - If true, will print the changes that are expected to happen at every step instead of actually writing the changes
- * @property {ChangeLogLineFormatter} [changelogLineFormatter] - If provided, will be used to format the changelog line for each package that has changed
- * @property {ChangeLogEntryFormatter} [changelogEntryFormatter] - If provided, will be used to format the changelog line for each package that has changed
  * @property {string} [cwd=appRootPath.toString()]
  */
 
@@ -399,6 +398,8 @@ export async function applyRecommendedBumpsByPackage(opts) {
     updatePeer = false,
   } = opts ?? {};
   const fixedCWD = fixCWD(cwd);
+
+  const customConfig = await readLetsVersionConfig(fixedCWD);
 
   let yes = opts?.yes || false;
 
@@ -512,7 +513,7 @@ export async function applyRecommendedBumpsByPackage(opts) {
     const changelogInfo = await getChangelogUpdateForPackageInfo({
       commits: synchronized.conventional,
       bumps: synchronized.bumps,
-      lineFormatter: opts?.changelogLineFormatter,
+      lineFormatter: customConfig?.changelog?.changelogLineFormatter,
     });
 
     for (const syncbump of synchronized.bumps) {
@@ -534,7 +535,7 @@ export async function applyRecommendedBumpsByPackage(opts) {
                 sha: '',
               }),
             ],
-            opts?.changelogLineFormatter,
+            customConfig?.changelog?.changelogLineFormatter,
           ),
         }),
       );
@@ -553,9 +554,8 @@ export async function applyRecommendedBumpsByPackage(opts) {
         } catch (error) {
           /* file doesn't exist */
         }
-        const changelogUpdates = opts?.changelogEntryFormatter
-          ? opts.changelogEntryFormatter(c)
-          : `${c.toString()}${os.EOL}---${os.EOL}${os.EOL}`;
+        const changelogUpdates =
+          customConfig?.changelog?.changeLogEntryFormatter?.(c) ?? `${c.toString()}${os.EOL}---${os.EOL}${os.EOL}`;
 
         if (dryRun) {
           console.info(
