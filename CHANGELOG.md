@@ -1,3 +1,11 @@
+## 0.4.1-beta.2 (2023-06-14)
+
+### 🔀 Miscellaneous 🔀
+
+- added ability to provide custom config specifically to the apply-bumps fnc (3038dfde8b308fce9533bc4e639595efd388323b)
+
+---
+
 ## 0.4.1-beta.1 (2023-06-14)
 
 ### 🛠️ Fixes 🛠️
