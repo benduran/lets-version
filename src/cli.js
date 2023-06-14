@@ -271,6 +271,12 @@ async function setupCLI() {
               'If true, will print the changes that are expected to happen at every step instead of actually writing the changes',
             type: 'boolean',
           })
+          .option('rollupChangelog', {
+            default: false,
+            description:
+              'If true, in addition to updating changelog files for all packages that will be bumped, creates a "rollup" CHANGELOG.md at the root of the repo that contains an aggregate of changes',
+            type: 'boolean',
+          })
           .option('noChangelog', {
             default: false,
             description: 'If true, will not write CHANGELOG.md updates for each package that has changed',
@@ -302,6 +308,7 @@ async function setupCLI() {
           noPush: args.noPush,
           preid: args.preid,
           releaseAs: args.releaseAs,
+          rollupChangelog: args.rollupChangelog,
           uniqify: args.uniqify,
           updateOptional: args.updateOptional,
           updatePeer: args.updatePeer,

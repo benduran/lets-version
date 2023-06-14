@@ -359,6 +359,7 @@ export async function getRecommendedBumpsByPackage(opts) {
  * @property {boolean} [updatePeer=false] - If true, will update any dependent "package.json#peerDependencies" fields
  * @property {boolean} [updateOptional=false] - If true, will update any dependent "package.json#optionalDependencies" fields
  * @property {boolean} [noPush=false] - If true, will prevent pushing any changes to upstream / origin
+ * @property {boolean} [rollupChangelog=false] - If true, in addition to updating changelog files for all packages that will be bumped, creates a "rollup" CHANGELOG.md at the root of the repo that contains an aggregate of changes
  * @property {boolean} [noChangelog=false] - If true, will not write CHANGELOG.md updates for each package that has changed
  * @property {boolean} [dryRun=false] - If true, will print the changes that are expected to happen at every step instead of actually writing the changes
  * @property {ChangeLogLineFormatter} [changelogLineFormatter] - If provided, will be used to format the changelog line for each package that has changed
@@ -379,19 +380,20 @@ export async function getRecommendedBumpsByPackage(opts) {
  */
 export async function applyRecommendedBumpsByPackage(opts) {
   const {
-    names,
-    releaseAs = ReleaseAsPresets.AUTO,
-    preid = '',
-    uniqify = false,
+    cwd = appRootPath.toString(),
+    dryRun = false,
     forceAll = false,
+    names,
+    noChangelog = false,
     noFetchAll = false,
     noFetchTags = false,
-    cwd = appRootPath.toString(),
+    noPush = false,
+    preid = '',
+    releaseAs = ReleaseAsPresets.AUTO,
+    rollupChangelog = false,
+    uniqify = false,
     updateOptional = false,
     updatePeer = false,
-    noPush = false,
-    noChangelog = false,
-    dryRun = false,
   } = opts ?? {};
   const fixedCWD = fixCWD(cwd);
 
@@ -557,6 +559,34 @@ export async function applyRecommendedBumpsByPackage(opts) {
         } else await fs.writeFile(c.changelogPath, `${changelogUpdates}${existingChangelog}`, 'utf-8');
       }),
     );
+
+    if (rollupChangelog) {
+      // User wants an aggregated changelog at the root.
+      // if this repo only has a single package AND that package is marked
+      // as the root package, do nothing
+
+      const continueWithRollupChangelog =
+        (synchronized.packages.length === 1 && !synchronized.packages[0]?.root) || synchronized.packages.length > 1;
+
+      if (continueWithRollupChangelog) {
+        const rollupChangelogPath = path.join(fixedCWD, 'CHANGELOG.md');
+        await fs.ensureFile(rollupChangelogPath);
+
+        const existingChangelog = await fs.readFile(rollupChangelogPath, 'utf-8');
+        const changelogUpdates = changelogInfo.reduce((prev, c) => {
+          let update = `# ${c.bumpRecommendation.packageInfo.name} Updates${os.EOL}${os.EOL}`;
+          update += `${c.toString()}${os.EOL}${os.EOL}`;
+
+          return `${update}${prev}`;
+        }, '');
+
+        if (dryRun) {
+          console.info(
+            `Will write the following rollup changelog updated to ${rollupChangelogPath}:${os.EOL}${os.EOL}${changelogUpdates}`,
+          );
+        } else await fs.writeFile(rollupChangelogPath, `${changelogUpdates}${existingChangelog}`, 'utf-8');
+      }
+    }
   }
 
   // commit the stuffs
