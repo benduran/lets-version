@@ -1,3 +1,11 @@
+## 0.4.1-beta.3 (2023-06-15)
+
+### 🔀 Miscellaneous 🔀
+
+- responded to PR feedback and added a custom rollup formatter (36673916a728592807c826d939f7a47029bb6f39)
+
+---
+
 ## 0.4.1-beta.2 (2023-06-14)
 
 ### 🔀 Miscellaneous 🔀
