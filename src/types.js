@@ -442,6 +442,19 @@ export class BumpRecommendation {
  */
 
 /**
+ * A custom formatter that will take in an instance of the ChangelogAggregateUpdate,
+ * which contains all of the updates and subsequent individual lines for the commit.
+ *
+ * If the output of this function is a string, this will cause an aggregated
+ * changelog to get written.
+ *
+ * @callback ChangeLogRollupFormatter
+ * @param {ChangelogAggregateUpdate} aggregatedUpdate
+ *
+ * @returns {string | null} String contents to be written, or null if you want nothing to be written
+ */
+
+/**
  * Represents a single type of changelog update
  * that should be included as part of a larger "ChangelogUpdate."
  * This individual entry should be written to a CHANGELOG.md file

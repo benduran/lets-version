@@ -587,13 +587,17 @@ export async function applyRecommendedBumpsByPackage(opts) {
           existingChangelog = await fs.readFile(changelogUpdates.changelogPath, 'utf-8');
         } catch (error) {}
 
+        const updatesToWrite = customConfig?.changelog?.changeLogRollupFormatter
+          ? customConfig?.changelog?.changeLogRollupFormatter(changelogUpdates)
+          : changelogUpdates.toString();
+
         if (dryRun) {
           console.info(
-            `Will write the following rollup changelog updated to ${changelogUpdates.changelogPath}:${os.EOL}${
-              os.EOL
-            }${changelogUpdates.toString()}`,
+            `Will write the following rollup changelog updated to ${changelogUpdates.changelogPath}:${os.EOL}${os.EOL}${
+              updatesToWrite || ''
+            }`,
           );
-        } else {
+        } else if (updatesToWrite) {
           await fs.writeFile(
             changelogUpdates.changelogPath,
             `${changelogUpdates.toString()}${existingChangelog}`,

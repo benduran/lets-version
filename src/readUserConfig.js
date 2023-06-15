@@ -2,6 +2,7 @@
  * @typedef {import('type-fest').PackageJson} PackageJson
  * @typedef {import('./types.js').ChangeLogLineFormatter} ChangeLogLineFormatter
  * @typedef {import('./types.js').ChangeLogEntryFormatter} ChangeLogEntryFormatter
+ * @typedef {import('./types.js').ChangeLogRollupFormatter} ChangeLogRollupFormatter
  */
 
 import fs from 'fs-extra';
@@ -12,6 +13,7 @@ import path from 'path';
  *
  * @property {ChangeLogLineFormatter} [changelogLineFormatter] - A custom changelog line formatter, which is a function that accepts a single argument of type "ChangelogLineFormatterArgs" and returns a string or null
  * @property {ChangeLogEntryFormatter} [changeLogEntryFormatter] - A custom changelog entry formatter, which is a function that accepts an array of change log entries and returns the full changelog entry string
+ * @property {ChangeLogRollupFormatter} [changeLogRollupFormatter] - A custom changelog rollup formatter that specifically formats the "aggregated" changelog. Function accepts
  */
 
 /**
