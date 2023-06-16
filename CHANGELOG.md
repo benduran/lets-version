@@ -1,3 +1,17 @@
+## 0.5.0 (2023-06-16)
+
+### ✨ Features ✨
+
+- added command to visualize the local dep graph (984b4b05c28e2f11af6f9e6291082011c33ad6d2)
+
+
+
+### 📖 Docs 📖
+
+- updated readme (82ea354f929f38f276ddcede7908e0588e75b8ae)
+
+---
+
 ## 0.4.1 (2023-06-16)
 
 ### 🔀 Miscellaneous 🔀
