@@ -12,6 +12,7 @@
  */
 
 import appRootPath from 'app-root-path';
+import { execSync } from 'child_process';
 import { detect as detectPM } from 'detect-package-manager';
 import fs from 'fs-extra';
 import os from 'os';
@@ -493,16 +494,17 @@ export async function applyRecommendedBumpsByPackage(opts) {
      * and
      * https://github.com/npm/cli/issues/4942
      */
-    const syncLockfiles = async () => {
+    const syncLockfiles = () => {
+      if (didSyncLockFiles) return;
       try {
-        await execAsync(`${pm} install`, { cwd: fixedCWD, stdio: 'ignore' });
+        execSync(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
         didSyncLockFiles = true;
       } catch (error) {
         didSyncLockFiles = false;
       }
     };
-    await syncLockfiles();
-    await syncLockfiles();
+    syncLockfiles();
+    syncLockfiles();
 
     if (!didSyncLockFiles) {
       console.error('Failed to synchronize lock files. Aborting remaining operations');
