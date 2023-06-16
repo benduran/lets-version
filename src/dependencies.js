@@ -92,6 +92,23 @@ export async function getBumpRecommendationForPackageInfo(
 }
 
 /**
+ * Sorts nodes by depth and then sorts each dep at any level
+ *
+ * @param {LocalDependencyGraphNode[]} nodes
+ *
+ * @returns {LocalDependencyGraphNode[]}
+ */
+function sortNodes(nodes) {
+  return nodes
+    .sort((a, b) => b.localDepDepth - a.localDepDepth)
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map(node => {
+      node.deps = sortNodes(node.deps);
+      return node;
+    });
+}
+
+/**
  * Applies bumps to top-level packages, then attempts to recursively
  * synchronize package versions and applies bumps if a package hasn't already
  * been bumped (but might receive one as a result from this operation)
@@ -129,48 +146,34 @@ export async function synchronizeBumps({
    * Meant to be called recursively
    *
    * @param {LocalDependencyGraphNode} node
-   * @param {BumpRecommendation | null | undefined} parentBump
    */
-  const computeBumpForNode = async (node, parentBump) => {
-    // no-op for top-level bumps
-    if (node.depType === 'self' || !parentBump) return;
+  const computeBumpForNode = async node => {
+    const myNodeBump = bumpsByPackageName.get(node.name);
 
-    const nodeExistingBump = bumpsByPackageName.get(node.name);
+    if (!node.deps.length) return myNodeBump;
 
-    /** @type {BumpRecommendation} */
-    let bumpToInsert;
-    if (nodeExistingBump) {
-      // we take the node's current bump OR the parent bump,
-      // whichever is larger
-      const bumpType = Math.max(nodeExistingBump.type, parentBump.type);
-      bumpToInsert = await getBumpRecommendationForPackageInfo(
+    // walk the tree. deepest dep that has a bump bubbles to the top
+    for (const childNode of sortNodes(node.deps)) {
+      // either my child has a bump or I have a bump.
+      // if neither is the case, skip
+      const childBump = await computeBumpForNode(childNode);
+      if (!childBump) continue;
+
+      const myBumpToInsert = await getBumpRecommendationForPackageInfo(
         node,
-        nodeExistingBump.from,
-        bumpType,
+        myNodeBump?.from ?? node.version,
+        Math.max(myNodeBump?.type ?? -1, childBump.type),
         releaseAs,
         preid,
         uniqify,
         fixedCWD,
       );
-    } else {
-      // we need to explicitly use the parent's bump
-      bumpToInsert = await getBumpRecommendationForPackageInfo(
-        node,
-        parentBump.from,
-        parentBump.type,
-        releaseAs,
-        preid,
-        uniqify,
-        fixedCWD,
-      );
+
+      bumpsByPackageName.set(node.name, myBumpToInsert);
     }
-
-    bumpsByPackageName.set(node.name, bumpToInsert);
-
-    for (const childNode of node.deps) computeBumpForNode(childNode, bumpsByPackageName.get(node.name));
   };
 
-  for (const node of nodes) computeBumpForNode(node, null);
+  for (const node of sortNodes(nodes)) await computeBumpForNode(node);
 
   // the bumps map should now be 100% up-to-date, as we walked through
   // the dependency graph to ensure all updates were in there.

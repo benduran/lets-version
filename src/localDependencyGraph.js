@@ -42,7 +42,7 @@ function buildGraphForPackageInfo(packageInfo, allPackagesByName, depType, updat
       if (!localMatch) continue;
 
       // @ts-ignore
-      node.deps.push(buildGraphForPackageInfo(localMatch, allPackagesByName, pkey));
+      node.deps.push(buildGraphForPackageInfo(localMatch, allPackagesByName, pkey, updatePeer, updateOptional));
     }
   }
 
