@@ -602,11 +602,7 @@ export async function applyRecommendedBumpsByPackage(opts) {
             }`,
           );
         } else if (updatesToWrite) {
-          await fs.writeFile(
-            changelogUpdates.changelogPath,
-            `${changelogUpdates.toString()}${existingChangelog}`,
-            'utf-8',
-          );
+          await fs.writeFile(changelogUpdates.changelogPath, `${updatesToWrite}${existingChangelog}`, 'utf-8');
         }
       }
     }
