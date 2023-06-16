@@ -22,7 +22,6 @@ import {
   listPackages,
 } from './lets-version.js';
 import { BumpTypeToString } from './types.js';
-import { loadDefaultExportFunction } from './util.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -94,6 +93,16 @@ const getSharedBumpArgs = yargs =>
       description:
         'If true, forces all packages to receive a bump update, regardless of whether they have changed. What this means, in practice, is that any package that would not normally be changed will receive a PATCH update (or an equivalent if --preid is set)',
       type: 'boolean',
+    })
+    .option('updatePeer', {
+      default: false,
+      description: 'If true, will update any dependent "package.json#peerDependencies" fields',
+      type: 'boolean',
+    })
+    .option('updateOptional', {
+      default: false,
+      description: 'If true, will update any dependent "package.json#optionalDependencies" fields',
+      type: 'boolean',
     });
 
 async function setupCLI() {
@@ -122,7 +131,11 @@ async function setupCLI() {
       'Gets the last tag used when version bumping for a specific package. If no package is specified, all found tags for each package detected are returned',
       y => getSharedVersionYargs(y),
       async args => {
-        const allResults = await getLastVersionTagsByPackageName(args.package, args.noFetchTags, args.cwd);
+        const allResults = await getLastVersionTagsByPackageName({
+          cwd: args.cwd,
+          names: args.package,
+          noFetchTags: args.noFetchTags,
+        });
 
         if (args.json) return console.info(JSON.stringify(allResults, null, 2));
 
@@ -139,7 +152,11 @@ async function setupCLI() {
       'Gets a list of all files that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.',
       y => getSharedVersionYargs(y),
       async args => {
-        const changedFiles = await getChangedFilesSinceBump(args.package, args.noFetchTags, args.cwd);
+        const changedFiles = await getChangedFilesSinceBump({
+          cwd: args.cwd,
+          names: args.package,
+          noFetchTags: args.noFetchTags,
+        });
 
         if (args.json) return console.info(JSON.stringify(changedFiles, null, 2));
 
@@ -156,7 +173,11 @@ async function setupCLI() {
       'Gets a list of all packages that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.',
       y => getSharedVersionYargs(y),
       async args => {
-        const changedPackages = await getChangedPackagesSinceBump(args.package, args.noFetchTags, args.cwd);
+        const changedPackages = await getChangedPackagesSinceBump({
+          cwd: args.cwd,
+          names: args.package,
+          noFetchTags: args.noFetchTags,
+        });
 
         if (args.json) return console.info(JSON.stringify(changedPackages, null, 2));
 
@@ -173,7 +194,10 @@ async function setupCLI() {
       'Parsed git commits for a specific package or packages, using the official Conventional Commits parser',
       y => getSharedVersionYargs(y),
       async args => {
-        const commits = await getConventionalCommitsByPackage(args.package, args.cwd);
+        const commits = await getConventionalCommitsByPackage({
+          cwd: args.cwd,
+          names: args.package,
+        });
 
         if (args.json) return console.info(JSON.stringify(commits, null, 2));
 
@@ -196,15 +220,18 @@ async function setupCLI() {
       'Gets a series of recommended version bumps for a specific package or set of packages. NOTE: It is possible for your bump recommendation to not change. If this is the case, this means that your particular package has never had a version bump by the lets-version library.',
       y => getSharedBumpArgs(y),
       async args => {
-        const { bumps } = await getRecommendedBumpsByPackage(
-          args.package,
-          args.releaseAs,
-          args.preid,
-          args.forceAll,
-          args.noFetchAll,
-          args.noFetchTags,
-          args.cwd,
-        );
+        const { bumps } = await getRecommendedBumpsByPackage({
+          cwd: args.cwd,
+          forceAll: args.forceAll,
+          names: args.package,
+          noFetchAll: args.noFetchAll,
+          noFetchTags: args.noFetchTags,
+          preid: args.preid,
+          releaseAs: args.releaseAs,
+          uniqify: args.uniqify,
+          updateOptional: args.updateOptional,
+          updatePeer: args.updatePeer,
+        });
 
         if (args.json) return console.info(JSON.stringify(bumps, null, 2));
 
@@ -243,6 +270,12 @@ async function setupCLI() {
               'If true, will print the changes that are expected to happen at every step instead of actually writing the changes',
             type: 'boolean',
           })
+          .option('rollupChangelog', {
+            default: false,
+            description:
+              'If true, in addition to updating changelog files for all packages that will be bumped, creates a "rollup" CHANGELOG.md at the root of the repo that contains an aggregate of changes',
+            type: 'boolean',
+          })
           .option('noChangelog', {
             default: false,
             description: 'If true, will not write CHANGELOG.md updates for each package that has changed',
@@ -252,53 +285,25 @@ async function setupCLI() {
             default: false,
             description: 'If true, will not push changes and tags to origin',
             type: 'boolean',
-          })
-          .option('updatePeer', {
-            default: false,
-            description: 'If true, will update any dependent "package.json#peerDependencies" fields',
-            type: 'boolean',
-          })
-          .option('updateOptional', {
-            default: false,
-            description: 'If true, will update any dependent "package.json#optionalDependencies" fields',
-            type: 'boolean',
-          })
-          .option('changelogLineFormatterPath', {
-            default: undefined,
-            description:
-              'Path to a file to use as a custom changelog line formatter, the file must return a default export of a function that accepts a single argument of type "ChangelogLineFormatterArgs" and returns a string or null',
-            type: 'string',
-          })
-          .option('changelogEntryFormatterPath', {
-            default: undefined,
-            description:
-              'Path to a file to use as a custom changelog entry formatter, the file must return a default export of a function that accepts an array of change log entries and returns the full changelog entry string',
-            type: 'string',
           }),
       async args => {
-        const changelogLineFormatter = await loadDefaultExportFunction(args.changelogLineFormatterPath);
-        const changelogEntryFormatter = await loadDefaultExportFunction(args.changelogEntryFormatterPath);
-
-        await applyRecommendedBumpsByPackage(
-          args.package,
-          args.releaseAs,
-          args.preid,
-          args.uniqify,
-          args.forceAll,
-          args.noFetchAll,
-          args.noFetchTags,
-          {
-            dryRun: args.dryRun,
-            noChangelog: args.noChangelog,
-            noPush: args.noPush,
-            updateOptional: args.updateOptional,
-            updatePeer: args.updatePeer,
-            yes: args.yes,
-            changelogLineFormatter,
-            changelogEntryFormatter,
-          },
-          args.cwd,
-        );
+        await applyRecommendedBumpsByPackage({
+          cwd: args.cwd,
+          dryRun: args.dryRun,
+          forceAll: args.forceAll,
+          names: args.package,
+          noChangelog: args.noChangelog,
+          noFetchAll: args.noFetchAll,
+          noFetchTags: args.noFetchTags,
+          noPush: args.noPush,
+          preid: args.preid,
+          releaseAs: args.releaseAs,
+          rollupChangelog: args.rollupChangelog,
+          uniqify: args.uniqify,
+          updateOptional: args.updateOptional,
+          updatePeer: args.updatePeer,
+          yes: args.yes,
+        });
       },
     )
     .help();

@@ -1,3 +1,66 @@
+## 0.4.1-beta.4 (2023-06-15)
+
+### 🛠️ Fixes 🛠️
+
+- fixed bug that wouldn't return ALL the bumps, including transitive ones (c016087f4c6091f08ac0c0731e6d700d73e4ee53)
+- fixed writing package.json files emitting blank files (bd43f36b0ba69cf066fb3b2c4dae8dcf31541593)
+
+
+
+### 🔀 Miscellaneous 🔀
+
+- moved to using execSync when running NPM install (f04d1deb23584c3a2139bea0a3c0ac271581ebe1)
+
+---
+
+## 0.4.1-beta.3 (2023-06-15)
+
+### 🔀 Miscellaneous 🔀
+
+- responded to PR feedback and added a custom rollup formatter (36673916a728592807c826d939f7a47029bb6f39)
+
+---
+
+## 0.4.1-beta.2 (2023-06-14)
+
+### 🔀 Miscellaneous 🔀
+
+- added ability to provide custom config specifically to the apply-bumps fnc (3038dfde8b308fce9533bc4e639595efd388323b)
+
+---
+
+## 0.4.1-beta.1 (2023-06-14)
+
+### 🛠️ Fixes 🛠️
+
+- fixed missing config-related exports (b6d70497a93042fab53da216c6d93791a2b658b4)
+
+---
+
+## 0.4.1-beta.0 (2023-06-14)
+
+### 🚨 Breaking Changes 🚨
+
+- moved to reading a letsVersion.config.mjs file (d236d5ddb51aa108871f9c3ec5de61dd4d021424)
+
+
+
+### 🔀 Miscellaneous 🔀
+
+- Merge remote-tracking branch 'origin/main' into bduran/rollup-changelog (341c6a68406d40ec36c6a549cad16ea3378bf58f)
+- add a flag to allow users to customize the entry cha… (9d84faba7e68f5b18895b0a88095b9455a20adf8)
+- moved to a data structure to handle the aggregate view of the hangelog (6de6cd99a867284d170dc4e3f987ec0004aa2cc0)
+- tweaked the markdown header (faa3cddd1e8ca46e0c81ec78a5d5bb110f2ce126)
+- removed some extraneous files from the build (07b3636a5095b24a8aba08af171f7f7674ced9b2)
+
+
+
+### ✨ Features ✨
+
+- add a flag to allow users to customize the entry changelog entry (a5f0b857890e168ccb63f5620de9fb6d81a9c95a)
+
+---
+
 ## 0.4.0 (2023-06-13)
 
 ### 🔀 Miscellaneous 🔀

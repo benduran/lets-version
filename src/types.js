@@ -442,6 +442,19 @@ export class BumpRecommendation {
  */
 
 /**
+ * A custom formatter that will take in an instance of the ChangelogAggregateUpdate,
+ * which contains all of the updates and subsequent individual lines for the commit.
+ *
+ * If the output of this function is a string, this will cause an aggregated
+ * changelog to get written.
+ *
+ * @callback ChangeLogRollupFormatter
+ * @param {ChangelogAggregateUpdate} aggregatedUpdate
+ *
+ * @returns {string | null} String contents to be written, or null if you want nothing to be written
+ */
+
+/**
  * Represents a single type of changelog update
  * that should be included as part of a larger "ChangelogUpdate."
  * This individual entry should be written to a CHANGELOG.md file
@@ -538,5 +551,50 @@ export class ChangelogUpdate {
       .join(`${os.EOL}${os.EOL}${os.EOL}${os.EOL}`);
 
     return `${header}${os.EOL}${os.EOL}${entries}${os.EOL}`;
+  }
+}
+
+/**
+ * Represents a "rollup" CHANGELOG.md that will contain
+ * all of the updates that happened for a given version bump operation.
+ * Typically, this is placed at the root of a multi-package monorepo
+ */
+export class ChangelogAggregateUpdate {
+  /**
+   * @param {string} cwd
+   * @param {string} formattedDate
+   * @param {ChangelogUpdate[]} changelogUpdates
+   */
+  constructor(cwd, formattedDate, changelogUpdates) {
+    /** @type {string} */
+    this.cwd = cwd;
+
+    /** @type {string} */
+    this.formattedDate = formattedDate;
+
+    /** @type {ChangelogUpdate[]} */
+    this.changelogUpdates = changelogUpdates;
+  }
+
+  get changelogPath() {
+    return path.join(this.cwd, 'CHANGELOG.md');
+  }
+
+  /**
+   * Converts this ChangelogAggregateUpdate instance into a string that
+   * can be safely prepended to a CHANGELOG.md file in the root of your project
+   *
+   * @returns {string}
+   */
+  toString() {
+    const header = `# __All updates from ${this.formattedDate} are below:__`;
+
+    const perChangeUpdates = this.changelogUpdates.reduce((prev, c) => {
+      let update = `# ${c.bumpRecommendation.packageInfo.name} Updates${os.EOL}${os.EOL}`;
+      update += `${c.toString()}${os.EOL}${os.EOL}`;
+      return `${update}${prev}`;
+    }, '');
+
+    return `${header}${os.EOL}${os.EOL}${perChangeUpdates}---${os.EOL}`;
   }
 }
