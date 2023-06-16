@@ -416,6 +416,58 @@ NOTE: It is possible for your bump recommendation to not change. If this is the 
 
 ---
 
+### Advanced configuration
+
+The `lets-version` library supports some additional configurations, which can be enabled and customized by creating a `letsVersion.config.mjs` config file in the root of your repository. Please take note of the **.mjs** extension. If you would like TypeScript type assistance support, you can use the provided `defineLetsVersionConfig(config)` function for this, which is a simple pass-through function. The available options are listed below, all of which are *optional*:
+
+```javascript
+import { defineLetsVersionConfig } from '@better-builds/lets-version';
+
+export default defineLetsVersionConfig({
+  changelog: {
+    /**
+     * A custom formatter that will take in all of the changes for a version and output what the change
+     * log entry should look like
+     *
+     * @param {ChangelogUpdate} updates - The updates to be included in the changelog entry for a version
+     * @returns {string} The formatted line to represent the entire changelog entry for a version
+     */
+    changeLogEntryFormatter(updates) {
+      // updates is an instance of the `ChangelogUpdate` class.
+      return ''; // Return some string to alter the Changelog contents, or null if you want to omit
+    },
+
+    /**
+    * A custom formatter that will take in a single commit line and return a formatted string.
+    *
+    * @param {GitConventional} line - The individual line to format
+    * @returns {string | null} The formatted line or null if you want to ignore the line
+    */
+    changelogLineFormatter(conventional) {
+      // conventional is an instance of the `GitConventional` class
+
+      return ''; // Return some string to alter the Changelog contents, or null if you want to omit this line
+    },
+
+    /**
+    * A custom formatter that will take in an instance of the ChangelogAggregateUpdate,
+    * which contains all of the updates and subsequent individual lines for the commit.
+    *
+    * If the output of this function is a string, this will cause an aggregated
+    * changelog to get written.
+    * @param {ChangelogAggregateUpdate} aggregatedUpdate
+    *
+    * @returns {string | null} String contents to be written, or null if you want nothing to be written
+    */
+    changeLogRollupFormatter(aggregatedUpdate) {
+      // aggregatedUpdate is an instance of the `ChangelogAggregateUpdate` class
+
+      return ''; // Return some string to alter the Changelog contents, or null if you want to skip writing a rollup changelog
+    },
+  },
+});
+```
+
 ## Get started contributing
 
 1. Clone this repo
