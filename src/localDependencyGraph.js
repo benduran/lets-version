@@ -18,10 +18,12 @@ import { isPackageJSONDependencyKeySupported } from './util.js';
  * @param {PackageInfo} packageInfo
  * @param {Map<string, PackageInfo>} allPackagesByName
  * @param {DepType} depType
+ * @param {boolean} updatePeer
+ * @param {boolean} updateOptional
  *
  * @returns {LocalDependencyGraphNode}
  */
-function buildGraphForPackageInfo(packageInfo, allPackagesByName, depType) {
+function buildGraphForPackageInfo(packageInfo, allPackagesByName, depType, updatePeer, updateOptional) {
   const node = new LocalDependencyGraphNode({
     ...packageInfo,
     depType,
@@ -29,7 +31,7 @@ function buildGraphForPackageInfo(packageInfo, allPackagesByName, depType) {
   });
 
   for (const pkey in packageInfo.pkg) {
-    if (!isPackageJSONDependencyKeySupported(pkey, true, true)) continue;
+    if (!isPackageJSONDependencyKeySupported(pkey, updatePeer, updateOptional)) continue;
 
     const pkeyDeps = packageInfo.pkg[pkey] ?? {};
     const pkeyDepsNames = Object.keys(pkeyDeps);
@@ -51,21 +53,30 @@ function buildGraphForPackageInfo(packageInfo, allPackagesByName, depType) {
  * and builds a local-only dependency graph
  * representation
  *
- * @param {string} [cwd=appRootPath.toString()]
+ * @param {Object} opts
+ * @param {PackageInfo[]} [opts.allPackages]
+ * @param {string} [opts.cwd=appRootPath.toString()]
+ * @param {boolean} opts.updatePeer
+ * @param {boolean} opts.updateOptional
  *
  * @returns {Promise<LocalDependencyGraphNode[]>}
  */
-export async function buildLocalDependencyGraph(cwd = appRootPath.toString()) {
+export async function buildLocalDependencyGraph({
+  allPackages: allPackagesOverride,
+  updatePeer,
+  updateOptional,
+  cwd = appRootPath.toString(),
+}) {
   const fixedCWD = fixCWD(cwd);
 
   /** @type {LocalDependencyGraphNode[]} */
   const nodes = [];
 
-  const allPackages = await getPackages(fixedCWD);
+  const allPackages = allPackagesOverride ?? (await getPackages(fixedCWD));
   const allPackagesByName = new Map(allPackages.map(p => [p.name, p]));
 
   for (const p of allPackages) {
-    nodes.push(buildGraphForPackageInfo(p, allPackagesByName, 'self'));
+    nodes.push(buildGraphForPackageInfo(p, allPackagesByName, 'self', updatePeer, updateOptional));
   }
 
   return nodes;

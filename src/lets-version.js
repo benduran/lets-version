@@ -7,7 +7,6 @@
  * @typedef {import('./types.js').ChangeLogEntryFormatter} ChangeLogEntryFormatter
  * @typedef {import('type-fest').PackageJson} PackageJson
  * @typedef {import('./changelog.js').GenerateChangelogOpts} GenerateChangelogOpts
- * @typedef {import('./dependencies.js').SynchronizeBumpsReturnType} SynchronizeBumpsReturnType
  * @typedef {import('./readUserConfig.js').LetsVersionConfig} LetsVersionConfig
  */
 
@@ -163,14 +162,6 @@ export async function getConventionalCommitsByPackage(opts) {
 }
 
 /**
- * @typedef {Object} GetRecommendedBumpsByPackageReturnType
- * @property {BumpRecommendation[]} bumps
- * @property {Map<string, BumpRecommendation>} bumpsByPackageName
- * @property {PackageInfo[]} packages
- * @property {GitCommitWithConventionalAndPackageInfo[]} conventional
- */
-
-/**
  * @typedef {Object} GetRecommendedBumpsByPackageOpts
  * @property {string[]} [names]
  * @property {ReleaseAsPresets} [releaseAs='auto']
@@ -193,7 +184,7 @@ export async function getConventionalCommitsByPackage(opts) {
  *
  * @param {GetRecommendedBumpsByPackageOpts} [opts]
  *
- * @returns {Promise<GetRecommendedBumpsByPackageReturnType>}
+ * @returns {Promise<{ bumps: BumpRecommendation[], conventional: GitCommitWithConventionalAndPackageInfo[] }>}
  */
 export async function getRecommendedBumpsByPackage(opts) {
   const {
@@ -223,7 +214,7 @@ export async function getRecommendedBumpsByPackage(opts) {
   const allPackages = await getPackages(fixedCWD);
   const filteredPackages = await filterPackagesByNames(allPackages, names, fixedCWD);
 
-  if (!filteredPackages) return { bumps: [], bumpsByPackageName: new Map(), conventional: [], packages: [] };
+  if (!filteredPackages) return { bumps: [], conventional: [] };
 
   const filteredPackagesByName = new Map(filteredPackages.map(p => [p.name, p]));
 
@@ -337,19 +328,18 @@ export async function getRecommendedBumpsByPackage(opts) {
     );
   }
 
-  const synchronized = await synchronizeBumps(
-    out.bumps,
-    new Map(out.bumps.map(b => [b.packageInfo.name, b])),
+  const synchronized = await synchronizeBumps({
     allPackages,
-    releaseAs,
+    cwd: fixedCWD,
+    bumps: out.bumps,
     preid,
+    releaseAs,
     uniqify,
-    updatePeer,
     updateOptional,
-    fixedCWD,
-  );
+    updatePeer,
+  });
 
-  return { ...synchronized, conventional };
+  return { bumps: synchronized, conventional };
 }
 
 /**
@@ -382,7 +372,7 @@ export async function getRecommendedBumpsByPackage(opts) {
  *
  * @param {ApplyRecommendedBumpsByPackageOpts} [opts]
  *
- * @returns {Promise<GetRecommendedBumpsByPackageReturnType | null>}
+ * @returns {Promise<ReturnType<getRecommendedBumpsByPackage> | null>}
  */
 export async function applyRecommendedBumpsByPackage(opts) {
   const {
@@ -433,7 +423,7 @@ export async function applyRecommendedBumpsByPackage(opts) {
     updatePeer,
     updateOptional,
   });
-  const { bumpsByPackageName: presyncBumpsByPackageName } = synchronized;
+  const presyncBumpsByPackageName = new Map(synchronized.bumps.map(b => [b.packageInfo.name, b]));
 
   if (!synchronized.bumps.length) {
     console.warn('Unable to apply version bumps because no packages need bumping.');
@@ -579,8 +569,7 @@ export async function applyRecommendedBumpsByPackage(opts) {
       // if this repo only has a single package AND that package is marked
       // as the root package, do nothing
 
-      const continueWithRollupChangelog =
-        (synchronized.packages.length === 1 && !synchronized.packages[0]?.root) || synchronized.packages.length > 1;
+      const continueWithRollupChangelog = (allPackages.length === 1 && !allPackages[0]?.root) || allPackages.length > 1;
 
       if (continueWithRollupChangelog) {
         const changelogUpdates = new ChangelogAggregateUpdate(fixedCWD, getFormattedChangelogDate(), changelogInfo);

@@ -1,10 +1,16 @@
+/**
+ * @typedef {import('./types.js').LocalDependencyGraphNode} LocalDependencyGraphNode
+ * @typedef {import('./types.js').PackageInfo} PackageInfo
+ */
+
 import appRootPath from 'app-root-path';
 import semver from 'semver';
 import semverUtils from 'semver-utils';
 
 import { fixCWD } from './cwd.js';
 import { gitCurrentSHA } from './git.js';
-import { BumpRecommendation, BumpType, PackageInfo, ReleaseAsPresets } from './types.js';
+import { buildLocalDependencyGraph } from './localDependencyGraph.js';
+import { BumpRecommendation, BumpType, ReleaseAsPresets } from './types.js';
 import { isPackageJSONDependencyKeySupported } from './util.js';
 
 /**
@@ -86,81 +92,102 @@ export async function getBumpRecommendationForPackageInfo(
 }
 
 /**
- * @typedef {Object} SynchronizeBumpsReturnType
- * @property {BumpRecommendation[]} bumps
- * @property {Map<string, BumpRecommendation>} bumpsByPackageName
- * @property {PackageInfo[]} packages
- */
-
-/**
  * Applies bumps to top-level packages, then attempts to recursively
  * synchronize package versions and applies bumps if a package hasn't already
  * been bumped (but might receive one as a result from this operation)
  *
- * @param {BumpRecommendation[]} bumps
- * @param {Map<string, BumpRecommendation>} bumpsByPackageName
- * @param {PackageInfo[]} allPackages
- * @param {ReleaseAsPresets} releaseAs
- * @param {string | undefined} preid
- * @param {boolean} uniqify
- * @param {boolean} updatePeer
- * @param {boolean} updateOptional
- * @param {string} [cwd=appRootPath.toString()]
+ * @param {Object} opts
+ * @param {BumpRecommendation[]} opts.bumps
+ * @param {PackageInfo[]} opts.allPackages
+ * @param {ReleaseAsPresets} opts.releaseAs
+ * @param {string | undefined} opts.preid
+ * @param {boolean} opts.uniqify
+ * @param {boolean} opts.updatePeer
+ * @param {boolean} opts.updateOptional
+ * @param {string} [opts.cwd=appRootPath.toString()]
  *
- * @returns {Promise<SynchronizeBumpsReturnType>}
+ * @returns {Promise<BumpRecommendation[]>}
  */
-export async function synchronizeBumps(
-  bumps,
-  bumpsByPackageName,
+export async function synchronizeBumps({
   allPackages,
-  releaseAs,
+  bumps,
+  cwd = appRootPath.toString(),
   preid,
+  releaseAs,
   uniqify,
   updatePeer,
   updateOptional,
-  cwd = appRootPath.toString(),
-) {
+}) {
   const fixedCWD = fixCWD(cwd);
-  const clonedBumpsByPackageName = new Map(bumpsByPackageName.entries());
+  const nodes = await buildLocalDependencyGraph({ allPackages, cwd: fixedCWD, updatePeer, updateOptional });
+  const bumpsByPackageName = new Map(bumps.map(b => [b.packageInfo.name, b]));
 
-  const writeToDisk = new Map(bumps.map(b => [b.packageInfo.name, b.packageInfo]));
+  /**
+   * Function that computes which bump a dependency node
+   * should receive, based on its parent (if it has a parent),
+   * and takes the greater of its bump or its parent's bump.
+   * Meant to be called recursively
+   *
+   * @param {LocalDependencyGraphNode} node
+   * @param {BumpRecommendation | null | undefined} parentBump
+   */
+  const computeBumpForNode = async (node, parentBump) => {
+    // no-op for top-level bumps
+    if (node.depType === 'self' || !parentBump) return;
 
-  for (const bump of bumps) {
-    const toWrite = writeToDisk.get(bump.packageInfo.name);
-    if (!toWrite) continue;
+    const nodeExistingBump = bumpsByPackageName.get(node.name);
 
-    const version = semver.gt(bump.to, toWrite.version) ? bump.to : toWrite.version;
-    bump.packageInfo.version = bump.to;
-    bump.packageInfo.pkg.version = bump.to;
-    writeToDisk.set(
-      toWrite.name,
-      new PackageInfo({
-        ...toWrite,
+    /** @type {BumpRecommendation} */
+    let bumpToInsert;
+    if (nodeExistingBump) {
+      // we take the node's current bump OR the parent bump,
+      // whichever is larger
+      const bumpType = Math.max(nodeExistingBump.type, parentBump.type);
+      bumpToInsert = await getBumpRecommendationForPackageInfo(
+        node,
+        nodeExistingBump.from,
+        bumpType,
+        releaseAs,
+        preid,
+        uniqify,
+        fixedCWD,
+      );
+    } else {
+      // we need to explicitly use the parent's bump
+      bumpToInsert = await getBumpRecommendationForPackageInfo(
+        node,
+        parentBump.from,
+        parentBump.type,
+        releaseAs,
+        preid,
+        uniqify,
+        fixedCWD,
+      );
+    }
+
+    bumpsByPackageName.set(node.name, bumpToInsert);
+
+    for (const childNode of node.deps) computeBumpForNode(childNode, bumpsByPackageName.get(node.name));
+  };
+
+  for (const node of nodes) computeBumpForNode(node, null);
+
+  // the bumps map should now be 100% up-to-date, as we walked through
+  // the dependency graph to ensure all updates were in there.
+  // now, we need to iterate through each packageInfo.pkg and apply semver
+  // upgrades, as needed
+
+  for (const bump of bumpsByPackageName.values()) {
+    for (const pjsonKey in bump.packageInfo.pkg) {
+      if (!isPackageJSONDependencyKeySupported(pjsonKey, updatePeer, updateOptional)) continue;
+
+      // we're in a valid, supported dependencies key. loop through the deps and update where possible
+      for (const depName of Object.keys(bump.packageInfo.pkg[pjsonKey] ?? {})) {
+        const foundBump = bumpsByPackageName.get(depName);
+        if (!foundBump) continue;
+
         // @ts-ignore
-        pkg: {
-          ...toWrite.pkg,
-          version,
-        },
-        version,
-      }),
-    );
-  }
-
-  const updatedParents = Array.from(writeToDisk.values());
-  for (const updatedParent of updatedParents) {
-    const parentBumpType = clonedBumpsByPackageName.get(updatedParent.name);
-    if (!parentBumpType) continue;
-
-    // loop through all packages to find out which ones have the updatedParent as a dep
-    for (const p of allPackages) {
-      for (const key in p.pkg) {
-        if (!isPackageJSONDependencyKeySupported(key, updatePeer, updateOptional)) continue;
-        // there's a match. let's update the dep field
-
-        // @ts-ignore
-        const existingSemverStr = p.pkg[key][updatedParent.name] || '';
-        if (!existingSemverStr) continue;
-
+        const existingSemverStr = bump.packageInfo.pkg[pjsonKey][depName];
         const semverDetails = semverUtils.parseRange(existingSemverStr);
 
         // if there are more than one semverDetails because user has a complicated range,
@@ -176,60 +203,13 @@ export async function synchronizeBumps(
           firstDetailOperator = '^';
         }
 
-        const newSemverStr = `${firstDetailOperator}${updatedParent.version}`;
+        const newSemverStr = `${firstDetailOperator}${foundBump.to}`;
 
         // @ts-ignore
-        p.pkg[key][updatedParent.name] = newSemverStr;
-
-        // now we need to try and apply a bump for this dependent (p)
-        // if it doesn't already have one
-
-        /** @type {BumpRecommendation} */
-        let childBumpRec;
-
-        const existingBump = clonedBumpsByPackageName.get(p.name);
-        if (existingBump) {
-          existingBump.type = Math.max(existingBump.type, parentBumpType.type);
-          childBumpRec = existingBump;
-        } else {
-          const childBumpType = parentBumpType.type;
-          childBumpRec = await getBumpRecommendationForPackageInfo(
-            p,
-            p.version,
-            childBumpType,
-            releaseAs,
-            preid,
-            uniqify,
-            fixedCWD,
-          );
-
-          clonedBumpsByPackageName.set(p.name, childBumpRec);
-        }
-
-        // @ts-ignore
-        childBumpRec.packageInfo.pkg[key][updatedParent.name] = newSemverStr;
-
-        const recursedResults = await synchronizeBumps(
-          [childBumpRec],
-          clonedBumpsByPackageName,
-          allPackages,
-          releaseAs,
-          preid,
-          uniqify,
-          updatePeer,
-          updateOptional,
-          fixedCWD,
-        );
-
-        recursedResults.packages.forEach(r => writeToDisk.set(r.name, r));
-        recursedResults.bumps.forEach(b => clonedBumpsByPackageName.set(b.packageInfo.name, b));
+        bump.packageInfo.pkg[pjsonKey][depName] = newSemverStr;
       }
     }
   }
 
-  return {
-    bumps: Array.from(clonedBumpsByPackageName.values()),
-    bumpsByPackageName: clonedBumpsByPackageName,
-    packages: Array.from(writeToDisk.values()),
-  };
+  return Array.from(bumpsByPackageName.values());
 }

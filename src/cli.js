@@ -135,7 +135,7 @@ async function setupCLI() {
       'Builds a local repository-only dependency graph. If you are in a monorepo, this is useful to visualize how the dependencies in said monorepo relate to each other.',
       y => getSharedYargs(y),
       async args => {
-        const nodes = await buildLocalDependencyGraph(args.cwd);
+        const nodes = await buildLocalDependencyGraph({ cwd: args.cwd, updateOptional: true, updatePeer: true });
 
         if (args.json) return console.info(JSON.stringify(nodes, null, 2));
 
