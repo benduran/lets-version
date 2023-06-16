@@ -5,6 +5,7 @@ import semverUtils from 'semver-utils';
 import { fixCWD } from './cwd.js';
 import { gitCurrentSHA } from './git.js';
 import { BumpRecommendation, BumpType, PackageInfo, ReleaseAsPresets } from './types.js';
+import { isPackageJSONDependencyKeySupported } from './util.js';
 
 /**
  * Checks whether or not a package.json key is allowed to be updated / managed by "lets-version"
@@ -15,13 +16,6 @@ import { BumpRecommendation, BumpType, PackageInfo, ReleaseAsPresets } from './t
  *
  * @returns {boolean}
  */
-export function isPackageJSONDependencyKeySupported(key, updatePeer, updateOptional) {
-  if (key === 'dependencies' || key === 'devDependencies') return true;
-  if (key === 'peerDependencies' && updatePeer) return true;
-  if (key === 'optionalDependencies' && updateOptional) return true;
-
-  return false;
-}
 
 /**
  * Given a parsed packageInfo object and some parameters,

@@ -3,6 +3,8 @@
 /**
  * @typedef {import('type-fest').PackageJson} PackageJson
  * @typedef {import('yargs').Argv} Argv
+ *
+ * @typedef {import('./types.js').LocalDependencyGraphNode} LocalDependencyGraphNode
  * */
 
 import { promises as fs } from 'fs';
@@ -20,8 +22,10 @@ import {
   getLastVersionTagsByPackageName,
   getRecommendedBumpsByPackage,
   listPackages,
+  localDepGraph,
 } from './lets-version.js';
 import { BumpTypeToString } from './types.js';
+import { indentStr } from './util.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -124,6 +128,34 @@ async function setupCLI() {
         if (!packages.length) return console.warn('No packages were detected');
 
         return console.info(packages.map(p => p.packagePath).join(os.EOL));
+      },
+    )
+    .command(
+      'local-dep-graph',
+      'Builds a local repository-only dependency graph. If you are in a monorepo, this is useful to visualize how the dependencies in said monorepo relate to each other.',
+      y => getSharedYargs(y),
+      async args => {
+        const nodes = await localDepGraph(args.cwd);
+
+        if (args.json) return console.info(JSON.stringify(nodes, null, 2));
+
+        if (!nodes.length) return console.warn('No packages were detected');
+
+        /**
+         *
+         * @param {LocalDependencyGraphNode} node
+         * @param {number} depth
+         */
+        const printGraph = (node, depth) => {
+          console.info(
+            indentStr(
+              `${node.name}@${node.version} - depType: ${node.depType}, localDepDepth: ${node.localDepDepth}`,
+              depth,
+            ),
+          );
+          for (const childNode of node.deps) printGraph(childNode, depth + 2);
+        };
+        for (const node of nodes) printGraph(node, 0);
       },
     )
     .command(

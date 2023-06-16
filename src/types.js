@@ -270,6 +270,43 @@ export class PackageInfo {
 }
 
 /**
+ * @typedef {'self' | 'devDependencies' | 'dependencies' | 'optionalDependencies' | 'peerDependencies'} DepType
+ */
+
+/**
+ * Represents an instance of a local repository dependency
+ * and any other local deps it relies on
+ */
+export class LocalDependencyGraphNode extends PackageInfo {
+  /**
+   * @param {object} info
+   * @param {string[] | undefined} [info.filesChanged]
+   * @param {boolean} info.isPrivate
+   * @param {string} info.name
+   * @param {string} info.packagePath
+   * @param {string} info.packageJSONPath
+   * @param {PackageJson} info.pkg
+   * @param {boolean} info.root
+   * @param {string} info.version
+   * @param {DepType} info.depType
+   * @param {LocalDependencyGraphNode[]} info.deps
+   * @param {number} info.localDepDepth
+   */
+  constructor(info) {
+    super(info);
+
+    /** @type {DepType} */
+    this.depType = info.depType;
+
+    /** @type {LocalDependencyGraphNode[]} */
+    this.deps = info.deps;
+
+    /** @type {number} */
+    this.localDepDepth = info.localDepDepth;
+  }
+}
+
+/**
  * Represents information about a package and its latest detected git tag
  * that corresponds to a version or publish event
  */

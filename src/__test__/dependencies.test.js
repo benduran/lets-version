@@ -6,10 +6,11 @@ import path from 'path';
 import semver from 'semver';
 import { describe, expect, it } from 'vitest';
 
-import { getBumpRecommendationForPackageInfo, isPackageJSONDependencyKeySupported } from '../dependencies.js';
+import { getBumpRecommendationForPackageInfo } from '../dependencies.js';
 import { getPackages } from '../getPackages.js';
 import { gitCurrentSHA } from '../git.js';
 import { BumpType, ReleaseAsPresets } from '../types.js';
+import { isPackageJSONDependencyKeySupported } from '../util.js';
 
 describe('dependencies.js tests', () => {
   /** @type {PackageJson}  */

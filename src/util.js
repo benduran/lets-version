@@ -58,3 +58,36 @@ export async function loadDefaultExportFunction(filePath) {
 
   return undefined;
 }
+
+/**
+ * Checks whether or not a package.json key is allowed to be updated / managed by "lets-version"
+ *
+ * @param {string} key
+ * @param {boolean} updatePeer
+ * @param {boolean} updateOptional
+ *
+ * @returns {boolean}
+ */
+export function isPackageJSONDependencyKeySupported(key, updatePeer, updateOptional) {
+  if (key === 'dependencies' || key === 'devDependencies') return true;
+  if (key === 'peerDependencies' && updatePeer) return true;
+  if (key === 'optionalDependencies' && updateOptional) return true;
+
+  return false;
+}
+
+/**
+ * Left-indents content to a certain depth
+ *
+ * @param {string} content
+ * @param {number} [depth=0]
+ */
+export function indentStr(content, depth = 0) {
+  let out = content;
+
+  for (let i = 0; i < depth; i++) {
+    out = ` ${out}`;
+  }
+
+  return out;
+}
