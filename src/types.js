@@ -290,6 +290,7 @@ export class LocalDependencyGraphNode extends PackageInfo {
    * @param {string} info.version
    * @param {DepType} info.depType
    * @param {LocalDependencyGraphNode[]} info.deps
+   * @param {number} info.localDepDepth
    */
   constructor(info) {
     super(info);
@@ -299,6 +300,9 @@ export class LocalDependencyGraphNode extends PackageInfo {
 
     /** @type {LocalDependencyGraphNode[]} */
     this.deps = info.deps;
+
+    /** @type {number} */
+    this.localDepDepth = info.localDepDepth;
   }
 }
 

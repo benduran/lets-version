@@ -27,7 +27,8 @@ function buildGraphForPackageInfo(packageInfo, allPackagesByName, depType, updat
   const node = new LocalDependencyGraphNode({
     ...packageInfo,
     depType,
-    deps: [], // TODO: Populate me
+    deps: [],
+    localDepDepth: 0,
   });
 
   for (const pkey in packageInfo.pkg) {
@@ -43,6 +44,28 @@ function buildGraphForPackageInfo(packageInfo, allPackagesByName, depType, updat
       // @ts-ignore
       node.deps.push(buildGraphForPackageInfo(localMatch, allPackagesByName, pkey));
     }
+  }
+
+  return node;
+}
+
+/**
+ * Given a dependency node graph instance,
+ * computes how deep the local-dep tree goes
+ *
+ * @param {LocalDependencyGraphNode} node
+ * @param {number} depth
+ *
+ * @returns {LocalDependencyGraphNode}
+ */
+function computeDepDepth(node, depth) {
+  node.localDepDepth = depth;
+  if (!node.deps.length) return node;
+
+  for (const childNode of node.deps) {
+    const updatedChildNode = computeDepDepth(childNode, depth + 1);
+    node.localDepDepth = Math.max(node.localDepDepth, updatedChildNode.localDepDepth);
+    computeDepDepth(childNode, 0);
   }
 
   return node;
@@ -78,6 +101,8 @@ export async function buildLocalDependencyGraph({
   for (const p of allPackages) {
     nodes.push(buildGraphForPackageInfo(p, allPackagesByName, 'self', updatePeer, updateOptional));
   }
+
+  for (const node of nodes) computeDepDepth(node, 0);
 
   return nodes;
 }
