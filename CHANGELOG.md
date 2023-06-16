@@ -1,3 +1,18 @@
+## 0.4.1-beta.4 (2023-06-15)
+
+### 🛠️ Fixes 🛠️
+
+- fixed bug that wouldn't return ALL the bumps, including transitive ones (c016087f4c6091f08ac0c0731e6d700d73e4ee53)
+- fixed writing package.json files emitting blank files (bd43f36b0ba69cf066fb3b2c4dae8dcf31541593)
+
+
+
+### 🔀 Miscellaneous 🔀
+
+- moved to using execSync when running NPM install (f04d1deb23584c3a2139bea0a3c0ac271581ebe1)
+
+---
+
 ## 0.4.1-beta.3 (2023-06-15)
 
 ### 🔀 Miscellaneous 🔀
