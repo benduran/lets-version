@@ -23,7 +23,6 @@ import semver from 'semver';
 import { getChangelogUpdateForPackageInfo, getFormattedChangelogDate } from './changelog.js';
 import { fixCWD } from './cwd.js';
 import { getBumpRecommendationForPackageInfo, synchronizeBumps } from './dependencies.js';
-import { execAsync } from './exec.js';
 import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPackages } from './getPackages.js';
 import {
   formatVersionTagForPackage,
@@ -475,8 +474,11 @@ export async function applyRecommendedBumpsByPackage(opts) {
   await Promise.all(
     synchronized.bumps.map(async b => {
       if (dryRun) {
-        console.info(`Will write package.json updates for ${b.packageInfo.name} to ${b.packageInfo.packageJSONPath}`);
-      } else fs.writeFile(b.packageInfo.packageJSONPath, JSON.stringify(b.packageInfo.pkg, null, 2), 'utf-8');
+        return console.info(
+          `Will write package.json updates for ${b.packageInfo.name} to ${b.packageInfo.packageJSONPath}`,
+        );
+      }
+      return fs.writeFile(b.packageInfo.packageJSONPath, JSON.stringify(b.packageInfo.pkg, null, 2), 'utf-8');
     }),
   );
 
