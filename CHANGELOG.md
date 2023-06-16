@@ -1,3 +1,11 @@
+## 0.4.1 (2023-06-16)
+
+### 🔀 Miscellaneous 🔀
+
+- addressed final PR feedback (db0bd6830e62fc4b5548c35ea194d9691fe2b318)
+
+---
+
 ## 0.4.1-beta.4 (2023-06-15)
 
 ### 🛠️ Fixes 🛠️
