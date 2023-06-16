@@ -238,6 +238,7 @@ export async function synchronizeBumps(
         );
 
         recursedResults.packages.forEach(r => writeToDisk.set(r.name, r));
+        recursedResults.bumps.forEach(b => clonedBumpsByPackageName.set(b.packageInfo.name, b));
       }
     }
   }
