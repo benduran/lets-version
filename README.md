@@ -45,6 +45,11 @@ lets-version [command]
 Commands:
   lets-version ls                           Lists all detected packages for this
                                              repository
+  lets-version local-dep-graph              Builds a local repository-only depen
+                                            dency graph. If you are in a monorep
+                                            o, this is useful to visualize how t
+                                            he dependencies in said monorepo rel
+                                            ate to each other.
   lets-version last-version-tag             Gets the last tag used when version
                                             bumping for a specific package. If n
                                             o package is specified, all found ta
@@ -93,6 +98,27 @@ Lists all detected packages for this repository.
 lets-version ls
 
 Lists all detected packages for this repository
+
+Options:
+  --version  Show version number                                       [boolean]
+  --help     Show help                                                 [boolean]
+  --cwd      The folder to use as root when running command. Defaults to your se
+             ssion's CWD
+              [string] [default: "/Users/bduran/devlop/opensource/lets-version"]
+  --json     If true, lists results as a JSON blob piped to your terminal
+                                                      [boolean] [default: false]
+```
+
+### `local-dep-graph`
+
+Builds a local repository-only dependency graph. If you are in a monorepo, this is useful to visualize how the dependencies in said monorepo relate to each other.
+
+```bash
+lets-version local-dep-graph
+
+Builds a local repository-only dependency graph. If you are in a monorepo, this
+is useful to visualize how the dependencies in said monorepo relate to each othe
+r.
 
 Options:
   --version  Show version number                                       [boolean]
@@ -231,52 +257,6 @@ s the case, this means that your particular package has never had a version bump
  by the lets-version library.
 
 Options:
-      --version      Show version number                               [boolean]
-      --help         Show help                                         [boolean]
-      --cwd          The folder to use as root when running command. Defaults to
-                      your session's CWD
-              [string] [default: "/Users/bduran/devlop/opensource/lets-version"]
-      --json         If true, lists results as a JSON blob piped to your termina
-                     l                                [boolean] [default: false]
-  -p, --package      One or more packages to check. You can specify multiple by
-                     doing -p <name1> -p <name2> -p <name3>              [array]
-      --noFetchAll   If true, will not fetch information from remote via "git fe
-                     tch origin"                      [boolean] [default: false]
-      --noFetchTags  If true, does not force fetch tags from origin. By default,
-                      lets-version will do "git fetch origin --tags --force" to
-                     ensure your branch if up-to-date with the tags on origin
-                                                      [boolean] [default: false]
-      --releaseAs    Releases each changed package as this release type or as an
-                      exact version. "major" "minor" "patch" "alpha" "beta" "aut
-                     o" or an exact semver version number are allowed.
-                                                      [string] [default: "auto"]
-      --preid        The "prerelease identifier" to use as a prefix for the "pre
-                     release" part of a semver. Like the rc in 1.2.0-rc.8. If th
-                     is is specified, a bump type of "prerelease" will always ta
-                     ke place, causing any "--releaseAs" setting to be ignored.
-                                                                        [string]
-      --uniqify      If true, will append the git SHA at version bunp time to th
-                     e end of the version number (while maintaining valid semver
-                     )                                [boolean] [default: false]
-      --forceAll     If true, forces all packages to receive a bump update, rega
-                     rdless of whether they have changed. What this means, in pr
-                     actice, is that any package that would not normally be chan
-                     ged will receive a PATCH update (or an equivalent if --prei
-                     d is set)                        [boolean] [default: false]
-```
-
-### `apply-bumps`
-
-Gets a series of recommended version bumps for a specific package or set of packages, applies the version bumps, and updates all repository dependents to match the version that has been updated.
-
-```bash
-lets-version apply-bumps
-
-Gets a series of recommended version bumps for a specific package or set of pack
-ages, applies the version bumps, and updates all repository dependents to match
-the version that has been updated.
-
-Options:
       --version         Show version number                            [boolean]
       --help            Show help                                      [boolean]
       --cwd             The folder to use as root when running command. Defaults
@@ -309,20 +289,76 @@ Options:
                          in practice, is that any package that would not normall
                         y be changed will receive a PATCH update (or an equivale
                         nt if --preid is set)         [boolean] [default: false]
-  -y, --yes             If true, skips any confirmation prompts. Useful if you n
-                        eed to automate this process in CI
-                                                      [boolean] [default: false]
-      --dryRun          If true, will print the changes that are expected to hap
-                        pen at every step instead of actually writing the change
-                        s                             [boolean] [default: false]
-      --noChangelog     If true, will not write CHANGELOG.md updates for each pa
-                        ckage that has changed        [boolean] [default: false]
-      --noPush          If true, will not push changes and tags to origin
-                                                      [boolean] [default: false]
       --updatePeer      If true, will update any dependent "package.json#peerDep
                         endencies" fields             [boolean] [default: false]
       --updateOptional  If true, will update any dependent "package.json#optiona
                         lDependencies" fields         [boolean] [default: false]
+```
+
+### `apply-bumps`
+
+Gets a series of recommended version bumps for a specific package or set of packages, applies the version bumps, and updates all repository dependents to match the version that has been updated.
+
+```bash
+lets-version apply-bumps
+
+lets-version apply-bumps
+
+Gets a series of recommended version bumps for a specific package or set of pack
+ages, applies the version bumps, and updates all repository dependents to match
+the version that has been updated.
+
+Options:
+      --version          Show version number                           [boolean]
+      --help             Show help                                     [boolean]
+      --cwd              The folder to use as root when running command. Default
+                         s to your session's CWD
+              [string] [default: "/Users/bduran/devlop/opensource/lets-version"]
+      --json             If true, lists results as a JSON blob piped to your ter
+                         minal                        [boolean] [default: false]
+  -p, --package          One or more packages to check. You can specify multiple
+                          by doing -p <name1> -p <name2> -p <name3>      [array]
+      --noFetchAll       If true, will not fetch information from remote via "gi
+                         t fetch origin"              [boolean] [default: false]
+      --noFetchTags      If true, does not force fetch tags from origin. By defa
+                         ult, lets-version will do "git fetch origin --tags --fo
+                         rce" to ensure your branch if up-to-date with the tags
+                         on origin                    [boolean] [default: false]
+      --releaseAs        Releases each changed package as this release type or a
+                         s an exact version. "major" "minor" "patch" "alpha" "be
+                         ta" "auto" or an exact semver version number are allowe
+                         d.                           [string] [default: "auto"]
+      --preid            The "prerelease identifier" to use as a prefix for the
+                         "prerelease" part of a semver. Like the rc in 1.2.0-rc.
+                         8. If this is specified, a bump type of "prerelease" wi
+                         ll always take place, causing any "--releaseAs" setting
+                          to be ignored.                                [string]
+      --uniqify          If true, will append the git SHA at version bunp time t
+                         o the end of the version number (while maintaining vali
+                         d semver)                    [boolean] [default: false]
+      --forceAll         If true, forces all packages to receive a bump update,
+                         regardless of whether they have changed. What this mean
+                         s, in practice, is that any package that would not norm
+                         ally be changed will receive a PATCH update (or an equi
+                         valent if --preid is set)    [boolean] [default: false]
+      --updatePeer       If true, will update any dependent "package.json#peerDe
+                         pendencies" fields           [boolean] [default: false]
+      --updateOptional   If true, will update any dependent "package.json#option
+                         alDependencies" fields       [boolean] [default: false]
+  -y, --yes              If true, skips any confirmation prompts. Useful if you
+                         need to automate this process in CI
+                                                      [boolean] [default: false]
+      --dryRun           If true, will print the changes that are expected to ha
+                         ppen at every step instead of actually writing the chan
+                         ges                          [boolean] [default: false]
+      --rollupChangelog  If true, in addition to updating changelog files for al
+                         l packages that will be bumped, creates a "rollup" CHAN
+                         GELOG.md at the root of the repo that contains an aggre
+                         gate of changes              [boolean] [default: false]
+      --noChangelog      If true, will not write CHANGELOG.md updates for each p
+                         ackage that has changed      [boolean] [default: false]
+      --noPush           If true, will not push changes and tags to origin
+                                                      [boolean] [default: false]
 ```
 
 ---
@@ -331,88 +367,87 @@ Options:
 
 The Node API is a 1:1 match for the CLI API, and can be used in its place. All exported functions accept the same arguments and product the same results. There are some additional functions that are available when using the Node API, if you're interested in exploring
 
-### `listPackages(cwd)`
+### `listPackages(opts)`
 
 Returns all detected packages for this repository
 
 - Parameters
-  - `cwd?: string` - Defaults to `appRootPath.toString()`
+  - `opts?.cwd?: string` - Defaults to `appRootPath.toString()`
 
-### `getLastVersionTagsByPackageName(names, noFetchTags, cwd)`
+### `getLastVersionTagsByPackageName(opts)`
 
 Given an optional array of package names, reads the latest git tag that was used in a previous version bump operation.
 
 - Parameters
-  - `names?: string[]` - Defaults to `[]`
-  - `noFetchTags?: boolean` - Defaults to `false`
-  - `cwd?: string` - Defaults to `appRootPath.toString()`
+  - `opts?.names?: string[]` - Defaults to `[]`
+  - `opts?.noFetchTags?: boolean` - Defaults to `false`
+  - `opts?.cwd?: string` - Defaults to `appRootPath.toString()`
 
-### `getChangedFilesSinceBump(names, noFetchTags, cwd)`
+### `getChangedFilesSinceBump(opts)`
 
 Gets a list of all files that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.
 
 - Parameters
-  - `names?: string[]` - Defaults to `[]`
-  - `noFetchTags?: boolean` - Defaults to `false`
-  - `cwd?: string` - Defaults to `appRootPath.toString()`
+  - `opts?.names?: string[]` - Defaults to `[]`
+  - `opts?.noFetchTags?: boolean` - Defaults to `false`
+  - `opts?.cwd?: string` - Defaults to `appRootPath.toString()`
 
-### `getChangedPackagesSinceBump(names, noFetchTags, cwd)`
+### `getChangedPackagesSinceBump(opts)`
 
 Gets a list of all packages that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.
 
 - Parameters
-  - `names?: string[]` - Defaults to `[]`
-  - `noFetchTags?: boolean` - Defaults to `false`
-  - `cwd?: string` - Defaults to `appRootPath.toString()`
+  - `opts?.names?: string[]` - Defaults to `[]`
+  - `opts?.noFetchTags?: boolean` - Defaults to `false`
+  - `opts?.cwd?: string` - Defaults to `appRootPath.toString()`
 
-### `getConventionalCommitsByPackage(names, cwd = appRootPath.toString())`
+### `getConventionalCommitsByPackage(opts)`
 
 Parses commits since last publish for a specific package or set of packages and returns them represented as Conventional Commits objects.
 
 - Parameters
-  - `names?: string[]` - Defaults to `[]`
-  - `cwd?: string` - Defaults to `appRootPath.toString()`
+  - `opts?.names?: string[]` - Defaults to `[]`
+  - `opts?.cwd?: string` - Defaults to `appRootPath.toString()`
 
-### `getRecommendedBumpsByPackage(names, releaseAs, preid, uniqify, forceAll, noFetchAll, noFetchTags, updatePeer, updateOptional, cwd)`
 
+### `getRecommendedBumpsByPackage()`
 Given an optional list of package names, parses the git history since the last bump operation and suggests a bump.
 NOTE: It is possible for your bump recommendation to not change. If this is the case, this means that your particular package has never had a version bump by the lets-version library.
 
 - Parameters
-  - `names?: string[]` - Defaults to `undefined`
-  - `releaseAs?: ReleaseAsPresets` - Defaults to `ReleaseAsPresets.AUTO`
-  - `preid?: string` - Defaults to `undefined`
-  - `uniqify?: boolean` - Defaults to `false`
-  - `forceAll?: boolean` - Defaults to `false`
-  - `noFetchAll?: boolean` - Defaults to `false`
-  - `noFetchTags?: boolean` - Defaults to `false`
-  - `updatePeer?: boolean` - Defaults to `false`
-  - `updateOptional?: boolean` - Defaults to `false`
-  - `cwd?: string` - Defaults to `appRootPath.toString()`
+  - `opts?.names?: string[]` - Defaults to `undefined`
+  - `opts?.releaseAs?: ReleaseAsPresets` - Defaults to `ReleaseAsPresets.AUTO`
+  - `opts?.preid?: string` - Defaults to `undefined`
+  - `opts?.uniqify?: boolean` - Defaults to `false`
+  - `opts?.forceAll?: boolean` - Defaults to `false`
+  - `opts?.noFetchAll?: boolean` - Defaults to `false`
+  - `opts?.noFetchTags?: boolean` - Defaults to `false`
+  - `opts?.updatePeer?: boolean` - Defaults to `false`
+  - `opts?.updateOptional?: boolean` - Defaults to `false`
+  - `opts?.cwd?: string` - Defaults to `appRootPath.toString()`
 
-### `applyRecommendedBumpsByPackage(names, releaseAs, preid, uniqify, forceAll, noFetchAll, noFetchTags, opts, cwd)`
+### `applyRecommendedBumpsByPackage(opts)`
 
 Given an optional list of package names, parses the git history since the last bump operation, suggest a bump and applies it, also updating any dependent package.json files across your repository.
 NOTE: It is possible for your bump recommendation to not change. If this is the case, this means that your particular package has never had a version bump by the lets-version library.
 
 - Parameters
-  - `names?: string[]` - Defaults to `undefined`
-  - `releaseAs?: ReleaseAsPresets` - Defaults to `ReleaseAsPresets.AUTO`
-  - `preid?: string` - Defaults to `undefined`
-  - `uniqify?: boolean` - Defaults to `false`
-  - `forceAll?: boolean` - Defaults to `false`
-  - `noFetchAll?: boolean` - Defaults to `false`
-  - `noFetchTags?: boolean` - Defaults to `false`
-  - `opts?: { yes?: boolean; updatePeer?: boolean; updateOptional?: boolean; noPush?: boolean; noChangelog?: boolean; dryRun?: boolean; changelogLineFormatterPath?: string }` - Defaults to:
-    - `opts.yes` - If true, skips all user confirmations - Defaults to `false`
-    - `opts.updatePeer` - If true, will update any dependent "package.json#peerDependencies" fields - Defaults to `false`
-    - `opts.updateOptional` - If true, will update any dependent `"package.json#optionalDependencies"` fields - Defaults to `false`
-    - `opts.noPush` - If true, will prevent pushing any changes to upstream / origin - Defaults to `false`
-    - `opts.noChangelog` - If true, will not write CHANGELOG.md updates for each package that has changed. Defaults to `false`.
-    - `opts.dryRun` - If true, will print the changes that are expected to happen at every step instead of actually writing the changes. Defaults to `false`.
-    - `opts.changelogLineFormatterPath` - Path to a file to use as a custom changelog line formatter, the file must return a default export of a function that accepts a single argument of type "ChangelogLineFormatterArgs" and returns a string. Defaults to `undefined`.
-    - `opts.changelogEntryFormatterPath` - Path to a file to use as a custom changelog entry formatter, the file must return a default export of a function that accepts an array of change log entries and returns the full changelog entry string. Defaults to `undefined`.
-  - `cwd?: string` - Defaults to `appRootPath.toString()`
+  - `opts?.names?: string[]` - Defaults to `undefined`
+  - `opts?.releaseAs?: ReleaseAsPresets` - Defaults to `ReleaseAsPresets.AUTO`
+  - `opts?.preid?: string` - Defaults to `undefined`
+  - `opts?.uniqify?: boolean` - Defaults to `false`
+  - `opts?.forceAll?: boolean` - Defaults to `false`
+  - `opts?.noFetchAll?: boolean` - Defaults to `false`
+  - `opts?.noFetchTags?: boolean` - Defaults to `false`
+  - `opts?.yes` - If true, skips all user confirmations - Defaults to `false`
+  - `opts?.updatePeer` - If true, will update any dependent "package.json#peerDependencies" fields - Defaults to `false`
+  - `opts?.updateOptional` - If true, will update any dependent `"package.json#optionalDependencies"` fields - Defaults to `false`
+  - `opts?.noPush` - If true, will prevent pushing any changes to upstream / origin - Defaults to `false`
+  - `opts?.rollupChangelog` - If true, in addition to updating changelog files for all packages that will be bumped, creates a "rollup" CHANGELOG.md at the root of the repo that contains an aggregate of changes.
+  - `opts?.noChangelog` - If true, will not write CHANGELOG.md updates for each package that has changed. Defaults to `false`.
+  - `opts?.dryRun` - If true, will print the changes that are expected to happen at every step instead of actually writing the changes. Defaults to `false`.
+    array of change log entries and returns the full changelog entry string. Defaults to `undefined`.
+  - `opts?.cwd?: string` - Defaults to `appRootPath.toString()`
 
 ---
 
