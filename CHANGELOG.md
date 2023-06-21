@@ -1,3 +1,11 @@
+## 0.6.0 (2023-06-20)
+
+### ✨ Features ✨
+
+- allow for creating a git commit even when working dir is unclean (4686f6b715ecb765ce28a33a6000dd1876278897)
+
+---
+
 ## 0.5.1 (2023-06-19)
 
 ### 📖 Docs 📖
