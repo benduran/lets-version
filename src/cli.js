@@ -290,10 +290,10 @@ async function setupCLI() {
       'Gets a series of recommended version bumps for a specific package or set of packages, applies the version bumps, and updates all repository dependents to match the version that has been updated.',
       y =>
         getSharedBumpArgs(y)
-          .option('yes', {
-            alias: 'y',
+          .option('allowUncommitted', {
             default: false,
-            description: 'If true, skips any confirmation prompts. Useful if you need to automate this process in CI',
+            description:
+              'If true, will allow the version operation to continue when there are uncommitted files in the repo at version bump time. This is usefull if you have some scripts that need to run after version bumps are performed, but potentially before you issue a git commit and subsequent npm publish operation.',
             type: 'boolean',
           })
           .option('dryRun', {
@@ -317,9 +317,16 @@ async function setupCLI() {
             default: false,
             description: 'If true, will not push changes and tags to origin',
             type: 'boolean',
+          })
+          .option('yes', {
+            alias: 'y',
+            default: false,
+            description: 'If true, skips any confirmation prompts. Useful if you need to automate this process in CI',
+            type: 'boolean',
           }),
       async args => {
         await applyRecommendedBumpsByPackage({
+          allowUncommitted: args.allowUncommitted,
           cwd: args.cwd,
           dryRun: args.dryRun,
           forceAll: args.forceAll,

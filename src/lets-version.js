@@ -370,6 +370,7 @@ export async function getRecommendedBumpsByPackage(opts) {
  * @property {boolean} [noChangelog=false] - If true, will not write CHANGELOG.md updates for each package that has changed
  * @property {boolean} [dryRun=false] - If true, will print the changes that are expected to happen at every step instead of actually writing the changes
  * @property {string} [cwd=appRootPath.toString()]
+ * @property {boolean} [allowUncommitted=false] - If true, will allow the version operation to continue when there are uncommitted files in the repo at version bump time. This is usefull if you have some scripts that need to run after version bumps are performed, but potentially before you issue a git commit and subsequent npm publish operation.
  * @property {LetsVersionConfig} [customConfig]
  */
 
@@ -387,6 +388,7 @@ export async function getRecommendedBumpsByPackage(opts) {
  */
 export async function applyRecommendedBumpsByPackage(opts) {
   const {
+    allowUncommitted = false,
     customConfig: customConfigOverride,
     cwd = appRootPath.toString(),
     dryRun = false,
@@ -411,7 +413,7 @@ export async function applyRecommendedBumpsByPackage(opts) {
 
   if (dryRun) console.warn('**Dry Run has been enabled**');
 
-  const workingDirUnclean = await gitWorkdirUnclean(fixedCWD);
+  const workingDirUnclean = !allowUncommitted && (await gitWorkdirUnclean(fixedCWD));
 
   if (workingDirUnclean) {
     console.warn('Unable to apply version bumps because', fixedCWD, 'has uncommitted changes');
