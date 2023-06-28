@@ -7,13 +7,12 @@ import path from 'path';
 import semver from 'semver';
 
 import { fixCWD } from './cwd.js';
-import { execAsync } from './exec.js';
+import { execAsync, execSync } from './exec.js';
 import { parseToConventional } from './parser.js';
 import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.js';
 import { chunkArray } from './util.js';
 
-/** @type {ReturnType<execAsync> | null} */
-let cachedFetchAllPromise = null;
+let didFetchAll = false;
 /**
  * Fetches all tracking information from origin.
  * Most importantly, this tries to detect whether we're currently
@@ -21,18 +20,14 @@ let cachedFetchAllPromise = null;
  *
  * @param {string} [cwd=appRootPath.toString()]
  */
-export async function gitFetchAll(cwd = appRootPath.toString()) {
+export function gitFetchAll(cwd = appRootPath.toString()) {
+  if (didFetchAll) return;
+
   const fixedCWD = fixCWD(cwd);
 
-  if (cachedFetchAllPromise) return cachedFetchAllPromise;
-
   let isShallow = false;
-  try {
-    const stat = await fs.stat(path.join(fixedCWD, '.git', 'shallow'));
-    isShallow = stat.isFile();
-  } catch (error) {
-    /* no-op */
-  }
+  const stat = fs.statSync(path.join(fixedCWD, '.git', 'shallow'), { throwIfNoEntry: false });
+  isShallow = stat?.isFile() ?? false;
 
   if (isShallow) {
     console.warn(
@@ -40,24 +35,22 @@ export async function gitFetchAll(cwd = appRootPath.toString()) {
     );
   }
 
-  cachedFetchAllPromise = execAsync('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' });
-
-  return cachedFetchAllPromise;
+  execSync('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' });
+  didFetchAll = true;
 }
 
-/** @type {ReturnType<execAsync> | null} */
-let cachedFetchTagsPromise = null;
+let didFetchAllTags = false;
 /**
  * Pulls in all tags from origin and forces local to be updated
  * @param {string} [cwd=appRootPath.toString()]
  */
-export async function gitFetchAllTags(cwd = appRootPath.toString()) {
-  if (cachedFetchTagsPromise) return cachedFetchTagsPromise;
+export function gitFetchAllTags(cwd = appRootPath.toString()) {
+  if (didFetchAllTags) return;
 
   const fixedCWD = fixCWD(cwd);
-  cachedFetchTagsPromise = execAsync('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'ignore' });
 
-  return cachedFetchTagsPromise;
+  execSync('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'ignore' });
+  didFetchAllTags = true;
 }
 
 /**
@@ -103,17 +96,17 @@ let remoteTagsCache = null;
  *
  * @param {string} [cwd=appRootPath.toString()] - Nearest .git repo
  *
- * @returns {Promise<Array<[string, string]>>}
+ * @returns {Array<[string, string]>}
  */
-export async function gitRemoteTags(cwd = appRootPath.toString()) {
+export function gitRemoteTags(cwd = appRootPath.toString()) {
   if (remoteTagsCache) return remoteTagsCache;
 
   const fixedCWD = fixCWD(cwd);
 
   // since this function may be called multiple times in a workflow,
   // we want to avoid accidentally getting different results
-  remoteTagsCache = (await execAsync('git ls-remote --tags origin', { cwd: fixedCWD, stdio: 'pipe' })).stdout
-    .trim()
+  remoteTagsCache = execSync('git ls-remote --tags origin', { cwd: fixedCWD, stdio: 'pipe' })
+    .stdout.trim()
     .split(os.EOL)
     .filter(Boolean)
     .map(t => {
@@ -131,9 +124,9 @@ let localTagsCache = null;
  * Grabs the full list of all tags available locally
  *
  * @param {string} [cwd=appRootPath.toString()] - Neartest .git repo
- * @returns {Promise<Array<[string, string]>>}
+ * @returns {Array<[string, string]>}
  */
-export async function gitLocalTags(cwd = appRootPath.toString()) {
+export function gitLocalTags(cwd = appRootPath.toString()) {
   if (localTagsCache) return localTagsCache;
 
   const fixedCWD = fixCWD(cwd);
@@ -141,8 +134,8 @@ export async function gitLocalTags(cwd = appRootPath.toString()) {
   try {
     // since this function may be called multiple times in a workflow,
     // we want to avoid accidentally getting different results
-    localTagsCache = (await execAsync('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' })).stdout
-      .trim()
+    localTagsCache = execSync('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' })
+      .stdout.trim()
       .split(os.EOL)
       .filter(Boolean)
       .map(t => {
@@ -187,8 +180,8 @@ export async function gitLastKnownPublishTagInfoForPackage(packageInfo, cwd = ap
   const fixedCWD = fixCWD(cwd);
 
   // tag may either be on upstream or local-only. We need to treat both cases as "exists"
-  const allRemoteTag = await gitRemoteTags(fixedCWD);
-  const allLocalTags = await gitLocalTags(fixedCWD);
+  const allRemoteTag = gitRemoteTags(fixedCWD);
+  const allLocalTags = gitLocalTags(fixedCWD);
 
   // newest / largest tags first
   const allTags = [...allRemoteTag, ...allLocalTags].sort((a, b) => b[0].localeCompare(a[0]));
@@ -238,11 +231,11 @@ export async function gitLastKnownPublishTagInfoForPackage(packageInfo, cwd = ap
 export async function getLastKnownPublishTagInfoForAllPackages(packages, noFetchTags, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  if (!noFetchTags) await gitFetchAllTags(fixedCWD);
+  if (!noFetchTags) gitFetchAllTags(fixedCWD);
 
   // warm up the tags cache
-  await gitRemoteTags(fixedCWD);
-  await gitLocalTags(fixedCWD);
+  gitRemoteTags(fixedCWD);
+  gitLocalTags(fixedCWD);
 
   return Promise.all(
     packages.map(async p => {
@@ -304,7 +297,7 @@ export async function getAllFilesChangedSinceTagInfos(tagInfos, cwd = appRootPat
 export async function gitConventionalForPackage(packageInfo, noFetchAll = false, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  if (!noFetchAll) await gitFetchAll(fixedCWD);
+  if (!noFetchAll) gitFetchAll(fixedCWD);
   const taginfo = await gitLastKnownPublishTagInfoForPackage(packageInfo, fixedCWD);
   const relPackagePath = path.relative(cwd, packageInfo.packagePath);
   const results = await gitCommitsSince(taginfo?.sha, relPackagePath, fixedCWD);
