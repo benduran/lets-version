@@ -34,7 +34,7 @@ export async function getPackages(cwd = appRootPath.toString()) {
 
   if (pm === 'pnpm') {
     // this will also include the ROOT workspace, which we need to manually exclude
-    const pnpmOutput = await execAsync('pnpm list -r --dept -1 --json', { cwd: fixedCWD, stdio: 'pipe' });
+    const pnpmOutput = await execAsync('pnpm list -r --depth -1 --json', { cwd: fixedCWD, stdio: 'pipe' });
 
     /** @type {Array<{ name: string; path: string; private: boolean; version: string }>} */
     const foundPnpmWorkspaces = JSON.parse(pnpmOutput.stdout);

@@ -1,6 +1,7 @@
 /** @typedef {import('./types.js').PackageInfo} PackageInfo */
 
 import appRootPath from 'app-root-path';
+import { Mutex as AsyncMutex } from 'async-mutex';
 import fs from 'fs-extra';
 import os from 'os';
 import path from 'path';
@@ -12,8 +13,10 @@ import { parseToConventional } from './parser.js';
 import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.js';
 import { chunkArray } from './util.js';
 
-/** @type {ReturnType<execAsync> | null} */
-let cachedFetchAllPromise = null;
+/** @type {string | null} */
+let cachedFetchAllResult = null;
+const fetchAllMutex = new AsyncMutex();
+
 /**
  * Fetches all tracking information from origin.
  * Most importantly, this tries to detect whether we're currently
@@ -24,7 +27,7 @@ let cachedFetchAllPromise = null;
 export async function gitFetchAll(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  if (cachedFetchAllPromise) return cachedFetchAllPromise;
+  if (cachedFetchAllResult !== null) return cachedFetchAllResult;
 
   let isShallow = false;
   try {
@@ -40,24 +43,42 @@ export async function gitFetchAll(cwd = appRootPath.toString()) {
     );
   }
 
-  cachedFetchAllPromise = execAsync('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' });
+  const release = await fetchAllMutex.acquire();
 
-  return cachedFetchAllPromise;
+  // a previous async operation may have already updated the cache, so check if the results exist before making the normal execAsync call
+  if (cachedFetchAllResult !== null) return cachedFetchAllResult;
+
+  cachedFetchAllResult = (await execAsync('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' })).stdout.trim();
+
+  release();
+
+  return cachedFetchAllResult;
 }
 
-/** @type {ReturnType<execAsync> | null} */
-let cachedFetchTagsPromise = null;
+/** @type {string | null} */
+let cachedFetchTagsResult = null;
+const fetchTagsMutex = new AsyncMutex();
+
 /**
  * Pulls in all tags from origin and forces local to be updated
  * @param {string} [cwd=appRootPath.toString()]
  */
 export async function gitFetchAllTags(cwd = appRootPath.toString()) {
-  if (cachedFetchTagsPromise) return cachedFetchTagsPromise;
+  if (cachedFetchTagsResult !== null) return cachedFetchTagsResult;
 
   const fixedCWD = fixCWD(cwd);
-  cachedFetchTagsPromise = execAsync('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'ignore' });
 
-  return cachedFetchTagsPromise;
+  const release = await fetchTagsMutex.acquire();
+
+  if (cachedFetchTagsResult !== null) return cachedFetchTagsResult;
+
+  cachedFetchTagsResult = (
+    await execAsync('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'ignore' })
+  ).stdout.trim();
+
+  release();
+
+  return cachedFetchTagsResult;
 }
 
 /**
@@ -98,6 +119,8 @@ export async function gitCommitsSince(since = '', relPath = '', cwd = appRootPat
 
 /** @type {Array<[string, string]> | null} */
 let remoteTagsCache = null;
+const remoteTagsMutex = new AsyncMutex();
+
 /**
  * Grabs the full list of all tags available on upstream
  *
@@ -109,6 +132,10 @@ export async function gitRemoteTags(cwd = appRootPath.toString()) {
   if (remoteTagsCache) return remoteTagsCache;
 
   const fixedCWD = fixCWD(cwd);
+
+  const release = await remoteTagsMutex.acquire();
+
+  if (remoteTagsCache !== null) return remoteTagsCache;
 
   // since this function may be called multiple times in a workflow,
   // we want to avoid accidentally getting different results
@@ -122,11 +149,15 @@ export async function gitRemoteTags(cwd = appRootPath.toString()) {
       return [ref.replace('refs/tags/', ''), sha];
     });
 
+  release();
+
   return remoteTagsCache;
 }
 
 /** @type {Array<[string, string]> | null} */
 let localTagsCache = null;
+const localTagsMutex = new AsyncMutex();
+
 /**
  * Grabs the full list of all tags available locally
  *
@@ -139,6 +170,10 @@ export async function gitLocalTags(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   try {
+    const release = await localTagsMutex.acquire();
+
+    if (localTagsCache !== null) return localTagsCache;
+
     // since this function may be called multiple times in a workflow,
     // we want to avoid accidentally getting different results
     localTagsCache = (await execAsync('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' })).stdout
@@ -151,6 +186,7 @@ export async function gitLocalTags(cwd = appRootPath.toString()) {
         return [ref.replace('refs/tags/', ''), sha];
       });
 
+    release();
     return localTagsCache;
   } catch (error) {
     // According to the official git documentation, zero results will cause an exit code of "1"
