@@ -1,3 +1,11 @@
+## 0.6.1-beta.1 (2023-06-28)
+
+### 🛠️ Fixes 🛠️
+
+- moved certain git operations to be synchronous to allow for easier caching and deduplication (e7a9c39affce692da61bd9e2bd0003b34893b42e)
+
+---
+
 ## 0.6.0 (2023-06-20)
 
 ### ✨ Features ✨
