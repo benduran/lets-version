@@ -1,3 +1,18 @@
+## 0.6.1-beta.0 (2023-06-27)
+
+### 🛠️ Fixes 🛠️
+
+- fixed trying to return results from bogus git calls (d0362d8839ccde206da3ef8870645cd934cf4753)
+- fixed duplicate git calls causing slowdown and git request overload (0ac170cc5ba8e6ce220d59512bcd8d04f7165602)
+
+
+
+### 📖 Docs 📖
+
+- updated readme steps (b3c0a791e5a8e973a3a2f1909e08ed1ab2a61f62)
+
+---
+
 ## 0.6.0 (2023-06-20)
 
 ### ✨ Features ✨
