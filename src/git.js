@@ -13,8 +13,8 @@ import { parseToConventional } from './parser.js';
 import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.js';
 import { chunkArray } from './util.js';
 
-/** @type {string | null} */
-let cachedFetchAllResult = null;
+/** @type {boolean} */
+let fetchAllHappened = false;
 const fetchAllMutex = new AsyncMutex();
 
 /**
@@ -27,7 +27,7 @@ const fetchAllMutex = new AsyncMutex();
 export async function gitFetchAll(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  if (cachedFetchAllResult !== null) return cachedFetchAllResult;
+  if (fetchAllHappened) return;
 
   let isShallow = false;
   try {
@@ -46,17 +46,17 @@ export async function gitFetchAll(cwd = appRootPath.toString()) {
   const release = await fetchAllMutex.acquire();
 
   // a previous async operation may have already updated the cache, so check if the results exist before making the normal execAsync call
-  if (cachedFetchAllResult !== null) return cachedFetchAllResult;
+  if (fetchAllHappened) return;
 
-  cachedFetchAllResult = (await execAsync('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' })).stdout.trim();
+  await execAsync('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' });
+
+  fetchAllHappened = true;
 
   release();
-
-  return cachedFetchAllResult;
 }
 
-/** @type {string | null} */
-let cachedFetchTagsResult = null;
+/** @type {boolean} */
+let fetchTagsHappened = false;
 const fetchTagsMutex = new AsyncMutex();
 
 /**
@@ -64,21 +64,17 @@ const fetchTagsMutex = new AsyncMutex();
  * @param {string} [cwd=appRootPath.toString()]
  */
 export async function gitFetchAllTags(cwd = appRootPath.toString()) {
-  if (cachedFetchTagsResult !== null) return cachedFetchTagsResult;
+  if (fetchTagsHappened) return;
 
   const fixedCWD = fixCWD(cwd);
 
   const release = await fetchTagsMutex.acquire();
 
-  if (cachedFetchTagsResult !== null) return cachedFetchTagsResult;
+  if (fetchTagsHappened !== null) return fetchTagsHappened;
 
-  cachedFetchTagsResult = (
-    await execAsync('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'ignore' })
-  ).stdout.trim();
+  await execAsync('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'ignore' });
 
   release();
-
-  return cachedFetchTagsResult;
 }
 
 /**
