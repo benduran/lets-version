@@ -506,5 +506,6 @@ export default defineLetsVersionConfig({
 ## Get started contributing
 
 1. Clone this repo
-2. Run `./repo-setup.sh`
-3. Happy hacking! ⌨️
+2. Have `pnpm` and `yarn` installed globally (for the test suite)
+3. Run `./repo-setup.sh`
+4. Happy hacking! ⌨️
