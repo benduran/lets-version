@@ -1,3 +1,11 @@
+## 0.6.1 (2023-06-30)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #7 from benduran/bduran/dont-overload-git (b7a95ac9177aec43299c1f25e9f80fd93defdd06)
+
+---
+
 ## 0.6.1-beta.1 (2023-06-28)
 
 ### 🛠️ Fixes 🛠️
