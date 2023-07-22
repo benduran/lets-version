@@ -313,6 +313,12 @@ async function setupCLI() {
             description: 'If true, will not write CHANGELOG.md updates for each package that has changed',
             type: 'boolean',
           })
+          .option('noCommit', {
+            default: false,
+            description:
+              'If true, will modify all required files but leave them uncommitted after all operations as completed. This will also prevent a git push from occurring',
+            type: 'boolean',
+          })
           .option('noPush', {
             default: false,
             description: 'If true, will not push changes and tags to origin',
@@ -332,6 +338,7 @@ async function setupCLI() {
           forceAll: args.forceAll,
           names: args.package,
           noChangelog: args.noChangelog,
+          noCommit: args.noCommit,
           noFetchAll: args.noFetchAll,
           noFetchTags: args.noFetchTags,
           noPush: args.noPush,

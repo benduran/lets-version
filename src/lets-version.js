@@ -360,6 +360,7 @@ export async function getRecommendedBumpsByPackage(opts) {
  * @property {string} [preid='']
  * @property {boolean} [uniqify=false]
  * @property {boolean} [forceAll=false]
+ * @property {boolean} [noCommit=false] - If true, will modify all required files but leave them uncommitted after all operations as completed. This will also prevent a git push from occurring
  * @property {boolean} [noFetchAll=false]
  * @property {boolean} [noFetchTags=false]
  * @property {boolean} [yes=false] - If true, skips all user confirmations
@@ -395,6 +396,7 @@ export async function applyRecommendedBumpsByPackage(opts) {
     forceAll = false,
     names,
     noChangelog = false,
+    noCommit = false,
     noFetchAll = false,
     noFetchTags = false,
     noPush = false,
@@ -412,6 +414,11 @@ export async function applyRecommendedBumpsByPackage(opts) {
   let yes = opts?.yes || false;
 
   if (dryRun) console.warn('**Dry Run has been enabled**');
+
+  if (noCommit && !noPush)
+    console.warn(
+      'You supplied --no-commit but not --no-push. This will set --no-push to true to avoid pushing uncommitted changes',
+    );
 
   const workingDirUnclean = !allowUncommitted && (await gitWorkdirUnclean(fixedCWD));
 
@@ -612,32 +619,34 @@ export async function applyRecommendedBumpsByPackage(opts) {
   }
 
   // commit the stuffs
-  const header = 'Version Bump';
-  const body = synchronized.bumps.map(b => `${b.packageInfo.name}@${b.to}`).join(os.EOL);
-  if (dryRun) {
-    console.info(
-      `~~~~~${os.EOL}Will create a git commit with the following message:${os.EOL}${os.EOL}${header}${os.EOL}${os.EOL}${body}${os.EOL}~~~~~`,
-    );
-  } else await gitCommit(header, body, '', fixedCWD);
+  if (!noCommit) {
+    const header = 'Version Bump';
+    const body = synchronized.bumps.map(b => `${b.packageInfo.name}@${b.to}`).join(os.EOL);
+    if (dryRun) {
+      console.info(
+        `~~~~~${os.EOL}Will create a git commit with the following message:${os.EOL}${os.EOL}${header}${os.EOL}${os.EOL}${body}${os.EOL}~~~~~`,
+      );
+    } else await gitCommit(header, body, '', fixedCWD);
+  }
 
   // create all the git tags
-  const tagsToPush = await Promise.all(
-    synchronized.bumps.map(async b => {
-      const tag = formatVersionTagForPackage(
-        new PackageInfo({
-          ...b.packageInfo,
-          version: b.to,
-        }),
-      );
-      if (dryRun) console.info(`Will create the following git tag: ${tag}`);
-      else await gitTag(tag, fixedCWD);
+  if (!noPush || !noCommit) {
+    const tagsToPush = await Promise.all(
+      synchronized.bumps.map(async b => {
+        const tag = formatVersionTagForPackage(
+          new PackageInfo({
+            ...b.packageInfo,
+            version: b.to,
+          }),
+        );
+        if (dryRun) console.info(`Will create the following git tag: ${tag}`);
+        else await gitTag(tag, fixedCWD);
 
-      return tag;
-    }, fixedCWD),
-  );
+        return tag;
+      }, fixedCWD),
+    );
 
-  // push to upstream
-  if (!noPush) {
+    // push to upstream
     if (dryRun) console.info(`Will git push --no-verify all changes made during the version bump operation`);
     else await gitPush(fixedCWD);
 
