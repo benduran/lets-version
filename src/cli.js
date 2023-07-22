@@ -316,7 +316,7 @@ async function setupCLI() {
           .option('noCommit', {
             default: false,
             description:
-              'If true, will modify all required files but leave them uncommitted after all operations as completed. This will also prevent a git push from occurring',
+              'If true, will modify all required files but leave them uncommitted after all operations have completed. This will also prevent a git push from occurring',
             type: 'boolean',
           })
           .option('noPush', {

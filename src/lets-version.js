@@ -360,7 +360,7 @@ export async function getRecommendedBumpsByPackage(opts) {
  * @property {string} [preid='']
  * @property {boolean} [uniqify=false]
  * @property {boolean} [forceAll=false]
- * @property {boolean} [noCommit=false] - If true, will modify all required files but leave them uncommitted after all operations as completed. This will also prevent a git push from occurring
+ * @property {boolean} [noCommit=false] - If true, will modify all required files but leave them uncommitted after all operations have completed. This will also prevent a git push from occurring
  * @property {boolean} [noFetchAll=false]
  * @property {boolean} [noFetchTags=false]
  * @property {boolean} [yes=false] - If true, skips all user confirmations
