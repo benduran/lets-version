@@ -1,3 +1,18 @@
+## 0.7.0 (2023-07-21)
+
+### 🔀 Miscellaneous 🔀
+
+- fixed noCommit grammar (b56f14c304ecbee5c22123ea9614dca75eb9b1c7)
+- adding a noCommit flag to avoid committing any changes (47659258857a851283f55abc71bf14b4ea5562f1)
+
+
+
+### ✨ Features ✨
+
+- adding a noCommit flag to avoid committing any changes (9dc95f4a6aa6501f7465c7f78135c4afac1b53d9)
+
+---
+
 ## 0.6.1 (2023-06-30)
 
 ### 🔀 Miscellaneous 🔀
