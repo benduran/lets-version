@@ -1,3 +1,11 @@
+## 0.7.1 (2023-07-26)
+
+### 🔀 Miscellaneous 🔀
+
+- enhanced cmd to print all files changed by package (8057ef6d882e700c6c9a3fa95d26473866e25661)
+
+---
+
 ## 0.7.1-beta.0.d831ecc (2023-07-26)
 
 ### 🛠️ Fixes 🛠️
