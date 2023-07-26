@@ -14,6 +14,7 @@ import { fileURLToPath } from 'url';
 import createCLI from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
+import { fixCWD } from './cwd.js';
 import {
   applyRecommendedBumpsByPackage,
   getChangedFilesSinceBump,
@@ -203,7 +204,13 @@ async function setupCLI() {
     .command(
       'changed-packages-since-bump',
       'Gets a list of all packages that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.',
-      y => getSharedVersionYargs(y),
+      y =>
+        getSharedVersionYargs(y).option('byName', {
+          default: false,
+          description:
+            'If true and the --json flag has not been set, reports the changed packages by their package.json names, instead of by their relative file paths',
+          type: 'boolean',
+        }),
       async args => {
         const changedPackages = await getChangedPackagesSinceBump({
           cwd: args.cwd,
@@ -218,7 +225,19 @@ async function setupCLI() {
             'No files have changed. This likely means you have not yet created your first version with the lets-version library, or no changes have occurred since the last version bump.',
           );
         }
-        return console.info(changedPackages.map(p => p.packagePath).join(os.EOL));
+        return changedPackages.forEach(p => {
+          let changedStr = '';
+          if (args.byName) changedStr = `${p.name}${os.EOL}`;
+          else {
+            const relPackagePath = path.relative(fixCWD(args.cwd), p.packagePath);
+            changedStr = `./${relPackagePath}${os.EOL}`;
+          }
+          p.filesChanged?.forEach(fp => {
+            changedStr += `  ${fp}${os.EOL}`;
+          });
+
+          console.info(changedStr);
+        });
       },
     )
     .command(

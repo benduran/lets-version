@@ -99,9 +99,10 @@ export async function getAllPackagesChangedBasedOnFilesModified(filesModified, p
   for (const filePath of filesModified) {
     const touchedPackage = packagesToCheck.find(p => filePath.includes(p.packagePath));
     if (touchedPackage) {
+      const prevTrackedTouchedPackage = out.get(touchedPackage.name);
       const updatedPackage = new PackageInfo({
         ...touchedPackage,
-        filesChanged: [...(touchedPackage.filesChanged ?? []), filePath],
+        filesChanged: [...(prevTrackedTouchedPackage?.filesChanged ?? []), filePath],
       });
       out.set(touchedPackage.name, updatedPackage);
     }

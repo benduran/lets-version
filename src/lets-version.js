@@ -111,7 +111,7 @@ export async function getChangedFilesSinceBump(opts) {
 
   const tagResults = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, noFetchTags, fixedCWD);
 
-  return getAllFilesChangedSinceTagInfos(tagResults, fixedCWD);
+  return getAllFilesChangedSinceTagInfos(filteredPackages, tagResults, fixedCWD);
 }
 
 /**
@@ -126,14 +126,22 @@ export async function getChangedPackagesSinceBump(opts) {
   const { names, noFetchTags = false, cwd = appRootPath.toString() } = opts ?? {};
   const fixedCWD = fixCWD(cwd);
 
-  const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
+  const allPackages = await getPackages(fixedCWD);
+  const rootPackage = allPackages.find(p => p.root);
+  const filteredPackages = await filterPackagesByNames(allPackages, names, fixedCWD);
 
   if (!filteredPackages) return [];
 
   const tagInfos = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, noFetchTags, fixedCWD);
-  const changedFiles = await getAllFilesChangedSinceTagInfos(tagInfos, fixedCWD);
+  const changedFiles = await getAllFilesChangedSinceTagInfos(filteredPackages, tagInfos, fixedCWD);
 
-  return getAllPackagesChangedBasedOnFilesModified(changedFiles, filteredPackages, fixedCWD);
+  /** @type {PackageInfo[]} */
+  const allPackagesFilteredPlusRoot = [...filteredPackages];
+  if (rootPackage) allPackagesFilteredPlusRoot.push(rootPackage);
+
+  const deduped = Array.from(new Map(allPackagesFilteredPlusRoot.map(p => [p.name, p])).values());
+
+  return getAllPackagesChangedBasedOnFilesModified(changedFiles, deduped, fixedCWD);
 }
 
 /**

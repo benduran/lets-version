@@ -1,3 +1,17 @@
+## 0.7.1-beta.0.d831ecc (2023-07-26)
+
+### 🛠️ Fixes 🛠️
+
+- fixed filtering of changes files by SHA to scope by the respective package (d831eccaa98137aace3c61bbd5d749c3b61835e9)
+
+
+
+### ✨ Features ✨
+
+- enhanced cmd to print all files changed by package (6b2cb13aefc744e6a9d92b44b8a72f665344dcd4)
+
+---
+
 ## 0.7.0 (2023-07-21)
 
 ### 🔀 Miscellaneous 🔀
