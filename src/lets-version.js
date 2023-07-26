@@ -111,7 +111,7 @@ export async function getChangedFilesSinceBump(opts) {
 
   const tagResults = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, noFetchTags, fixedCWD);
 
-  return getAllFilesChangedSinceTagInfos(tagResults, fixedCWD);
+  return getAllFilesChangedSinceTagInfos(filteredPackages, tagResults, fixedCWD);
 }
 
 /**
@@ -133,7 +133,7 @@ export async function getChangedPackagesSinceBump(opts) {
   if (!filteredPackages) return [];
 
   const tagInfos = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, noFetchTags, fixedCWD);
-  const changedFiles = await getAllFilesChangedSinceTagInfos(tagInfos, fixedCWD);
+  const changedFiles = await getAllFilesChangedSinceTagInfos(filteredPackages, tagInfos, fixedCWD);
 
   /** @type {PackageInfo[]} */
   const allPackagesFilteredPlusRoot = [...filteredPackages];

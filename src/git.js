@@ -271,14 +271,29 @@ export async function gitAllFilesChangedSinceSha(sha, cwd = appRootPath.toString
  * returns all the files that have changed since any of these git tags
  * have occured, with duplicates removed
  *
+ * @param {PackageInfo[]} filteredPackages
  * @param {PublishTagInfo[]} tagInfos
  * @param {string} [cwd=appRootPath.toString()]
  */
-export async function getAllFilesChangedSinceTagInfos(tagInfos, cwd = appRootPath.toString()) {
+export async function getAllFilesChangedSinceTagInfos(filteredPackages, tagInfos, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
+  const packageNameLookup = new Map(filteredPackages.map(p => [p.name, p]));
+
   const results = (
-    await Promise.all(tagInfos.map(async t => (t.sha ? gitAllFilesChangedSinceSha(t.sha, fixedCWD) : [])))
+    await Promise.all(
+      tagInfos.map(async t => {
+        if (!t.sha) return [];
+        const pkg = packageNameLookup.get(t.packageName);
+        const results = await gitAllFilesChangedSinceSha(t.sha, fixedCWD);
+
+        // This should never happen, but
+        // we'll guard just to silence the compiler
+        if (!pkg) return results;
+
+        return results.filter(fp => fp.startsWith(pkg.packagePath));
+      }),
+    )
   ).flat();
 
   return Array.from(new Set(results));
