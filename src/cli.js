@@ -114,15 +114,21 @@ async function setupCLI() {
   /** @type {PackageJson} */
   const pjson = JSON.parse(await fs.readFile(path.join(__dirname, '../package.json'), 'utf-8'));
 
+  let currentCommand = '';
+
   const yargs = createCLI(hideBin(process.argv))
     .scriptName('lets-version')
     .version(pjson.version || '')
+    .middleware(argv => {
+      currentCommand = String(argv._[0] || '');
+    })
     .fail((msg, err) => {
       /**
        * We won't let yargs print the help message when failure occurs,
        * but we still want to surface the actual error, so we'll do so,
        * but with a generic error code of 1
        */
+      console.error(`lets-version ${currentCommand} failed`);
       console.error(err);
       // @ts-ignore
       process.exit(err.status || 1);
