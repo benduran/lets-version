@@ -1,3 +1,11 @@
+## 0.7.2-beta.0 (2023-09-19)
+
+### 🔀 Miscellaneous 🔀
+
+- make error message not print help menu for cleaner CLI errors (b2ddd76dd2553e9b0e379146681bf6bb8303ed13)
+
+---
+
 ## 0.7.1 (2023-07-26)
 
 ### 🔀 Miscellaneous 🔀
