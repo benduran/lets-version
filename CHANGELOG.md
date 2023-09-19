@@ -1,3 +1,11 @@
+## 0.7.2-beta.1 (2023-09-19)
+
+### 🔀 Miscellaneous 🔀
+
+- added which command failed (6d3b723a653ed53da3e9d2f6889e9b5c5a14c4cc)
+
+---
+
 ## 0.7.2-beta.0 (2023-09-19)
 
 ### 🔀 Miscellaneous 🔀
