@@ -1,3 +1,11 @@
+## 0.7.2 (2023-09-19)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #10 from benduran/bduran/better-error-message (e5303ac1a3c04d3bb0ebd120f3a1fe9c81a9d5b4)
+
+---
+
 ## 0.7.2-beta.1 (2023-09-19)
 
 ### 🔀 Miscellaneous 🔀
