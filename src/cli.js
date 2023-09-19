@@ -117,6 +117,16 @@ async function setupCLI() {
   const yargs = createCLI(hideBin(process.argv))
     .scriptName('lets-version')
     .version(pjson.version || '')
+    .fail((msg, err) => {
+      /**
+       * We won't let yargs print the help message when failure occurs,
+       * but we still want to surface the actual error, so we'll do so,
+       * but with a generic error code of 1
+       */
+      console.error(err);
+      // @ts-ignore
+      process.exit(err.status || 1);
+    })
     .command(
       'ls',
       'Lists all detected packages for this repository',
