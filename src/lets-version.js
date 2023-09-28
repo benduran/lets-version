@@ -423,6 +423,7 @@ export async function getRecommendedBumpsByPackage(opts) {
  * @property {boolean} [noCommit=false] - If true, will modify all required files but leave them uncommitted after all operations have completed. This will also prevent a git push from occurring
  * @property {boolean} [noFetchAll=false]
  * @property {boolean} [noFetchTags=false]
+ * @property {boolean} [noInstall=false] - If true, will skip running "npm install" or your package manager's equivalent install after applying the bumps
  * @property {boolean} [yes=false] - If true, skips all user confirmations
  * @property {boolean} [updatePeer=false] - If true, will update any dependent "package.json#peerDependencies" fields
  * @property {boolean} [updateOptional=false] - If true, will update any dependent "package.json#optionalDependencies" fields
@@ -459,6 +460,7 @@ export async function applyRecommendedBumpsByPackage(opts) {
     noCommit = false,
     noFetchAll = false,
     noFetchTags = false,
+    noInstall = false,
     noPush = false,
     preid = '',
     releaseAs = ReleaseAsPresets.AUTO,
@@ -555,32 +557,34 @@ export async function applyRecommendedBumpsByPackage(opts) {
   // install deps to ensure lockfiles are updated
   const pm = await detectPM({ cwd: fixedCWD });
 
-  if (dryRun) console.info(`Will run ${pm} install to synchronize lockfiles`);
-  else {
-    let didSyncLockFiles = false;
-    /**
-     * As of 5/30/2023, there is an open bug with NPM that causes "npm ci" to fail
-     * due to some internal race condition where lockfiles need a subsequent
-     * npm install to flush out all the changes.
-     * https://github.com/npm/cli/issues/4859#issuecomment-1120018666
-     * and
-     * https://github.com/npm/cli/issues/4942
-     */
-    const syncLockfiles = () => {
-      if (didSyncLockFiles) return;
-      try {
-        execSync(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
-        didSyncLockFiles = true;
-      } catch (error) {
-        didSyncLockFiles = false;
-      }
-    };
-    syncLockfiles();
-    syncLockfiles();
+  if (!noInstall) {
+    if (dryRun) console.info(`Will run ${pm} install to synchronize lockfiles`);
+    else {
+      let didSyncLockFiles = false;
+      /**
+       * As of 5/30/2023, there is an open bug with NPM that causes "npm ci" to fail
+       * due to some internal race condition where lockfiles need a subsequent
+       * npm install to flush out all the changes.
+       * https://github.com/npm/cli/issues/4859#issuecomment-1120018666
+       * and
+       * https://github.com/npm/cli/issues/4942
+       */
+      const syncLockfiles = () => {
+        if (didSyncLockFiles) return;
+        try {
+          execSync(`${pm} install`, { cwd: fixedCWD, stdio: 'inherit' });
+          didSyncLockFiles = true;
+        } catch (error) {
+          didSyncLockFiles = false;
+        }
+      };
+      syncLockfiles();
+      syncLockfiles();
 
-    if (!didSyncLockFiles) {
-      console.error('Failed to synchronize lock files. Aborting remaining operations');
-      process.exit(1);
+      if (!didSyncLockFiles) {
+        console.error('Failed to synchronize lock files. Aborting remaining operations');
+        process.exit(1);
+      }
     }
   }
 
