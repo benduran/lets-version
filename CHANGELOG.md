@@ -1,3 +1,11 @@
+## 0.7.4-beta.1 (2023-09-28)
+
+### ✨ Features ✨
+
+- added 'noInstall' flag to opt-into avoiding npm install after the version bump operation (9431a6d2ee4db73f312effb923e65fedd9c49acc)
+
+---
+
 ## 0.7.4-beta.0 (2023-09-28)
 
 ### 🛠️ Fixes 🛠️
