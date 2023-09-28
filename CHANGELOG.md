@@ -1,3 +1,18 @@
+## 0.7.4 (2023-09-28)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #12 from benduran/bduran/no-push-not-respected (86ffbb31113d895abc23ff87f450d261f8d784e8)
+
+
+
+### 📖 Docs 📖
+
+- removed my CWD lol (1c678271a5854123d048239c933513f6efbf4f65)
+- updated readme. also added 'private' marker to package printouts (847476d8c8d984a2801c59f583ff5055c3adedfa)
+
+---
+
 ## 0.7.4-beta.1 (2023-09-28)
 
 ### ✨ Features ✨
