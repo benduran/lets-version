@@ -116,7 +116,7 @@ export async function getChangedFilesSinceBump(opts) {
 }
 
 /**
- * @typedef {Object} getChangedFilesSinceBranchOpts
+ * @typedef {Object} GetChangedFilesSinceBranchOpts
  * @property {string} [cwd=appRootPath.toString()]
  * @property {string[]} [names]
  * @property {string} [branch='main']
@@ -125,7 +125,7 @@ export async function getChangedFilesSinceBump(opts) {
 /**
  * Gets a list of all files that have changed since the current branch was created.
  *
- * @param {getChangedFilesSinceBranchOpts} [opts]
+ * @param {GetChangedFilesSinceBranchOpts} [opts]
  * @returns {Promise<string[]>}
  */
 export async function getChangedFilesSinceBranch(opts) {
@@ -171,7 +171,7 @@ export async function getChangedPackagesSinceBump(opts) {
 /**
  * Gets a list of all packages that have changed since the current branch was created.
  *
- * @param {getChangedFilesSinceBranchOpts} [opts]
+ * @param {GetChangedFilesSinceBranchOpts} [opts]
  *
  * @returns {Promise<PackageInfo[]>}
  */
