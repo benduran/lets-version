@@ -300,6 +300,27 @@ export async function getAllFilesChangedSinceTagInfos(filteredPackages, tagInfos
 }
 
 /**
+ * Given an input of the "main" branch name,
+ * returns all the files that have changed since the current branch was created
+ *
+ * @param {PackageInfo[]} filteredPackages
+ * @param {string} branch
+ * @param {string} [cwd=appRootPath.toString()]
+ */
+export async function getAllFilesChangedSinceBranch(filteredPackages, branch, cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+  const allFiles = await gitAllFilesChangedSinceSha(branch, fixedCWD);
+
+  const results = filteredPackages
+    .map(pkg => {
+      return allFiles.filter(fp => fp.startsWith(pkg.packagePath));
+    })
+    .flat();
+
+  return Array.from(new Set(results));
+}
+
+/**
  * Gets full git commit, with conventional commits parsed data,
  * for a single, parsed package info
  *
