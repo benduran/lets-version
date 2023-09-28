@@ -108,7 +108,7 @@ Options:
   --help     Show help                                                 [boolean]
   --cwd      The folder to use as root when running command. Defaults to your se
              ssion's CWD
-       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
+
   --json     If true, lists results as a JSON blob piped to your terminal
                                                       [boolean] [default: false]
 ```
@@ -129,7 +129,7 @@ Options:
   --help     Show help                                                 [boolean]
   --cwd      The folder to use as root when running command. Defaults to your se
              ssion's CWD
-       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
+
   --json     If true, lists results as a JSON blob piped to your terminal
                                                       [boolean] [default: false]
 ```
@@ -149,7 +149,7 @@ Options:
       --help         Show help                                         [boolean]
       --cwd          The folder to use as root when running command. Defaults to
                       your session's CWD
-       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
+
       --json         If true, lists results as a JSON blob piped to your termina
                      l                                [boolean] [default: false]
   -p, --package      One or more packages to check. You can specify multiple by
@@ -178,7 +178,7 @@ Options:
       --help         Show help                                         [boolean]
       --cwd          The folder to use as root when running command. Defaults to
                       your session's CWD
-       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
+
       --json         If true, lists results as a JSON blob piped to your termina
                      l                                [boolean] [default: false]
   -p, --package      One or more packages to check. You can specify multiple by
@@ -207,7 +207,7 @@ Options:
       --help         Show help                                         [boolean]
       --cwd          The folder to use as root when running command. Defaults to
                       your session's CWD
-       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
+
       --json         If true, lists results as a JSON blob piped to your termina
                      l                                [boolean] [default: false]
   -p, --package      One or more packages to check. You can specify multiple by
@@ -238,7 +238,7 @@ Options:
       --help         Show help                                         [boolean]
       --cwd          The folder to use as root when running command. Defaults to
                       your session's CWD
-       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
+
       --json         If true, lists results as a JSON blob piped to your termina
                      l                                [boolean] [default: false]
   -p, --package      One or more packages to check. You can specify multiple by
@@ -268,7 +268,7 @@ Options:
       --help            Show help                                      [boolean]
       --cwd             The folder to use as root when running command. Defaults
                          to your session's CWD
-       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
+
       --json            If true, lists results as a JSON blob piped to your term
                         inal                          [boolean] [default: false]
   -p, --package         One or more packages to check. You can specify multiple
@@ -318,7 +318,7 @@ Options:
       --help              Show help                                    [boolean]
       --cwd               The folder to use as root when running command. Defaul
                           ts to your session's CWD
-       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
+
       --json              If true, lists results as a JSON blob piped to your te
                           rminal                      [boolean] [default: false]
   -p, --package           One or more packages to check. You can specify multipl
@@ -394,7 +394,7 @@ Options:
       --help     Show help                                             [boolean]
       --cwd      The folder to use as root when running command. Defaults to you
                  r session's CWD
-       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
+
       --json     If true, lists results as a JSON blob piped to your terminal
                                                       [boolean] [default: false]
   -b, --branch   Name of the branch to check against. [string] [default: "main"]
@@ -416,7 +416,7 @@ Options:
       --help     Show help                                             [boolean]
       --cwd      The folder to use as root when running command. Defaults to you
                  r session's CWD
-       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
+
       --json     If true, lists results as a JSON blob piped to your terminal
                                                       [boolean] [default: false]
   -b, --branch   Name of the branch to check against. [string] [default: "main"]
