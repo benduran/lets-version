@@ -26,6 +26,7 @@ import { getBumpRecommendationForPackageInfo, synchronizeBumps } from './depende
 import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPackages } from './getPackages.js';
 import {
   formatVersionTagForPackage,
+  getAllFilesChangedSinceBranch,
   getAllFilesChangedSinceTagInfos,
   getLastKnownPublishTagInfoForAllPackages,
   gitCommit,
@@ -115,6 +116,29 @@ export async function getChangedFilesSinceBump(opts) {
 }
 
 /**
+ * @typedef {Object} GetChangedFilesSinceBranchOpts
+ * @property {string} [cwd=appRootPath.toString()]
+ * @property {string[]} [names]
+ * @property {string} [branch='main']
+ */
+
+/**
+ * Gets a list of all files that have changed since the current branch was created.
+ *
+ * @param {GetChangedFilesSinceBranchOpts} [opts]
+ * @returns {Promise<string[]>}
+ */
+export async function getChangedFilesSinceBranch(opts) {
+  const { names, cwd = appRootPath.toString(), branch = 'main' } = opts ?? {};
+  const fixedCWD = fixCWD(cwd);
+  const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
+
+  if (!filteredPackages) return [];
+
+  return getAllFilesChangedSinceBranch(filteredPackages, branch, fixedCWD);
+}
+
+/**
  * Gets a list of all packages that have changed since the last publish for a specific package or set of packages.
  * If no results are returned, it likely means that there was not a previous version tag detected in git.
  *
@@ -134,6 +158,34 @@ export async function getChangedPackagesSinceBump(opts) {
 
   const tagInfos = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, noFetchTags, fixedCWD);
   const changedFiles = await getAllFilesChangedSinceTagInfos(filteredPackages, tagInfos, fixedCWD);
+
+  /** @type {PackageInfo[]} */
+  const allPackagesFilteredPlusRoot = [...filteredPackages];
+  if (rootPackage) allPackagesFilteredPlusRoot.push(rootPackage);
+
+  const deduped = Array.from(new Map(allPackagesFilteredPlusRoot.map(p => [p.name, p])).values());
+
+  return getAllPackagesChangedBasedOnFilesModified(changedFiles, deduped, fixedCWD);
+}
+
+/**
+ * Gets a list of all packages that have changed since the current branch was created.
+ *
+ * @param {GetChangedFilesSinceBranchOpts} [opts]
+ *
+ * @returns {Promise<PackageInfo[]>}
+ */
+export async function getChangedPackagesSinceBranch(opts) {
+  const { names, cwd = appRootPath.toString(), branch = 'main' } = opts ?? {};
+  const fixedCWD = fixCWD(cwd);
+
+  const allPackages = await getPackages(fixedCWD);
+  const rootPackage = allPackages.find(p => p.root);
+  const filteredPackages = await filterPackagesByNames(allPackages, names, fixedCWD);
+
+  if (!filteredPackages) return [];
+
+  const changedFiles = await getAllFilesChangedSinceBranch(filteredPackages, branch, fixedCWD);
 
   /** @type {PackageInfo[]} */
   const allPackagesFilteredPlusRoot = [...filteredPackages];

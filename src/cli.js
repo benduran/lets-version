@@ -5,6 +5,7 @@
  * @typedef {import('yargs').Argv} Argv
  *
  * @typedef {import('./types.js').LocalDependencyGraphNode} LocalDependencyGraphNode
+ * @typedef {import('./types.js').PackageInfo} PackageInfo
  * */
 
 import { promises as fs } from 'fs';
@@ -17,7 +18,9 @@ import { hideBin } from 'yargs/helpers';
 import { fixCWD } from './cwd.js';
 import {
   applyRecommendedBumpsByPackage,
+  getChangedFilesSinceBranch,
   getChangedFilesSinceBump,
+  getChangedPackagesSinceBranch,
   getChangedPackagesSinceBump,
   getConventionalCommitsByPackage,
   getLastVersionTagsByPackageName,
@@ -71,6 +74,37 @@ const getSharedVersionYargs = yargs =>
     });
 
 /**
+ * Returns baseline set of arguments that are applicable to all branch-specific commands
+ * @param {Argv} yargs
+ */
+const getSharedBranchYargs = yargs =>
+  getSharedYargs(yargs)
+    .option('branch', {
+      alias: 'b',
+      default: 'main',
+      description: 'Name of the branch to check against.',
+      type: 'string',
+    })
+    .option('package', {
+      alias: 'p',
+      description: 'One or more packages to check. You can specify multiple by doing -p <name1> -p <name2> -p <name3>',
+      type: 'array',
+      string: true,
+    });
+
+/**
+ * Returns a byName argument
+ * @param {Argv} yargs
+ */
+const addByNameYargs = yargs =>
+  yargs.option('byName', {
+    default: false,
+    description:
+      'If true and the --json flag has not been set, reports the changed packages by their package.json names, instead of by their relative file paths',
+    type: 'boolean',
+  });
+
+/**
  * Returns baseline set of arguments that are applicable to all bump operation commands
  * @param {Argv} yargs
  */
@@ -109,6 +143,28 @@ const getSharedBumpArgs = yargs =>
       description: 'If true, will update any dependent "package.json#optionalDependencies" fields',
       type: 'boolean',
     });
+
+/**
+ * Prints package changes based on input parameters
+ * @param {PackageInfo[]} changedPackages
+ * @param {boolean} byName
+ * @param {string} cwd
+ */
+const reportChangedPackages = (changedPackages, byName, cwd) => {
+  return changedPackages.forEach(p => {
+    let changedStr = '';
+    if (byName) changedStr = `${p.name}${os.EOL}`;
+    else {
+      const relPackagePath = path.relative(fixCWD(cwd), p.packagePath);
+      changedStr = `./${relPackagePath}${os.EOL}`;
+    }
+    p.filesChanged?.forEach(fp => {
+      changedStr += `  ${fp}${os.EOL}`;
+    });
+
+    console.info(changedStr);
+  });
+};
 
 async function setupCLI() {
   /** @type {PackageJson} */
@@ -220,13 +276,7 @@ async function setupCLI() {
     .command(
       'changed-packages-since-bump',
       'Gets a list of all packages that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.',
-      y =>
-        getSharedVersionYargs(y).option('byName', {
-          default: false,
-          description:
-            'If true and the --json flag has not been set, reports the changed packages by their package.json names, instead of by their relative file paths',
-          type: 'boolean',
-        }),
+      y => addByNameYargs(getSharedVersionYargs(y)),
       async args => {
         const changedPackages = await getChangedPackagesSinceBump({
           cwd: args.cwd,
@@ -241,19 +291,7 @@ async function setupCLI() {
             'No files have changed. This likely means you have not yet created your first version with the lets-version library, or no changes have occurred since the last version bump.',
           );
         }
-        return changedPackages.forEach(p => {
-          let changedStr = '';
-          if (args.byName) changedStr = `${p.name}${os.EOL}`;
-          else {
-            const relPackagePath = path.relative(fixCWD(args.cwd), p.packagePath);
-            changedStr = `./${relPackagePath}${os.EOL}`;
-          }
-          p.filesChanged?.forEach(fp => {
-            changedStr += `  ${fp}${os.EOL}`;
-          });
-
-          console.info(changedStr);
-        });
+        return reportChangedPackages(changedPackages, args.byName, args.cwd);
       },
     )
     .command(
@@ -385,6 +423,48 @@ async function setupCLI() {
           updatePeer: args.updatePeer,
           yes: args.yes,
         });
+      },
+    )
+    .command(
+      'changed-files-since-branch',
+      'Gets a list of all files that have changed in the current branch.',
+      y => getSharedBranchYargs(y),
+      async args => {
+        const changedFiles = await getChangedFilesSinceBranch({
+          cwd: args.cwd,
+          names: args.package,
+          branch: args.branch,
+        });
+
+        if (args.json) return console.info(JSON.stringify(changedFiles, null, 2));
+
+        if (!changedFiles.length) {
+          return console.warn(
+            'No files have changed. This likely means no changes have occurred since the branch was created.',
+          );
+        }
+        return console.info(changedFiles.join(os.EOL));
+      },
+    )
+    .command(
+      'changed-packages-since-branch',
+      'Gets a list of all packages that have changed in the current branch.',
+      y => addByNameYargs(getSharedBranchYargs(y)),
+      async args => {
+        const changedPackages = await getChangedPackagesSinceBranch({
+          cwd: args.cwd,
+          names: args.package,
+          branch: args.branch,
+        });
+
+        if (args.json) return console.info(JSON.stringify(changedPackages, null, 2));
+
+        if (!changedPackages.length) {
+          return console.warn(
+            'No files have changed. This likely means no changes have occurred since the branch was created.',
+          );
+        }
+        return reportChangedPackages(changedPackages, args.byName, args.cwd);
       },
     )
     .help();
