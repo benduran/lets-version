@@ -84,6 +84,10 @@ Commands:
                                             mps, and updates all repository depe
                                             ndents to match the version that has
                                              been updated.
+  lets-version changed-files-since-branch   Gets a list of all files that have c
+                                            hanged in the current branch.
+  lets-version changed-packages-since-bran  Gets a list of all packages that hav
+  ch                                        e changed in the current branch.
 
 Options:
   --version  Show version number                                       [boolean]
@@ -104,7 +108,7 @@ Options:
   --help     Show help                                                 [boolean]
   --cwd      The folder to use as root when running command. Defaults to your se
              ssion's CWD
-              [string] [default: "/Users/bduran/devlop/opensource/lets-version"]
+       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
   --json     If true, lists results as a JSON blob piped to your terminal
                                                       [boolean] [default: false]
 ```
@@ -125,7 +129,7 @@ Options:
   --help     Show help                                                 [boolean]
   --cwd      The folder to use as root when running command. Defaults to your se
              ssion's CWD
-              [string] [default: "/Users/bduran/devlop/opensource/lets-version"]
+       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
   --json     If true, lists results as a JSON blob piped to your terminal
                                                       [boolean] [default: false]
 ```
@@ -145,7 +149,7 @@ Options:
       --help         Show help                                         [boolean]
       --cwd          The folder to use as root when running command. Defaults to
                       your session's CWD
-              [string] [default: "/Users/bduran/devlop/opensource/lets-version"]
+       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
       --json         If true, lists results as a JSON blob piped to your termina
                      l                                [boolean] [default: false]
   -p, --package      One or more packages to check. You can specify multiple by
@@ -174,7 +178,7 @@ Options:
       --help         Show help                                         [boolean]
       --cwd          The folder to use as root when running command. Defaults to
                       your session's CWD
-              [string] [default: "/Users/bduran/devlop/opensource/lets-version"]
+       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
       --json         If true, lists results as a JSON blob piped to your termina
                      l                                [boolean] [default: false]
   -p, --package      One or more packages to check. You can specify multiple by
@@ -203,7 +207,7 @@ Options:
       --help         Show help                                         [boolean]
       --cwd          The folder to use as root when running command. Defaults to
                       your session's CWD
-              [string] [default: "/Users/bduran/devlop/opensource/lets-version"]
+       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
       --json         If true, lists results as a JSON blob piped to your termina
                      l                                [boolean] [default: false]
   -p, --package      One or more packages to check. You can specify multiple by
@@ -214,6 +218,9 @@ Options:
                       lets-version will do "git fetch origin --tags --force" to
                      ensure your branch if up-to-date with the tags on origin
                                                       [boolean] [default: false]
+      --byName       If true and the --json flag has not been set, reports the c
+                     hanged packages by their package.json names, instead of by
+                     their relative file paths        [boolean] [default: false]
 ```
 
 ### `get-conventional-since-bump`
@@ -231,7 +238,7 @@ Options:
       --help         Show help                                         [boolean]
       --cwd          The folder to use as root when running command. Defaults to
                       your session's CWD
-              [string] [default: "/Users/bduran/devlop/opensource/lets-version"]
+       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
       --json         If true, lists results as a JSON blob piped to your termina
                      l                                [boolean] [default: false]
   -p, --package      One or more packages to check. You can specify multiple by
@@ -261,7 +268,7 @@ Options:
       --help            Show help                                      [boolean]
       --cwd             The folder to use as root when running command. Defaults
                          to your session's CWD
-              [string] [default: "/Users/bduran/devlop/opensource/lets-version"]
+       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
       --json            If true, lists results as a JSON blob piped to your term
                         inal                          [boolean] [default: false]
   -p, --package         One or more packages to check. You can specify multiple
@@ -302,63 +309,122 @@ Gets a series of recommended version bumps for a specific package or set of pack
 ```bash
 lets-version apply-bumps
 
-lets-version apply-bumps
-
 Gets a series of recommended version bumps for a specific package or set of pack
 ages, applies the version bumps, and updates all repository dependents to match
 the version that has been updated.
 
 Options:
-      --version          Show version number                           [boolean]
-      --help             Show help                                     [boolean]
-      --cwd              The folder to use as root when running command. Default
-                         s to your session's CWD
-              [string] [default: "/Users/bduran/devlop/opensource/lets-version"]
-      --json             If true, lists results as a JSON blob piped to your ter
-                         minal                        [boolean] [default: false]
-  -p, --package          One or more packages to check. You can specify multiple
-                          by doing -p <name1> -p <name2> -p <name3>      [array]
-      --noFetchAll       If true, will not fetch information from remote via "gi
-                         t fetch origin"              [boolean] [default: false]
-      --noFetchTags      If true, does not force fetch tags from origin. By defa
-                         ult, lets-version will do "git fetch origin --tags --fo
-                         rce" to ensure your branch if up-to-date with the tags
-                         on origin                    [boolean] [default: false]
-      --releaseAs        Releases each changed package as this release type or a
-                         s an exact version. "major" "minor" "patch" "alpha" "be
-                         ta" "auto" or an exact semver version number are allowe
-                         d.                           [string] [default: "auto"]
-      --preid            The "prerelease identifier" to use as a prefix for the
-                         "prerelease" part of a semver. Like the rc in 1.2.0-rc.
-                         8. If this is specified, a bump type of "prerelease" wi
-                         ll always take place, causing any "--releaseAs" setting
-                          to be ignored.                                [string]
-      --uniqify          If true, will append the git SHA at version bunp time t
-                         o the end of the version number (while maintaining vali
-                         d semver)                    [boolean] [default: false]
-      --forceAll         If true, forces all packages to receive a bump update,
-                         regardless of whether they have changed. What this mean
-                         s, in practice, is that any package that would not norm
-                         ally be changed will receive a PATCH update (or an equi
-                         valent if --preid is set)    [boolean] [default: false]
-      --updatePeer       If true, will update any dependent "package.json#peerDe
-                         pendencies" fields           [boolean] [default: false]
-      --updateOptional   If true, will update any dependent "package.json#option
-                         alDependencies" fields       [boolean] [default: false]
-  -y, --yes              If true, skips any confirmation prompts. Useful if you
-                         need to automate this process in CI
+      --version           Show version number                          [boolean]
+      --help              Show help                                    [boolean]
+      --cwd               The folder to use as root when running command. Defaul
+                          ts to your session's CWD
+       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
+      --json              If true, lists results as a JSON blob piped to your te
+                          rminal                      [boolean] [default: false]
+  -p, --package           One or more packages to check. You can specify multipl
+                          e by doing -p <name1> -p <name2> -p <name3>    [array]
+      --noFetchAll        If true, will not fetch information from remote via "g
+                          it fetch origin"            [boolean] [default: false]
+      --noFetchTags       If true, does not force fetch tags from origin. By def
+                          ault, lets-version will do "git fetch origin --tags --
+                          force" to ensure your branch if up-to-date with the ta
+                          gs on origin                [boolean] [default: false]
+      --releaseAs         Releases each changed package as this release type or
+                          as an exact version. "major" "minor" "patch" "alpha" "
+                          beta" "auto" or an exact semver version number are all
+                          owed.                       [string] [default: "auto"]
+      --preid             The "prerelease identifier" to use as a prefix for the
+                           "prerelease" part of a semver. Like the rc in 1.2.0-r
+                          c.8. If this is specified, a bump type of "prerelease"
+                           will always take place, causing any "--releaseAs" set
+                          ting to be ignored.                           [string]
+      --uniqify           If true, will append the git SHA at version bunp time
+                          to the end of the version number (while maintaining va
+                          lid semver)                 [boolean] [default: false]
+      --forceAll          If true, forces all packages to receive a bump update,
+                           regardless of whether they have changed. What this me
+                          ans, in practice, is that any package that would not n
+                          ormally be changed will receive a PATCH update (or an
+                          equivalent if --preid is set)
                                                       [boolean] [default: false]
-      --dryRun           If true, will print the changes that are expected to ha
-                         ppen at every step instead of actually writing the chan
-                         ges                          [boolean] [default: false]
-      --rollupChangelog  If true, in addition to updating changelog files for al
-                         l packages that will be bumped, creates a "rollup" CHAN
-                         GELOG.md at the root of the repo that contains an aggre
-                         gate of changes              [boolean] [default: false]
-      --noChangelog      If true, will not write CHANGELOG.md updates for each p
-                         ackage that has changed      [boolean] [default: false]
-      --noPush           If true, will not push changes and tags to origin
+      --updatePeer        If true, will update any dependent "package.json#peerD
+                          ependencies" fields         [boolean] [default: false]
+      --updateOptional    If true, will update any dependent "package.json#optio
+                          nalDependencies" fields     [boolean] [default: false]
+      --allowUncommitted  If true, will allow the version operation to continue
+                          when there are uncommitted files in the repo at versio
+                          n bump time. This is usefull if you have some scripts
+                          that need to run after version bumps are performed, bu
+                          t potentially before you issue a git commit and subseq
+                          uent npm publish operation. [boolean] [default: false]
+      --dryRun            If true, will print the changes that are expected to h
+                          appen at every step instead of actually writing the ch
+                          anges                       [boolean] [default: false]
+      --rollupChangelog   If true, in addition to updating changelog files for a
+                          ll packages that will be bumped, creates a "rollup" CH
+                          ANGELOG.md at the root of the repo that contains an ag
+                          gregate of changes          [boolean] [default: false]
+      --noChangelog       If true, will not write CHANGELOG.md updates for each
+                          package that has changed    [boolean] [default: false]
+      --noCommit          If true, will modify all required files but leave them
+                           uncommitted after all operations have completed. This
+                           will also prevent a git push from occurring
                                                       [boolean] [default: false]
+      --noInstall         If true, will skip running "npm install" or your packa
+                          ge manager's equivalent install after applying the bum
+                          ps                          [boolean] [default: false]
+      --noPush            If true, will not push changes and tags to origin
+                                                      [boolean] [default: false]
+  -y, --yes               If true, skips any confirmation prompts. Useful if you
+                           need to automate this process in CI
+                                                      [boolean] [default: false]
+```
+
+### `changed-files-since-branch`
+
+Gets a list of all files that have changed in the current branch.
+
+```bash
+lets-version changed-files-since-branch
+
+Gets a list of all files that have changed in the current branch.
+
+Options:
+      --version  Show version number                                   [boolean]
+      --help     Show help                                             [boolean]
+      --cwd      The folder to use as root when running command. Defaults to you
+                 r session's CWD
+       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
+      --json     If true, lists results as a JSON blob piped to your terminal
+                                                      [boolean] [default: false]
+  -b, --branch   Name of the branch to check against. [string] [default: "main"]
+  -p, --package  One or more packages to check. You can specify multiple by doin
+                 g -p <name1> -p <name2> -p <name3>                      [array]
+```
+
+### `changed-packages-since-branch`
+
+Gets a list of all packages that have changed in the current branch.
+
+```bash
+lets-version changed-packages-since-branch
+
+Gets a list of all packages that have changed in the current branch.
+
+Options:
+      --version  Show version number                                   [boolean]
+      --help     Show help                                             [boolean]
+      --cwd      The folder to use as root when running command. Defaults to you
+                 r session's CWD
+       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
+      --json     If true, lists results as a JSON blob piped to your terminal
+                                                      [boolean] [default: false]
+  -b, --branch   Name of the branch to check against. [string] [default: "main"]
+  -p, --package  One or more packages to check. You can specify multiple by doin
+                 g -p <name1> -p <name2> -p <name3>                      [array]
+      --byName   If true and the --json flag has not been set, reports the chang
+                 ed packages by their package.json names, instead of by their re
+                 lative file paths                    [boolean] [default: false]
 ```
 
 ---
@@ -447,6 +513,24 @@ NOTE: It is possible for your bump recommendation to not change. If this is the 
   - `opts?.noChangelog` - If true, will not write CHANGELOG.md updates for each package that has changed. Defaults to `false`.
   - `opts?.dryRun` - If true, will print the changes that are expected to happen at every step instead of actually writing the changes. Defaults to `false`.
     array of change log entries and returns the full changelog entry string. Defaults to `undefined`.
+  - `opts?.cwd?: string` - Defaults to `appRootPath.toString()`
+
+### `getChangedFilesSinceBranch(opts)`
+
+Gets a list of all files that have changed since the current branch was created.
+
+- Parameters
+  - `opts?.branch?: string` - Defaults to `main`
+  - `opts?.names?: string[]` - Defaults to `undefined`
+  - `opts?.cwd?: string` - Defaults to `appRootPath.toString()`
+
+### `getChangedPackagesSinceBranch(opts)`
+
+Gets a list of all packages that have changed since the current branch was created.
+
+- Parameters
+  - `opts?.branch?: string` - Defaults to `main`
+  - `opts?.names?: string[]` - Defaults to `undefined`
   - `opts?.cwd?: string` - Defaults to `appRootPath.toString()`
 
 ---

@@ -519,7 +519,9 @@ export async function applyRecommendedBumpsByPackage(opts) {
       b =>
         `package: ${b.packageInfo.name}${os.EOL}  bump: ${b.from ? `${b.from} -> ${b.to}` : `First time -> ${b.to}`}${
           os.EOL
-        }  type: ${BumpTypeToString[b.type]}${os.EOL}  valid: ${b.isValid}`,
+        }  type: ${BumpTypeToString[b.type]}${os.EOL}  valid: ${b.isValid}${os.EOL}  private: ${
+          b.packageInfo.isPrivate
+        }`,
     )
     .join(`${os.EOL}${os.EOL}`);
   if (!yes) {
