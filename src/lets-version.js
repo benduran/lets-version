@@ -690,8 +690,10 @@ export async function applyRecommendedBumpsByPackage(opts) {
   }
 
   // create all the git tags
-  if (!noPush || !noCommit) {
-    const tagsToPush = await Promise.all(
+  /** @type {string[]} */
+  let tagsToPush = [];
+  if (!noCommit) {
+    tagsToPush = await Promise.all(
       synchronized.bumps.map(async b => {
         const tag = formatVersionTagForPackage(
           new PackageInfo({
@@ -705,13 +707,15 @@ export async function applyRecommendedBumpsByPackage(opts) {
         return tag;
       }, fixedCWD),
     );
+  }
 
+  if (!noPush) {
     // push to upstream
     if (dryRun) console.info(`Will git push --no-verify all changes made during the version bump operation`);
     else await gitPush(fixedCWD);
 
     if (dryRun) console.info(`Will push the following git tags: ${tagsToPush.join(' ')}`);
-    else await gitPushTags(tagsToPush, fixedCWD);
+    else if (tagsToPush.length) await gitPushTags(tagsToPush, fixedCWD);
   }
 
   return synchronized;
