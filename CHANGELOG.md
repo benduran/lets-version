@@ -1,3 +1,11 @@
+## 0.7.4-beta.0 (2023-09-28)
+
+### 🛠️ Fixes 🛠️
+
+- nopush and nocommit are not properly respected (65e5f53229d4762c412bda5e33f468ad0115248d)
+
+---
+
 ## 0.7.3 (2023-09-28)
 
 ### 🔀 Miscellaneous 🔀
