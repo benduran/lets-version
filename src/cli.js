@@ -392,6 +392,11 @@ async function setupCLI() {
               'If true, will modify all required files but leave them uncommitted after all operations have completed. This will also prevent a git push from occurring',
             type: 'boolean',
           })
+          .option('noInstall', {
+            default: false,
+            description: `If true, will skip running "npm install" or your package manager's equivalent install after applying the bumps`,
+            type: 'boolean',
+          })
           .option('noPush', {
             default: false,
             description: 'If true, will not push changes and tags to origin',
@@ -414,6 +419,7 @@ async function setupCLI() {
           noCommit: args.noCommit,
           noFetchAll: args.noFetchAll,
           noFetchTags: args.noFetchTags,
+          noInstall: args.noInstall,
           noPush: args.noPush,
           preid: args.preid,
           releaseAs: args.releaseAs,
