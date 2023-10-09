@@ -141,7 +141,9 @@ export async function synchronizeBumps(
 
     const [existingSemver] = semverUtils.parseRange(toWrite.version);
 
-    const existingTagDoesNotMatch = !Boolean(existingSemver?.release?.toLowerCase().includes(bump.bumpTypeName));
+    const existingTagDoesNotMatch = existingSemver?.release
+      ? !existingSemver.release.toLowerCase().includes(bump.bumpTypeName)
+      : true;
 
     // we want to fully respect the prerelease or "releaseAs" changeover,
     // or fallback to using the version number that's largest
