@@ -139,7 +139,13 @@ export async function synchronizeBumps(
     const toWrite = writeToDisk.get(bump.packageInfo.name);
     if (!toWrite) continue;
 
-    const version = semver.gt(bump.to, toWrite.version) ? bump.to : toWrite.version;
+    const [existingSemver] = semverUtils.parseRange(toWrite.version);
+
+    const existingTagDoesNotMatch = !Boolean(existingSemver?.release?.toLowerCase().includes(bump.bumpTypeName));
+
+    // we want to fully respect the prerelease or "releaseAs" changeover,
+    // or fallback to using the version number that's largest
+    const version = existingTagDoesNotMatch || semver.gt(bump.to, toWrite.version) ? bump.to : toWrite.version;
     bump.packageInfo.version = bump.to;
     bump.packageInfo.pkg.version = bump.to;
     writeToDisk.set(

@@ -459,6 +459,17 @@ export class BumpRecommendation {
   get isValid() {
     return this.from !== this.to;
   }
+
+  /**
+   * Computes a human-friendly bump type name
+   * from the BumpType enum for this Bump recommendation
+   */
+  get bumpTypeName() {
+    for (const [key, val] of Object.entries(BumpType)) {
+      if (this.type === val) return key.toLowerCase();
+    }
+    throw new Error(`Invalid bump type of "${this.type}" detected`);
+  }
 }
 
 /**
