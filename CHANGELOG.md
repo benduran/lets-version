@@ -1,3 +1,18 @@
+## 0.7.5 (2023-10-09)
+
+### 🔀 Miscellaneous 🔀
+
+- changing between alpha and beta doesn't respect the changeover (d29635fa7979694bbb34f5c4ecc8a35d6c6fa28c)
+- always use the existing comparison logic if there's not a valid release type detected for some reason (f5fd0af7b83779371cea7e11156a6bc484bdddd3)
+
+
+
+### 🛠️ Fixes 🛠️
+
+- changing between alpha and beta doesn't respect the changeover (82bbb2e3a429d15d970af098ad587e663f833f1c)
+
+---
+
 ## 0.7.4 (2023-09-28)
 
 ### 🔀 Miscellaneous 🔀
