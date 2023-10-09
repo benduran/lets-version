@@ -40,10 +40,12 @@ function computeDepDepth(node, depth) {
  * @param {PackageInfo} packageInfo
  * @param {Map<string, PackageInfo>} allPackagesByName
  * @param {DepType} depType
+ * @param {boolean} [updatePeer=false]
+ * @param {boolean} [updateOptional=false]
  *
  * @returns {LocalDependencyGraphNode}
  */
-function buildGraphForPackageInfo(packageInfo, allPackagesByName, depType) {
+function buildGraphForPackageInfo(packageInfo, allPackagesByName, depType, updatePeer = false, updateOptional = false) {
   const node = new LocalDependencyGraphNode({
     ...packageInfo,
     depType,
@@ -52,7 +54,7 @@ function buildGraphForPackageInfo(packageInfo, allPackagesByName, depType) {
   });
 
   for (const pkey in packageInfo.pkg) {
-    if (!isPackageJSONDependencyKeySupported(pkey, true, true)) continue;
+    if (!isPackageJSONDependencyKeySupported(pkey, updatePeer, updateOptional)) continue;
 
     const pkeyDeps = packageInfo.pkg[pkey] ?? {};
     const pkeyDepsNames = Object.keys(pkeyDeps);
@@ -62,7 +64,7 @@ function buildGraphForPackageInfo(packageInfo, allPackagesByName, depType) {
       if (!localMatch) continue;
 
       // @ts-ignore
-      node.deps.push(buildGraphForPackageInfo(localMatch, allPackagesByName, pkey));
+      node.deps.push(buildGraphForPackageInfo(localMatch, allPackagesByName, pkey, updatePeer, updateOptional));
     }
   }
 
@@ -75,10 +77,16 @@ function buildGraphForPackageInfo(packageInfo, allPackagesByName, depType) {
  * representation
  *
  * @param {string} [cwd=appRootPath.toString()]
+ * @param {boolean} [updatePeer=false]
+ * @param {boolean} [updateOptional=false]
  *
  * @returns {Promise<LocalDependencyGraphNode[]>}
  */
-export async function buildLocalDependencyGraph(cwd = appRootPath.toString()) {
+export async function buildLocalDependencyGraph(
+  cwd = appRootPath.toString(),
+  updatePeer = false,
+  updateOptional = false,
+) {
   const fixedCWD = fixCWD(cwd);
 
   /** @type {LocalDependencyGraphNode[]} */

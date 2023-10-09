@@ -304,6 +304,58 @@ export class LocalDependencyGraphNode extends PackageInfo {
     /** @type {number} */
     this.localDepDepth = info.localDepDepth;
   }
+
+  /**
+   * Checks whether any place in this node's tree
+   * has a dep that matches this name,
+   * and returns the parent node
+   * if it is found
+   * @param {string} depname
+   *
+   * @returns {LocalDependencyGraphNode | null}
+   */
+  hasDep(depname) {
+    for (const childDep of this.deps) {
+      if (childDep.name === depname) return this;
+      // need to check children's children
+
+      const found = childDep.hasDep(depname);
+      if (found) return found;
+    }
+    return null;
+  }
+
+  /**
+   * Given an existing bump recommendation,
+   * attempts to find any transitive dependencies
+   * in the dep graph that match the thing being bumped.
+   * If a match is found, then all monorepo packages
+   * that depend on it, either directly or indirectly,
+   * will have a bump recommendation created that matches
+   * the bump rec provided.
+   *
+   * @param {BumpRecommendation} bumpRec
+   *
+   * @returns {BumpRecommendation[]}
+   */
+  getBubbleBumpRec(bumpRec) {
+    /**
+     * @type {BumpRecommendation[]}
+     */
+    const recs = [];
+    for (const childDep of this.deps) {
+      if (childDep.name === bumpRec.packageInfo.name) {
+        recs.push(new BumpRecommendation(this, bumpRec.from, bumpRec.to, bumpRec.type));
+        continue;
+      }
+
+      const deeperRecs = childDep.getBubbleBumpRec(bumpRec);
+      recs.push(...deeperRecs);
+    }
+
+    // remove duplicates
+    return Array.from(new Map(recs.map(r => [r.packageInfo.name, r])).values());
+  }
 }
 
 /**
@@ -447,6 +499,9 @@ export class BumpRecommendation {
 
     /** @type {BumpType} */
     this.type = type;
+
+    /** @type {string} */
+    this.bumpTypeDisplayName = this.getBumpTypeDisplayName();
   }
 
   /**
@@ -458,6 +513,31 @@ export class BumpRecommendation {
    */
   get isValid() {
     return this.from !== this.to;
+  }
+
+  /**
+   * Gets a human-friendly, stringified version
+   * of the bump type enum
+   *
+   * @private
+   */
+  getBumpTypeDisplayName() {
+    switch (this.type) {
+      case BumpType.EXACT:
+        return 'EXACT';
+      case BumpType.FIRST:
+        return 'FIRST';
+      case BumpType.MAJOR:
+        return 'MAJOR';
+      case BumpType.MINOR:
+        return 'MINOR';
+      case BumpType.PATCH:
+        return 'PATCH';
+      case BumpType.PRERELEASE:
+        return 'PRERELEASE';
+      default:
+        throw new Error(`Invalid bump type of "${this.type}" detected`);
+    }
   }
 }
 

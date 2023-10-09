@@ -1,11 +1,14 @@
 import appRootPath from 'app-root-path';
 import semver from 'semver';
-import semverUtils from 'semver-utils';
 
 import { fixCWD } from './cwd.js';
 import { gitCurrentSHA } from './git.js';
-import { BumpRecommendation, BumpType, PackageInfo, ReleaseAsPresets } from './types.js';
-import { isPackageJSONDependencyKeySupported } from './util.js';
+import { buildLocalDependencyGraph } from './localDependencyGraph.js';
+import { BumpRecommendation, BumpType, ReleaseAsPresets } from './types.js';
+
+/**
+ * @typedef {import('./types.js').PackageInfo} PackageInfo
+ */
 
 /**
  * Checks whether or not a package.json key is allowed to be updated / managed by "lets-version"
@@ -103,6 +106,34 @@ export async function getBumpRecommendationForPackageInfo(
  */
 
 /**
+ * Given a map of bump recommendations,
+ * ensures that only a single for each package
+ * name is taken, always using the maximum bump
+ * recommendation possible
+ *
+ * @param {Map<string, BumpRecommendation[]>} byName
+ *
+ * @returns {BumpRecommendation[]}
+ */
+function dedupBumpsAndTakeMax(byName) {
+  /**
+   * @type {BumpRecommendation[]}
+   */
+  const deduped = [];
+  for (const proposedBumpsForPackage of byName.values()) {
+    const maxBump = proposedBumpsForPackage.reduce(
+      // @ts-ignore
+      (prev, proposedBump) => (prev.type > proposedBump.type ? prev : proposedBump),
+      {},
+    );
+    // @ts-ignore
+    deduped.push(maxBump);
+  }
+
+  return deduped;
+}
+
+/**
  * Applies bumps to top-level packages, then attempts to recursively
  * synchronize package versions and applies bumps if a package hasn't already
  * been bumped (but might receive one as a result from this operation)
@@ -131,115 +162,57 @@ export async function synchronizeBumps(
   cwd = appRootPath.toString(),
 ) {
   const fixedCWD = fixCWD(cwd);
-  const clonedBumpsByPackageName = new Map(bumpsByPackageName.entries());
 
-  const writeToDisk = new Map(bumps.map(b => [b.packageInfo.name, b.packageInfo]));
+  // we will push all bumps that will actually need to be written
+  // to disk to this array. This means we'll need to recursively update
+  // children if, say, PackageA was bumped, and PackageB depends on it.
+  // This would mean PackageB would have to receive the same type of bump
+  // PackageA received, unless PackageB already received a bump and it was a
+  // "bigger" type than PackageA would have forced. Repeat, ad nauseum 🤣.
+  const bumpsIncludingTransitive = [...bumps];
+  // const clonedBumpsByPackageName = new Map(bumpsByPackageName.entries());
+  const graph = await buildLocalDependencyGraph(fixedCWD);
 
   for (const bump of bumps) {
-    const toWrite = writeToDisk.get(bump.packageInfo.name);
-    if (!toWrite) continue;
-
-    const version = semver.gt(bump.to, toWrite.version) ? bump.to : toWrite.version;
-    bump.packageInfo.version = bump.to;
-    bump.packageInfo.pkg.version = bump.to;
-    writeToDisk.set(
-      toWrite.name,
-      new PackageInfo({
-        ...toWrite,
-        // @ts-ignore
-        pkg: {
-          ...toWrite.pkg,
-          version,
-        },
-        version,
-      }),
-    );
-  }
-
-  const updatedParents = Array.from(writeToDisk.values());
-  for (const updatedParent of updatedParents) {
-    const parentBumpType = clonedBumpsByPackageName.get(updatedParent.name);
-    if (!parentBumpType) continue;
-
-    // loop through all packages to find out which ones have the updatedParent as a dep
-    for (const p of allPackages) {
-      for (const key in p.pkg) {
-        if (!isPackageJSONDependencyKeySupported(key, updatePeer, updateOptional)) continue;
-        // there's a match. let's update the dep field
-
-        // @ts-ignore
-        const existingSemverStr = p.pkg[key][updatedParent.name] || '';
-        if (!existingSemverStr) continue;
-
-        const semverDetails = semverUtils.parseRange(existingSemverStr);
-
-        // if there are more than one semverDetails because user has a complicated range,
-        // we will only take the first one if it's something we can work with in the update.
-        // if it's not something reasonable, it will automatically become "^"
-        const [firstDetail] = semverDetails;
-        let firstDetailOperator = firstDetail?.operator || '^';
-        if (
-          !firstDetailOperator.startsWith('>=') &&
-          !firstDetailOperator.startsWith('^') &&
-          !firstDetailOperator.startsWith('~')
-        ) {
-          firstDetailOperator = '^';
-        }
-
-        const newSemverStr = `${firstDetailOperator}${updatedParent.version}`;
-
-        // @ts-ignore
-        p.pkg[key][updatedParent.name] = newSemverStr;
-
-        // now we need to try and apply a bump for this dependent (p)
-        // if it doesn't already have one
-
-        /** @type {BumpRecommendation} */
-        let childBumpRec;
-
-        const existingBump = clonedBumpsByPackageName.get(p.name);
-        if (existingBump) {
-          existingBump.type = Math.max(existingBump.type, parentBumpType.type);
-          childBumpRec = existingBump;
-        } else {
-          const childBumpType = parentBumpType.type;
-          childBumpRec = await getBumpRecommendationForPackageInfo(
-            p,
-            p.version,
-            childBumpType,
-            releaseAs,
-            preid,
-            uniqify,
-            fixedCWD,
-          );
-
-          clonedBumpsByPackageName.set(p.name, childBumpRec);
-        }
-
-        // @ts-ignore
-        childBumpRec.packageInfo.pkg[key][updatedParent.name] = newSemverStr;
-
-        const recursedResults = await synchronizeBumps(
-          [childBumpRec],
-          clonedBumpsByPackageName,
-          allPackages,
-          releaseAs,
-          preid,
-          uniqify,
-          updatePeer,
-          updateOptional,
-          fixedCWD,
-        );
-
-        recursedResults.packages.forEach(r => writeToDisk.set(r.name, r));
-        recursedResults.bumps.forEach(b => clonedBumpsByPackageName.set(b.packageInfo.name, b));
-      }
+    for (const topLevelPackage of graph) {
+      bumpsIncludingTransitive.push(...topLevelPackage.getBubbleBumpRec(bump));
     }
   }
 
+  // remove duplicates and always take the larger of any matches
+  /**
+   * @type {Map<string, BumpRecommendation[]>}
+   */
+  const byName = new Map();
+
+  for (const bump of bumpsIncludingTransitive) {
+    if (!byName.has(bump.packageInfo.name)) byName.set(bump.packageInfo.name, []);
+    byName.set(bump.packageInfo.name, [...(byName.get(bump.packageInfo.name) ?? []), bump]);
+  }
+
+  let deduped = dedupBumpsAndTakeMax(byName);
+
+  // if there are more bumps than what we started with, we need to
+  // go through the process again to ensure everything is flushed out
+
+  if (deduped.length > bumps.length) {
+    const result = await synchronizeBumps(
+      deduped,
+      new Map(deduped.map(d => [d.packageInfo.name, d])),
+      allPackages,
+      releaseAs,
+      preid,
+      uniqify,
+      updatePeer,
+      updateOptional,
+      fixedCWD,
+    );
+    deduped = result.bumps;
+  }
+
   return {
-    bumps: Array.from(clonedBumpsByPackageName.values()),
-    bumpsByPackageName: clonedBumpsByPackageName,
-    packages: Array.from(writeToDisk.values()),
+    bumps: deduped,
+    bumpsByPackageName: new Map(deduped.map(f => [f.packageInfo.name, f])),
+    packages: deduped.map(f => f.packageInfo),
   };
 }
