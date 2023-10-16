@@ -68,6 +68,8 @@ export function parseToConventional(commits) {
         sha: c.sha,
         subject: details.subject || extracted.subject,
         type: details.type,
+        email: c.email,
+        author: c.author,
       }),
     );
   });

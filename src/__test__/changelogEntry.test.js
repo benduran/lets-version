@@ -18,6 +18,8 @@ describe('changelog entry tests', () => {
       sha: 'sha',
       breaking: false,
       mentions: ['mention'],
+      author: 'author',
+      email: 'email',
     }),
   ];
 
@@ -25,7 +27,7 @@ describe('changelog entry tests', () => {
    * @param {GitConventional} line
    * @returns {string}
    */
-  const customFormatter = line => `- **${line.scope}** ${line.subject} (${line.sha})`;
+  const customFormatter = line => `- **${line.scope}** ${line.author} ${line.subject} (${line.sha})`;
 
   it('should use the default formatter', () => {
     const result = new ChangelogUpdateEntry(ChangelogEntryType.FEATURES, sampleLines);
@@ -34,6 +36,6 @@ describe('changelog entry tests', () => {
 
   it('should use the custom formatter', () => {
     const result = new ChangelogUpdateEntry(ChangelogEntryType.FEATURES, sampleLines, customFormatter);
-    expect(result.toString()).toBe('### ✨ Features ✨\n\n- **scope** subject (sha)');
+    expect(result.toString()).toBe('### ✨ Features ✨\n\n- **scope** author subject (sha)');
   });
 });

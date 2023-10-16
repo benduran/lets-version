@@ -90,6 +90,8 @@ export class GitConventional {
   /**
    * @param {object} conventional
    * @param {string} conventional.sha
+   * @param {string | null} [conventional.author]
+   * @param {string | null} [conventional.email]
    * @param {string | null} conventional.body
    * @param {boolean} conventional.breaking
    * @param {string | null} conventional.footer
@@ -117,9 +119,17 @@ export class GitConventional {
     sha,
     subject,
     type,
+    author,
+    email,
   }) {
     /** @type {string} */
     this.sha = sha;
+
+    /** @type {string | undefined | null} */
+    this.author = author;
+
+    /** @type {string | undefined | null} */
+    this.email = email;
 
     /**
      * @type {string | null}
