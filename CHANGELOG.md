@@ -1,3 +1,12 @@
+## 0.7.6 (2023-10-16)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #14 from artemdanylenko/adanylenko/author (0fcc5abd0f783e1d74be8aa823c8383829ea6683)
+- Add ability to use author/email in the changelog formatter (e1b6ef8b9a3576a5bb1099a8f17056569faf092f)
+
+---
+
 ## 0.7.5 (2023-10-09)
 
 ### 🔀 Miscellaneous 🔀
