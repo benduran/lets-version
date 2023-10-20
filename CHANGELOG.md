@@ -1,3 +1,18 @@
+## 0.8.0 (2023-10-20)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #15 from benduran/bduran/fix-changelog-default-line-formatter (ebb77944109a9932bafce50d0238a85cc6ed070f)
+- chore: removed debugging line (fdfc4b84d2071179da1a0f87c02aa63fd41d40d2)
+
+
+
+### 🛠️ Fixes 🛠️
+
+- fix: changelog line default formatter used the wrong default field (0fc702314d7169117ce1e75690928be967ec291c)
+
+---
+
 ## 0.7.6 (2023-10-16)
 
 ### 🔀 Miscellaneous 🔀
