@@ -542,7 +542,8 @@ export class ChangelogUpdateEntry {
    * @returns {string}
    */
   defaultFormatter(line) {
-    return `- ${line.subject || line.header} ${line.sha ? `(${line.sha})` : ''}`;
+    const formatted = `${line.header || line.subject || ''} ${line.sha ? `(${line.sha})` : ''}`;
+    return `- ${formatted.trim()}`;
   }
 
   /**

@@ -1,27 +1,34 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 
 import { ChangelogEntryType, ChangelogUpdateEntry, GitConventional } from '../types.js';
 
 describe('changelog entry tests', () => {
-  const sampleLines = [
-    new GitConventional({
-      body: 'body',
-      footer: 'footer',
-      header: 'header',
-      type: 'type',
-      scope: 'scope',
-      merge: 'merge',
-      notes: [{ title: 'title', text: 'text' }],
-      references: ['references'],
-      revert: null,
-      subject: 'subject',
-      sha: 'sha',
-      breaking: false,
-      mentions: ['mention'],
-      author: 'author',
-      email: 'email',
-    }),
-  ];
+  /**
+   * @type {GitConventional[]}
+   */
+  let sampleLines = [];
+
+  beforeEach(() => {
+    sampleLines = [
+      new GitConventional({
+        body: 'body',
+        footer: 'footer',
+        header: 'header',
+        type: 'type',
+        scope: 'scope',
+        merge: 'merge',
+        notes: [{ title: 'title', text: 'text' }],
+        references: ['references'],
+        revert: null,
+        subject: 'subject',
+        sha: 'sha',
+        breaking: false,
+        mentions: ['mention'],
+        author: 'author',
+        email: 'email',
+      }),
+    ];
+  });
 
   /**
    * @param {GitConventional} line
@@ -31,7 +38,30 @@ describe('changelog entry tests', () => {
 
   it('should use the default formatter', () => {
     const result = new ChangelogUpdateEntry(ChangelogEntryType.FEATURES, sampleLines);
+    expect(result.toString()).toBe('### ✨ Features ✨\n\n- header (sha)');
+  });
+
+  it("should fall back to using the changelog line's subject if no header is present", () => {
+    const result = new ChangelogUpdateEntry(
+      ChangelogEntryType.FEATURES,
+      sampleLines.map(l => {
+        l.header = null;
+        return l;
+      }),
+    );
     expect(result.toString()).toBe('### ✨ Features ✨\n\n- subject (sha)');
+  });
+
+  it('should simply just render the commit hash if there was no parsed header or subject for the message', () => {
+    const result = new ChangelogUpdateEntry(
+      ChangelogEntryType.FEATURES,
+      sampleLines.map(l => {
+        l.header = null;
+        l.subject = null;
+        return l;
+      }),
+    );
+    expect(result.toString()).toBe('### ✨ Features ✨\n\n- (sha)');
   });
 
   it('should use the custom formatter', () => {
