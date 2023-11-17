@@ -366,6 +366,10 @@ Options:
                           gregate of changes          [boolean] [default: false]
       --noChangelog       If true, will not write CHANGELOG.md updates for each
                           package that has changed    [boolean] [default: false]
+      --changelogDependencies
+                          If true, changelog will include information about the
+                          changes in the dependencies of a package that is being
+                          bumped                  [boolean] [default: false]
       --noCommit          If true, will modify all required files but leave them
                            uncommitted after all operations have completed. This
                            will also prevent a git push from occurring
@@ -511,6 +515,7 @@ NOTE: It is possible for your bump recommendation to not change. If this is the 
   - `opts?.noPush` - If true, will prevent pushing any changes to upstream / origin - Defaults to `false`
   - `opts?.rollupChangelog` - If true, in addition to updating changelog files for all packages that will be bumped, creates a "rollup" CHANGELOG.md at the root of the repo that contains an aggregate of changes.
   - `opts?.noChangelog` - If true, will not write CHANGELOG.md updates for each package that has changed. Defaults to `false`.
+  - `opts?.changelogDependencies` - If true, changelog will include information about the changes in the dependencies of a package that is being bumped. Defaults to `false`.
   - `opts?.dryRun` - If true, will print the changes that are expected to happen at every step instead of actually writing the changes. Defaults to `false`.
     array of change log entries and returns the full changelog entry string. Defaults to `undefined`.
   - `opts?.cwd?: string` - Defaults to `appRootPath.toString()`

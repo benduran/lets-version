@@ -6,6 +6,7 @@
  */
 
 import dayjs from 'dayjs';
+import os from 'os';
 
 import { conventionalCommitToBumpType } from './parser.js';
 import {
@@ -22,6 +23,7 @@ import {
  * @property {BumpRecommendation[]} bumps
  * @property {GitCommitWithConventionalAndPackageInfo[]} commits
  * @property {ChangeLogLineFormatter} [lineFormatter]
+ * @property {boolean} [changelogDependencies]
  */
 
 /**
@@ -106,6 +108,53 @@ export async function getChangelogUpdateForPackageInfo(opts) {
   for (const bump of opts.bumps) {
     if (processedConventionalForPackageName.has(bump.packageInfo.name)) continue;
 
+    /**
+     * @param {Set<BumpRecommendation>} bumpSet
+     *
+     * @returns {BumpRecommendation[]}
+     */
+    const findRootBumpsRecursively = bumpSet => {
+      /** @type {BumpRecommendation[]} */
+      const rootBumps = [];
+      bumpSet.forEach(bump => {
+        if (bump.parentBumps.size === 0) {
+          rootBumps.push(bump);
+        } else {
+          rootBumps.push(...findRootBumpsRecursively(bump.parentBumps));
+        }
+      });
+      return rootBumps;
+    };
+    const rootBumps = findRootBumpsRecursively(bump.parentBumps);
+
+    /**
+     * @param {BumpRecommendation[]} bumps
+     *
+     * @returns {string}
+     */
+    const collectHeader = bumps => {
+      return bumps
+        .map(bump => {
+          const header = `#### ${bump.packageInfo.name}`;
+
+          let bumpLog = out.find(entry => entry.bumpRecommendation === bump)?.toString() ?? '';
+          // Increase the header level by one
+          bumpLog = bumpLog.replaceAll('# ', '#### ');
+
+          return `${header}${os.EOL}${bumpLog}`;
+        })
+        .join(`${os.EOL}${os.EOL}`);
+    };
+
+    const header =
+      rootBumps.length > 0 && opts.changelogDependencies
+        ? `Version bumped because of the changes in the following packages:${os.EOL}${os.EOL}${collectHeader(
+            rootBumps,
+          )}`
+        : bump.type === BumpType.EXACT
+        ? `Version bumped exactly to ${bump.to}`
+        : `Version bump forced for all`;
+
     out.push(
       new ChangelogUpdate(getFormattedChangelogDate(), bump, {
         [ChangelogEntryType.MISC]: new ChangelogUpdateEntry(
@@ -115,8 +164,7 @@ export async function getChangelogUpdateForPackageInfo(opts) {
               body: null,
               breaking: bump.type === BumpType.MAJOR || bump.type === BumpType.EXACT,
               footer: null,
-              header:
-                bump.type === BumpType.EXACT ? `Version bumped exactly to ${bump.to}` : `Version bump forced for all`,
+              header: header,
               mentions: [],
               merge: null,
               notes: [],

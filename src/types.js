@@ -444,8 +444,9 @@ export class BumpRecommendation {
    * @param {string | null} from
    * @param {string} to
    * @param {BumpType} type
+   * @param {BumpRecommendation} [parentBump]
    */
-  constructor(packageInfo, from, to, type) {
+  constructor(packageInfo, from, to, type, parentBump) {
     /** @type {PackageInfo} */
     this.packageInfo = packageInfo;
 
@@ -457,6 +458,9 @@ export class BumpRecommendation {
 
     /** @type {BumpType} */
     this.type = type;
+
+    /** @type {Set<BumpRecommendation>} */
+    this.parentBumps = new Set(parentBump ? [parentBump] : []);
   }
 
   /**

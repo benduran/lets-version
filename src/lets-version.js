@@ -394,7 +394,16 @@ export async function getRecommendedBumpsByPackage(opts) {
     const from = forceAll || preid || isExactRelease || tagInfo?.sha ? packageInfo.version : null;
 
     out.bumps.push(
-      await getBumpRecommendationForPackageInfo(packageInfo, from, bumpType, releaseAs, preid, uniqify, fixedCWD),
+      await getBumpRecommendationForPackageInfo(
+        packageInfo,
+        from,
+        bumpType,
+        undefined,
+        releaseAs,
+        preid,
+        uniqify,
+        fixedCWD,
+      ),
     );
   }
 
@@ -430,6 +439,7 @@ export async function getRecommendedBumpsByPackage(opts) {
  * @property {boolean} [noPush=false] - If true, will prevent pushing any changes to upstream / origin
  * @property {boolean} [rollupChangelog=false] - If true, in addition to updating changelog files for all packages that will be bumped, creates a "rollup" CHANGELOG.md at the root of the repo that contains an aggregate of changes
  * @property {boolean} [noChangelog=false] - If true, will not write CHANGELOG.md updates for each package that has changed
+ * @property {boolean} [changelogDependencies=false] - If true, changelog will include information about the changes in the dependencies of a package that is being bumped
  * @property {boolean} [dryRun=false] - If true, will print the changes that are expected to happen at every step instead of actually writing the changes
  * @property {string} [cwd=appRootPath.toString()]
  * @property {boolean} [allowUncommitted=false] - If true, will allow the version operation to continue when there are uncommitted files in the repo at version bump time. This is usefull if you have some scripts that need to run after version bumps are performed, but potentially before you issue a git commit and subsequent npm publish operation.
@@ -457,6 +467,7 @@ export async function applyRecommendedBumpsByPackage(opts) {
     forceAll = false,
     names,
     noChangelog = false,
+    changelogDependencies = false,
     noCommit = false,
     noFetchAll = false,
     noFetchTags = false,
@@ -599,6 +610,7 @@ export async function applyRecommendedBumpsByPackage(opts) {
       commits: synchronized.conventional,
       bumps: synchronized.bumps,
       lineFormatter: customConfig?.changelog?.changelogLineFormatter,
+      changelogDependencies,
     });
 
     for (const syncbump of synchronized.bumps) {

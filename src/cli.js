@@ -386,6 +386,12 @@ async function setupCLI() {
             description: 'If true, will not write CHANGELOG.md updates for each package that has changed',
             type: 'boolean',
           })
+          .option('changelogDependencies', {
+            default: false,
+            description:
+              'If true, changelog will include information about the changes in the dependencies of a package that is being bumped',
+            type: 'boolean',
+          })
           .option('noCommit', {
             default: false,
             description:
@@ -416,6 +422,7 @@ async function setupCLI() {
           forceAll: args.forceAll,
           names: args.package,
           noChangelog: args.noChangelog,
+          changelogDependencies: args.changelogDependencies,
           noCommit: args.noCommit,
           noFetchAll: args.noFetchAll,
           noFetchTags: args.noFetchTags,
