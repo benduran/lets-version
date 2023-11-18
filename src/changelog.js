@@ -138,8 +138,11 @@ export async function getChangelogUpdateForPackageInfo(opts) {
           const header = `#### ${bump.packageInfo.name}`;
 
           let bumpLog = out.find(entry => entry.bumpRecommendation === bump)?.toString() ?? '';
-          // Increase the header level by one
-          bumpLog = bumpLog.replaceAll('# ', '#### ');
+          // Increase all header levels by three
+          bumpLog = bumpLog
+            .split(os.EOL)
+            .map(line => (line.startsWith('#') ? `###${line}` : line))
+            .join(os.EOL);
 
           return `${header}${os.EOL}${bumpLog}`;
         })
