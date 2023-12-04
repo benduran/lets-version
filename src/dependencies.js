@@ -24,6 +24,7 @@ import { isPackageJSONDependencyKeySupported } from './util.js';
  * @param {PackageInfo} packageInfo
  * @param {string | null} from
  * @param {BumpType} bumpType
+ * @param {BumpRecommendation} [parentBump]
  * @param {ReleaseAsPresets} [releaseAs]
  * @param {string} [preid]
  * @param {boolean} [uniqify]
@@ -35,6 +36,7 @@ export async function getBumpRecommendationForPackageInfo(
   packageInfo,
   from,
   bumpType,
+  parentBump,
   releaseAs,
   preid,
   uniqify,
@@ -92,7 +94,7 @@ export async function getBumpRecommendationForPackageInfo(
     to += `.${await gitCurrentSHA(fixedCWD)}`;
   }
 
-  return new BumpRecommendation(packageInfo, fromToUse, to, bumpTypeToUse);
+  return new BumpRecommendation(packageInfo, fromToUse, to, bumpTypeToUse, parentBump);
 }
 
 /**
@@ -166,8 +168,8 @@ export async function synchronizeBumps(
 
   const updatedParents = Array.from(writeToDisk.values());
   for (const updatedParent of updatedParents) {
-    const parentBumpType = clonedBumpsByPackageName.get(updatedParent.name);
-    if (!parentBumpType) continue;
+    const parentBump = clonedBumpsByPackageName.get(updatedParent.name);
+    if (!parentBump) continue;
 
     // loop through all packages to find out which ones have the updatedParent as a dep
     for (const p of allPackages) {
@@ -207,14 +209,16 @@ export async function synchronizeBumps(
 
         const existingBump = clonedBumpsByPackageName.get(p.name);
         if (existingBump) {
-          existingBump.type = Math.max(existingBump.type, parentBumpType.type);
+          existingBump.type = Math.max(existingBump.type, parentBump.type);
+          existingBump.parentBumps.add(parentBump);
           childBumpRec = existingBump;
         } else {
-          const childBumpType = parentBumpType.type;
+          const childBumpType = parentBump.type;
           childBumpRec = await getBumpRecommendationForPackageInfo(
             p,
             p.version,
             childBumpType,
+            parentBump,
             releaseAs,
             preid,
             uniqify,
