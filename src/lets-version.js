@@ -394,7 +394,16 @@ export async function getRecommendedBumpsByPackage(opts) {
     const from = forceAll || preid || isExactRelease || tagInfo?.sha ? packageInfo.version : null;
 
     out.bumps.push(
-      await getBumpRecommendationForPackageInfo(packageInfo, from, bumpType, releaseAs, preid, uniqify, fixedCWD),
+      await getBumpRecommendationForPackageInfo(
+        packageInfo,
+        from,
+        bumpType,
+        undefined,
+        releaseAs,
+        preid,
+        uniqify,
+        fixedCWD,
+      ),
     );
   }
 

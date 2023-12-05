@@ -56,7 +56,14 @@ describe('dependencies.js tests', () => {
     expect(bump1.type).toBe(BumpType.PATCH);
 
     // we are validating first release is an "as-is"
-    const bump2 = await getBumpRecommendationForPackageInfo(pinfo, null, BumpType.MAJOR, undefined, undefined);
+    const bump2 = await getBumpRecommendationForPackageInfo(
+      pinfo,
+      null,
+      BumpType.MAJOR,
+      undefined,
+      undefined,
+      undefined,
+    );
     expect(bump2.from).toBe(null);
     expect(bump2.isValid).toBeTruthy();
     expect(bump2.packageInfo).toBe(pinfo);
@@ -64,7 +71,14 @@ describe('dependencies.js tests', () => {
     expect(bump2.type).toBe(BumpType.MAJOR);
 
     // prerelease with preid and no prior release should still mark with the pred
-    const bump3 = await getBumpRecommendationForPackageInfo(pinfo, null, BumpType.PRERELEASE, undefined, 'beta');
+    const bump3 = await getBumpRecommendationForPackageInfo(
+      pinfo,
+      null,
+      BumpType.PRERELEASE,
+      undefined,
+      undefined,
+      'beta',
+    );
     expect(bump3.from).toBe(pinfo.version);
     expect(bump3.isValid).toBeTruthy();
     expect(bump3.packageInfo).toBe(pinfo);
@@ -72,7 +86,7 @@ describe('dependencies.js tests', () => {
     expect(bump3.type).toBe(BumpType.PRERELEASE);
 
     // if a "releaseAs" is provided, we should wholesale ignore the BumpType and it should default to the type of "releaseAs"
-    const bump4 = await getBumpRecommendationForPackageInfo(pinfo, null, BumpType.MAJOR, 'beta', undefined);
+    const bump4 = await getBumpRecommendationForPackageInfo(pinfo, null, BumpType.MAJOR, undefined, 'beta', undefined);
     expect(bump4.from).toBe(pinfo.version);
     expect(bump4.isValid).toBeTruthy();
     expect(bump4.packageInfo).toBe(pinfo);
@@ -84,6 +98,7 @@ describe('dependencies.js tests', () => {
       pinfo,
       null,
       BumpType.MAJOR,
+      undefined,
       ReleaseAsPresets.MINOR,
       undefined,
     );
@@ -94,7 +109,14 @@ describe('dependencies.js tests', () => {
     expect(bump5.type).toBe(BumpType.MINOR);
 
     // releaseAs may also be "exact," which disregards everything and bumps to the exact provided value
-    const bump6 = await getBumpRecommendationForPackageInfo(pinfo, null, BumpType.MAJOR, '100.1.2', undefined);
+    const bump6 = await getBumpRecommendationForPackageInfo(
+      pinfo,
+      null,
+      BumpType.MAJOR,
+      undefined,
+      '100.1.2',
+      undefined,
+    );
     expect(bump6.from).toBe(pjson.version);
     expect(bump6.isValid).toBeTruthy();
     expect(bump6.packageInfo).toBe(pinfo);
@@ -106,6 +128,7 @@ describe('dependencies.js tests', () => {
       pinfo,
       pjson.version ?? '',
       BumpType.MAJOR,
+      undefined,
       undefined,
       undefined,
     );
@@ -121,6 +144,7 @@ describe('dependencies.js tests', () => {
       pjson.version ?? '',
       BumpType.PRERELEASE,
       undefined,
+      undefined,
       'bloop',
     );
     expect(bump8.from).toBe(pjson.version);
@@ -135,6 +159,7 @@ describe('dependencies.js tests', () => {
       pjsonWithDifferentVersion,
       pjsonWithDifferentVersion.version,
       BumpType.PRERELEASE,
+      undefined,
       ReleaseAsPresets.BETA,
       '',
     );
@@ -149,6 +174,7 @@ describe('dependencies.js tests', () => {
       pjsonWithDifferentVersion,
       pjsonWithDifferentVersion.version,
       BumpType.PRERELEASE,
+      undefined,
       ReleaseAsPresets.BETA,
       '',
       true,
