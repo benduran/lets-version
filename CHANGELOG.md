@@ -1,3 +1,12 @@
+## 0.8.2 (2023-12-05)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #18 from artemdanylenko/adanylenko/allChanges (44a1a098f2fcf29301bd5b55348303cd69d46bee)
+- Allow changeLogEntryFormatter access to all updates in the package tree (ad1e92051dc59ad1af86bc093de6015b96d32655)
+
+---
+
 ## 0.8.1 (2023-12-04)
 
 ### 🔀 Miscellaneous 🔀
