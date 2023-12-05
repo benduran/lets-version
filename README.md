@@ -549,9 +549,10 @@ export default defineLetsVersionConfig({
      * log entry should look like
      *
      * @param {ChangelogUpdate} updates - The updates to be included in the changelog entry for a version
+     * @param {ChangelogUpdate[]} allUpdates - The list of all updates for the context about the changes in other packages
      * @returns {string} The formatted line to represent the entire changelog entry for a version
      */
-    changeLogEntryFormatter(updates) {
+    changeLogEntryFormatter(updates, allUpdates) {
       // updates is an instance of the `ChangelogUpdate` class.
       return ''; // Return some string to alter the Changelog contents, or null if you want to omit
     },
