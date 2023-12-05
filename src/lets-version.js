@@ -649,7 +649,8 @@ export async function applyRecommendedBumpsByPackage(opts) {
           /* file doesn't exist */
         }
         const changelogUpdates =
-          customConfig?.changelog?.changeLogEntryFormatter?.(c) ?? `${c.toString()}${os.EOL}---${os.EOL}${os.EOL}`;
+          customConfig?.changelog?.changeLogEntryFormatter?.(c, changelogInfo) ??
+          `${c.toString()}${os.EOL}---${os.EOL}${os.EOL}`;
 
         if (dryRun) {
           console.info(
