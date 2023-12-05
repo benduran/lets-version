@@ -1,3 +1,12 @@
+## 0.8.1 (2023-12-04)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #17 from artemdanylenko/adanylenko/parentBump (ad0970a61735e58f17c8a58e0a1ea42f35ad22bb)
+- Allow traversing from BumpRecommendation to its parents for the recursive package bumps (a169aeafb9af7d875b184c28c72940aa01c34352)
+
+---
+
 ## 0.8.0 (2023-10-20)
 
 ### 🔀 Miscellaneous 🔀
