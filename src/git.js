@@ -407,6 +407,7 @@ export async function gitCommit(header, body, footer, cwd = appRootPath.toString
 export async function gitPush(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
+  await execAsync('git pull --ff-only', { cwd: fixedCWD, stdio: 'inherit' });
   await execAsync('git push --no-verify', { cwd: fixedCWD, stdio: 'inherit' });
 }
 
@@ -419,6 +420,7 @@ export async function gitPush(cwd = appRootPath.toString()) {
 export async function gitPushTag(tag, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
+  await execAsync('git pull --ff-only', { cwd: fixedCWD, stdio: 'inherit' });
   await execAsync(`git push origin ${tag} --no-verify`, { cwd: fixedCWD, stdio: 'inherit' });
 }
 
