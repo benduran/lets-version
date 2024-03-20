@@ -1,3 +1,11 @@
+## 0.8.3-beta.0 (2024-03-20)
+
+### 🚨 Breaking Changes 🚨
+
+- chore!: pull with fast-forward only before doing any push operation (51b47bbf526b2dedd9779a94ea3e7aca83cb7b40)
+
+---
+
 ## 0.8.2 (2023-12-05)
 
 ### 🔀 Miscellaneous 🔀
