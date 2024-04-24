@@ -115,6 +115,7 @@ export async function getBumpRecommendationForPackageInfo(
  * @param {ReleaseAsPresets} releaseAs
  * @param {string | undefined} preid
  * @param {boolean} uniqify
+ * @param {boolean} saveExact
  * @param {boolean} updatePeer
  * @param {boolean} updateOptional
  * @param {string} [cwd=appRootPath.toString()]
@@ -128,6 +129,7 @@ export async function synchronizeBumps(
   releaseAs,
   preid,
   uniqify,
+  saveExact,
   updatePeer,
   updateOptional,
   cwd = appRootPath.toString(),
@@ -196,6 +198,10 @@ export async function synchronizeBumps(
           firstDetailOperator = '^';
         }
 
+        if (saveExact) {
+          firstDetailOperator = '';
+        }
+
         const newSemverStr = `${firstDetailOperator}${updatedParent.version}`;
 
         // @ts-ignore
@@ -238,6 +244,7 @@ export async function synchronizeBumps(
           releaseAs,
           preid,
           uniqify,
+          saveExact,
           updatePeer,
           updateOptional,
           fixedCWD,
