@@ -288,7 +288,7 @@ Options:
                          If this is specified, a bump type of "prerelease" will
                         always take place, causing any "--releaseAs" setting to
                         be ignored.                                     [string]
-      --uniqify         If true, will append the git SHA at version bunp time to
+      --uniqify         If true, will append the git SHA at version bump time to
                          the end of the version number (while maintaining valid
                         semver)                       [boolean] [default: false]
       --forceAll        If true, forces all packages to receive a bump update, r
@@ -338,9 +338,12 @@ Options:
                           c.8. If this is specified, a bump type of "prerelease"
                            will always take place, causing any "--releaseAs" set
                           ting to be ignored.                           [string]
-      --uniqify           If true, will append the git SHA at version bunp time
+      --uniqify           If true, will append the git SHA at version bump time
                           to the end of the version number (while maintaining va
                           lid semver)                 [boolean] [default: false]
+      --saveExact         If true, saved dependencies will be configured with an
+                          exact version rather than using npm's default semver r
+                          ange operator.              [boolean] [default: false]
       --forceAll          If true, forces all packages to receive a bump update,
                            regardless of whether they have changed. What this me
                           ans, in practice, is that any package that would not n

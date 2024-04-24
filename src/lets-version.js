@@ -237,6 +237,7 @@ export async function getConventionalCommitsByPackage(opts) {
  * @property {ReleaseAsPresets} [releaseAs='auto']
  * @property {string} [preid='']
  * @property {boolean} [uniqify=false]
+ * @property {boolean} [saveExact=false]
  * @property {boolean} [forceAll=false]
  * @property {boolean} [noFetchAll=false]
  * @property {boolean} [noFetchTags=false]
@@ -261,6 +262,7 @@ export async function getRecommendedBumpsByPackage(opts) {
     names,
     releaseAs = ReleaseAsPresets.AUTO,
     uniqify = false,
+    saveExact = false,
     forceAll = false,
     noFetchAll = false,
     noFetchTags = false,
@@ -414,6 +416,7 @@ export async function getRecommendedBumpsByPackage(opts) {
     releaseAs,
     preid,
     uniqify,
+    saveExact,
     updatePeer,
     updateOptional,
     fixedCWD,
@@ -428,6 +431,7 @@ export async function getRecommendedBumpsByPackage(opts) {
  * @property {ReleaseAsPresets} [releaseAs='auto']
  * @property {string} [preid='']
  * @property {boolean} [uniqify=false]
+ * @property {boolean} [saveExact=false]
  * @property {boolean} [forceAll=false]
  * @property {boolean} [noCommit=false] - If true, will modify all required files but leave them uncommitted after all operations have completed. This will also prevent a git push from occurring
  * @property {boolean} [noFetchAll=false]

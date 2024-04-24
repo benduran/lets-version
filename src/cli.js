@@ -124,7 +124,7 @@ const getSharedBumpArgs = yargs =>
     .option('uniqify', {
       default: false,
       description:
-        'If true, will append the git SHA at version bunp time to the end of the version number (while maintaining valid semver)',
+        'If true, will append the git SHA at version bump time to the end of the version number (while maintaining valid semver)',
       type: 'boolean',
     })
     .option('forceAll', {
@@ -363,6 +363,12 @@ async function setupCLI() {
       'Gets a series of recommended version bumps for a specific package or set of packages, applies the version bumps, and updates all repository dependents to match the version that has been updated.',
       y =>
         getSharedBumpArgs(y)
+          .option('saveExact', {
+            default: false,
+            description:
+              "If true, saved dependencies will be configured with an exact version rather than using npm's default semver range operator",
+            type: 'boolean',
+          })
           .option('allowUncommitted', {
             default: false,
             description:
@@ -425,6 +431,7 @@ async function setupCLI() {
           releaseAs: args.releaseAs,
           rollupChangelog: args.rollupChangelog,
           uniqify: args.uniqify,
+          saveExact: args.saveExact,
           updateOptional: args.updateOptional,
           updatePeer: args.updatePeer,
           yes: args.yes,
