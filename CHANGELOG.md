@@ -1,3 +1,12 @@
+## 0.8.3 (2024-04-24)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #19 from artemdanylenko/adanylenko/saveExact (b2a501211acb5131b1a373b0b339331cc11e9c41)
+- Add option to saveExact when applying bumps inside the monorepo (6e169631f12185c34042d71236f430d3f0e5f9fd)
+
+---
+
 ## 0.8.2 (2023-12-05)
 
 ### 🔀 Miscellaneous 🔀
