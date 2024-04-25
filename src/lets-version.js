@@ -479,6 +479,7 @@ export async function applyRecommendedBumpsByPackage(opts) {
     releaseAs = ReleaseAsPresets.AUTO,
     rollupChangelog = false,
     uniqify = false,
+    saveExact = false,
     updateOptional = false,
     updatePeer = false,
   } = opts ?? {};
@@ -512,6 +513,7 @@ export async function applyRecommendedBumpsByPackage(opts) {
     releaseAs,
     preid,
     uniqify,
+    saveExact,
     forceAll,
     noFetchAll,
     noFetchTags,
