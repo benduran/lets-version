@@ -1,3 +1,18 @@
+## 0.8.4 (2024-04-25)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #20 from brucespang/bspang/fix-saveExact (9bb3ce518ed67b86391e2fdb1e7d20f1bfd59393)
+
+
+
+### 🛠️ Fixes 🛠️
+
+- fix: add pnpm to dev dependencies so that tests run (a1c16257c3e3db4e589576122f129f4564a31ca2)
+- fix: pass saveExact through applyRecommendedBumpsByPackage (6de070d3483e7ca2e585f4ae738d00ef6bd0ff7c)
+
+---
+
 ## 0.8.3 (2024-04-24)
 
 ### 🔀 Miscellaneous 🔀
