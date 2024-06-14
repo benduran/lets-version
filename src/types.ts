@@ -352,7 +352,7 @@ export class BumpRecommendation {
     public from: string | null,
     public to: string,
     public type: BumpType,
-    parentBump: BumpRecommendation,
+    parentBump?: BumpRecommendation,
   ) {
     this.parentBumps = new Set(parentBump ? [parentBump] : []);
   }

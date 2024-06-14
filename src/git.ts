@@ -75,16 +75,18 @@ export async function gitCommitsSince(since = '', relPath = '', cwd = appRootPat
 
   const { stdout } = await execAsync(cmd, { cwd: fixedCWD, stdio: 'pipe' });
 
-  return stdout
-    .split(LINE_DELIMITER)
-    .filter(Boolean)
-    .map(line => {
-      const trimmed = line.trim();
+  return (
+    stdout
+      ?.split(LINE_DELIMITER)
+      .filter(Boolean)
+      .map(line => {
+        const trimmed = line.trim();
 
-      const [sha = '', author = '', email = '', date = '', message = ''] = trimmed.split(DELIMITER).filter(Boolean);
-      return new GitCommit(author, date, email, message, sha);
-    })
-    .filter(commit => Boolean(commit.sha));
+        const [sha = '', author = '', email = '', date = '', message = ''] = trimmed.split(DELIMITER).filter(Boolean);
+        return new GitCommit(author, date, email, message, sha);
+      })
+      .filter(commit => Boolean(commit.sha)) ?? []
+  );
 }
 
 let remoteTagsCache: Array<[string, string]> | null = null;
@@ -103,15 +105,16 @@ export function gitRemoteTags(cwd = appRootPath.toString()) {
 
   // since this function may be called multiple times in a workflow,
   // we want to avoid accidentally getting different results
-  remoteTagsCache = execSync('git ls-remote --tags origin', { cwd: fixedCWD, stdio: 'pipe' })
-    .stdout.trim()
-    .split(os.EOL)
-    .filter(Boolean)
-    .map(t => {
-      const [sha = '', ref = ''] = t.split(/\s+/);
+  remoteTagsCache =
+    execSync('git ls-remote --tags origin', { cwd: fixedCWD, stdio: 'pipe' })
+      .stdout?.trim()
+      .split(os.EOL)
+      .filter(Boolean)
+      .map(t => {
+        const [sha = '', ref = ''] = t.split(/\s+/);
 
-      return [ref.replace('refs/tags/', ''), sha];
-    });
+        return [ref.replace('refs/tags/', ''), sha];
+      }) ?? null;
 
   return remoteTagsCache;
 }
@@ -131,15 +134,16 @@ export function gitLocalTags(cwd = appRootPath.toString()) {
   try {
     // since this function may be called multiple times in a workflow,
     // we want to avoid accidentally getting different results
-    localTagsCache = execSync('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' })
-      .stdout.trim()
-      .split(os.EOL)
-      .filter(Boolean)
-      .map(t => {
-        const [sha = '', ref = ''] = t.split(/\s+/);
+    localTagsCache =
+      execSync('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' })
+        .stdout?.trim()
+        .split(os.EOL)
+        .filter(Boolean)
+        .map(t => {
+          const [sha = '', ref = ''] = t.split(/\s+/);
 
-        return [ref.replace('refs/tags/', ''), sha];
-      });
+          return [ref.replace('refs/tags/', ''), sha];
+        }) ?? null;
 
     return localTagsCache;
   } catch (error) {
@@ -176,7 +180,7 @@ export async function gitLastKnownPublishTagInfoForPackage(
   const allLocalTags = gitLocalTags(fixedCWD);
 
   // newest / largest tags first
-  const allTags = [...allRemoteTag, ...allLocalTags].sort((a, b) => b[0].localeCompare(a[0]));
+  const allTags = [...(allRemoteTag ?? []), ...(allLocalTags ?? [])].sort((a, b) => b[0].localeCompare(a[0]));
 
   const allRemoteTagsMap = new Map(allTags);
 
@@ -244,11 +248,13 @@ export async function gitAllFilesChangedSinceSha(sha: string, cwd = appRootPath.
   const fixedCWD = fixCWD(cwd);
 
   const { stdout } = await execAsync(`git --no-pager diff --name-only ${sha}..`, { cwd: fixedCWD, stdio: 'pipe' });
-  return stdout
-    .trim()
-    .split(os.EOL)
-    .filter(Boolean)
-    .map(fp => path.resolve(path.join(cwd, fp)));
+  return (
+    stdout
+      ?.trim()
+      .split(os.EOL)
+      .filter(Boolean)
+      .map(fp => path.resolve(path.join(cwd, fp))) ?? []
+  );
 }
 
 /**
@@ -433,7 +439,7 @@ export async function gitTag(tag: string, cwd = appRootPath.toString()) {
 export async function gitWorkdirUnclean(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  const statusResult = (await execAsync('git status -s', { cwd: fixedCWD, stdio: 'pipe' })).stdout.trim();
+  const statusResult = (await execAsync('git status -s', { cwd: fixedCWD, stdio: 'pipe' })).stdout?.trim() ?? '';
 
   // split by newlines, just in case
   return statusResult.split(os.EOL).filter(Boolean).length > 0;
@@ -447,7 +453,7 @@ export async function gitWorkdirUnclean(cwd = appRootPath.toString()) {
 export async function gitCurrentSHA(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  const result = (await execAsync('git rev-parse --short HEAD', { cwd: fixedCWD, stdio: 'pipe' })).stdout.trim();
+  const result = (await execAsync('git rev-parse --short HEAD', { cwd: fixedCWD, stdio: 'pipe' })).stdout?.trim() ?? '';
 
   return result;
 }

@@ -16,7 +16,7 @@ export async function getBumpRecommendationForPackageInfo(
   from: string | null,
   bumpType: BumpType,
   parentBump?: BumpRecommendation,
-  releaseAs?: ReleaseAsPresets,
+  releaseAs?: ReleaseAsPresets | string,
   preid?: string,
   uniqify = false,
   cwd = appRootPath.toString(),
@@ -99,7 +99,7 @@ export async function synchronizeBumps(
   updatePeer: boolean,
   updateOptional: boolean,
   cwd = appRootPath.toString(),
-): Promise<SynchronizeBumpsReturnType> {
+) {
   const fixedCWD = fixCWD(cwd);
   const clonedBumpsByPackageName = new Map(bumpsByPackageName.entries());
 

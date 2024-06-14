@@ -1,7 +1,9 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
 import glob from 'fast-glob';
 import fs from 'fs-extra';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import type { PackageJson } from 'type-fest';
 import { describe, expect, it } from 'vitest';
 
 import { listPackages } from '../lets-version.js';
@@ -10,20 +12,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Reads and parses a package.json file to a JSON object
- *
- * @param {string} fp
- *
- * @returns {Promise<import('type-fest').PackageJson>}
  */
-const readPJSON = async fp => JSON.parse(await fs.readFile(path.join(fp, 'package.json'), 'utf-8'));
+const readPJSON = async (fp: string): Promise<PackageJson> =>
+  JSON.parse(await fs.readFile(path.join(fp, 'package.json'), 'utf-8'));
 
 /**
  * Reads all proposed package.json files from the dummy monorepos
- *
- * @param {string} fp
- * @returns
  */
-const readAllPJSONs = async fp => {
+const readAllPJSONs = async (fp: string): Promise<PackageJson[]> => {
   const allPjsons = (
     await Promise.all(
       (

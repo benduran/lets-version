@@ -1,12 +1,9 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { ChangelogEntryType, ChangelogUpdateEntry, GitConventional } from '../types.js';
+import { ChangelogEntryType, ChangelogUpdateEntry, ConventionalCommitType, GitConventional } from '../types.js';
 
 describe('changelog entry tests', () => {
-  /**
-   * @type {GitConventional[]}
-   */
-  let sampleLines = [];
+  let sampleLines: GitConventional[] = [];
 
   beforeEach(() => {
     sampleLines = [
@@ -14,7 +11,7 @@ describe('changelog entry tests', () => {
         body: 'body',
         footer: 'footer',
         header: 'header',
-        type: 'type',
+        type: ConventionalCommitType.TEST,
         scope: 'scope',
         merge: 'merge',
         notes: [{ title: 'title', text: 'text' }],
@@ -30,11 +27,7 @@ describe('changelog entry tests', () => {
     ];
   });
 
-  /**
-   * @param {GitConventional} line
-   * @returns {string}
-   */
-  const customFormatter = line => `- **${line.scope}** ${line.author} ${line.subject} (${line.sha})`;
+  const customFormatter = (line: GitConventional) => `- **${line.scope}** ${line.author} ${line.subject} (${line.sha})`;
 
   it('should use the default formatter', () => {
     const result = new ChangelogUpdateEntry(ChangelogEntryType.FEATURES, sampleLines);

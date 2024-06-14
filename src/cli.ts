@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import createCLI, { Argv } from 'yargs';
+import createCLI, { ArgumentsCamelCase, Argv } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { fixCWD } from './cwd.js';
@@ -42,6 +42,8 @@ const getSharedYargs = (yargs: Argv) =>
       type: 'boolean',
     });
 
+type GetSharedYargsType = ArgumentsCamelCase<{ cwd: string; json: boolean }>;
+
 /**
  * Returns baseline set of arguments that are applicable to all version-specific commands
  */
@@ -51,6 +53,7 @@ const getSharedVersionYargs = (yargs: Argv) =>
       alias: 'p',
       description: 'One or more packages to check. You can specify multiple by doing -p <name1> -p <name2> -p <name3>',
       type: 'array',
+      string: true,
     })
     .option('noFetchAll', {
       default: false,
@@ -63,6 +66,8 @@ const getSharedVersionYargs = (yargs: Argv) =>
         'If true, does not force fetch tags from origin. By default, lets-version will do "git fetch origin --tags --force" to ensure your branch if up-to-date with the tags on origin',
       type: 'boolean',
     });
+
+type GetSharedVersionYargsType = ArgumentsCamelCase<{ package?: string[]; noFetchAll: boolean; noFetchTags: boolean }>;
 
 /**
  * Returns baseline set of arguments that are applicable to all branch-specific commands
@@ -82,6 +87,8 @@ const getSharedBranchYargs = (yargs: Argv) =>
       string: true,
     });
 
+type GetSharedBranchYargsType = ArgumentsCamelCase<{ branch: string; package?: string[] }>;
+
 /**
  * Returns a byName argument
  */
@@ -92,6 +99,8 @@ const addByNameYargs = (yargs: Argv) =>
       'If true and the --json flag has not been set, reports the changed packages by their package.json names, instead of by their relative file paths',
     type: 'boolean',
   });
+
+type AddByNameYargsType = ArgumentsCamelCase<{ byName: boolean }>;
 
 /**
  * Returns baseline set of arguments that are applicable to all bump operation commands
@@ -117,6 +126,13 @@ const getSharedBumpArgs = (yargs: Argv) =>
     })
     .option('forceAll', {
       default: false,
+      deprecate: 'Use --force instead',
+      description:
+        'If true, forces all packages to receive a bump update, regardless of whether they have changed. What this means, in practice, is that any package that would not normally be changed will receive a PATCH update (or an equivalent if --preid is set)',
+      type: 'boolean',
+    })
+    .option('force', {
+      default: false,
       description:
         'If true, forces all packages to receive a bump update, regardless of whether they have changed. What this means, in practice, is that any package that would not normally be changed will receive a PATCH update (or an equivalent if --preid is set)',
       type: 'boolean',
@@ -131,6 +147,16 @@ const getSharedBumpArgs = (yargs: Argv) =>
       description: 'If true, will update any dependent "package.json#optionalDependencies" fields',
       type: 'boolean',
     });
+
+type GetSharedBumpArgsType = ArgumentsCamelCase<{
+  releaseAs: string;
+  preid?: string;
+  uniqify: boolean;
+  force: boolean;
+  forceAll: boolean;
+  updatePeer: boolean;
+  updateOptional: boolean;
+}>;
 
 /**
  * Prints package changes based on input parameters
@@ -256,8 +282,9 @@ async function setupCLI() {
     .command(
       'changed-packages-since-bump',
       'Gets a list of all packages that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.',
-      y => addByNameYargs(getSharedVersionYargs(y)),
-      async args => {
+      // @ts-ignore
+      y => getSharedYargs(addByNameYargs(getSharedVersionYargs(y))),
+      async (args: AddByNameYargsType & GetSharedVersionYargsType & GetSharedYargsType) => {
         const changedPackages = await getChangedPackagesSinceBump({
           cwd: args.cwd,
           names: args.package,
@@ -303,8 +330,9 @@ async function setupCLI() {
     .command(
       'get-bumps',
       'Gets a series of recommended version bumps for a specific package or set of packages. NOTE: It is possible for your bump recommendation to not change. If this is the case, this means that your particular package has never had a version bump by the lets-version library.',
-      y => getSharedBumpArgs(y),
-      async args => {
+      // @ts-ignore
+      y => getSharedYargs(getSharedBumpArgs(y)),
+      async (args: GetSharedYargsType & GetSharedBumpArgsType & GetSharedVersionYargsType) => {
         const { bumps } = await getRecommendedBumpsByPackage({
           cwd: args.cwd,
           forceAll: args.forceAll,
@@ -442,8 +470,9 @@ async function setupCLI() {
     .command(
       'changed-packages-since-branch',
       'Gets a list of all packages that have changed in the current branch.',
+      // @ts-ignore
       y => addByNameYargs(getSharedBranchYargs(y)),
-      async args => {
+      async (args: GetSharedYargsType & AddByNameYargsType & GetSharedBranchYargsType) => {
         const changedPackages = await getChangedPackagesSinceBranch({
           cwd: args.cwd,
           names: args.package,
