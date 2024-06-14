@@ -7,7 +7,7 @@ describe('parser.mjs tests', () => {
   const sampleCommits = [
     new GitCommit('John Doe', '2023-05-29', 'john@example.com', 'feat: add new feature', 'abcdef123456'),
     new GitCommit('Jane Doe', '2023-05-28', 'jane@example.com', 'fix: resolve issue', 'fedcba654321'),
-    new GitCommit('Jane Doe', '2023-05-28', 'jane@example.com', 'feat!(datepicker): rewrote API', '123maiomsdoim234'),
+    new GitCommit('Jane Doe', '2023-05-28', 'jane@example.com', 'feat(datepicker)!: rewrote API', '123maiomsdoim234'),
     new GitCommit(
       'John Doe',
       '2023-05-27',
