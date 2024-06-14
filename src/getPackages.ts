@@ -3,13 +3,12 @@ import appRootPath from 'app-root-path';
 import { detect as detectPackageManager } from 'detect-package-manager';
 import { promises as fs } from 'fs';
 import path from 'path';
+import { PackageJson } from 'type-fest';
 
 import { fixCWD } from './cwd.js';
 import { execAsync } from './exec.js';
 import { PackageInfo } from './types.js';
 import { detectIfMonorepo } from './workspaces.js';
-
-/** @typedef {import('type-fest').PackageJson} PackageJson */
 
 /**
  * Tries to figure out what all packages live in repository.
@@ -17,8 +16,6 @@ import { detectIfMonorepo } from './workspaces.js';
  * repo. Either way, we want to support both.
  * We will leave the responsibilty of updating the "root" monorepo package
  * to the user. They can use this library, but it will be opt-in.
- *
- * @param {string} [cwd=appRootPath.toString()] - Repo root to work in. Defaults to closest .git repo
  */
 export async function getPackages(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
@@ -26,18 +23,17 @@ export async function getPackages(cwd = appRootPath.toString()) {
 
   const rootPJSONPath = path.join(fixedCWD, 'package.json');
 
-  /** @type {PackageJson} */
-  const rootPJSON = JSON.parse(await fs.readFile(rootPJSONPath, 'utf8'));
+  const rootPJSON = JSON.parse(await fs.readFile(rootPJSONPath, 'utf8')) as PackageJson;
 
-  /** @type {Map<string, string>} */
-  let workspaces;
+  let workspaces = new Map<string, string>();
 
   if (pm === 'pnpm') {
     // this will also include the ROOT workspace, which we need to manually exclude
     const pnpmOutput = await execAsync('pnpm list -r --dept -1 --json', { cwd: fixedCWD, stdio: 'pipe' });
 
-    /** @type {Array<{ name: string; path: string; private: boolean; version: string }>} */
-    const foundPnpmWorkspaces = JSON.parse(pnpmOutput.stdout);
+    const foundPnpmWorkspaces: Array<{ name: string; path: string; private: boolean; version: string }> = JSON.parse(
+      pnpmOutput.stdout || '',
+    );
 
     workspaces = new Map(foundPnpmWorkspaces.filter(w => w.name !== rootPJSON.name).map(w => [w.name, w.path]));
   } else {
@@ -61,8 +57,7 @@ export async function getPackages(cwd = appRootPath.toString()) {
 
   const packages = await Promise.all(
     Array.from(workspaces.entries()).map(async ([name, packagePath]) => {
-      /** @type {PackageJson} */
-      const pjson = JSON.parse(await fs.readFile(path.join(packagePath, 'package.json'), 'utf8'));
+      const pjson = JSON.parse(await fs.readFile(path.join(packagePath, 'package.json'), 'utf8')) as PackageJson;
 
       return new PackageInfo({
         isPrivate: pjson.private ?? false,
@@ -83,18 +78,16 @@ export async function getPackages(cwd = appRootPath.toString()) {
 /**
  * Based on an input set of files that have been touched by some series of git commits,
  * returns an array of PackageInfo[] that have been changed since
- * @param {string[]} filesModified
- * @param {PackageInfo[]} [packages] - If provided, will scan through these packages instead
- * @param {string} [cwd=appRootPath.toString()]
- *
- * @returns {Promise<PackageInfo[]>}
  */
-export async function getAllPackagesChangedBasedOnFilesModified(filesModified, packages, cwd = appRootPath.toString()) {
+export async function getAllPackagesChangedBasedOnFilesModified(
+  filesModified: string[],
+  packages: PackageInfo[],
+  cwd = appRootPath.toString(),
+): Promise<PackageInfo[]> {
   const fixedCWD = fixCWD(cwd);
   const packagesToCheck = packages?.length ? packages : await getPackages(fixedCWD);
 
-  /** @type {Map<string, PackageInfo>} */
-  const out = new Map();
+  const out = new Map<string, PackageInfo>();
 
   for (const filePath of filesModified) {
     const touchedPackage = packagesToCheck.find(p => filePath.includes(p.packagePath));
@@ -119,14 +112,12 @@ export async function getAllPackagesChangedBasedOnFilesModified(filesModified, p
  * if this repository is detected to be a multipackage monorepo
  *
  * If no names are provided, all packages are returned
- *
- * @param {PackageInfo[]} packages
- * @param {string[] | undefined} names
- * @param {string} [cwd=appRootPath.toString()]
- *
- * @returns {Promise<PackageInfo[]>}
  */
-export async function filterPackagesByNames(packages, names, cwd = appRootPath.toString()) {
+export async function filterPackagesByNames(
+  packages: PackageInfo[],
+  names: string[] | undefined,
+  cwd = appRootPath.toString(),
+): Promise<PackageInfo[]> {
   const fixedCWD = fixCWD(cwd);
 
   const namesSet = new Set(names ?? []);

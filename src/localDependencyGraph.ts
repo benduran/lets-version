@@ -1,25 +1,15 @@
-/**
- * @typedef {import('./types.js').PackageInfo} PackageInfo
- * @typedef {import('./types.js').DepType} DepType
- */
-
 import appRootPath from 'app-root-path';
 
 import { fixCWD } from './cwd.js';
 import { getPackages } from './getPackages.js';
-import { LocalDependencyGraphNode } from './types.js';
+import { DepType, LocalDependencyGraphNode, PackageInfo } from './types.js';
 import { isPackageJSONDependencyKeySupported } from './util.js';
 
 /**
  * Given a dependency node graph instance,
  * computes how deep the local-dep tree goes
- *
- * @param {LocalDependencyGraphNode} node
- * @param {number} depth
- *
- * @returns {LocalDependencyGraphNode}
  */
-function computeDepDepth(node, depth) {
+function computeDepDepth(node: LocalDependencyGraphNode, depth: number): LocalDependencyGraphNode {
   node.localDepDepth = depth;
   if (!node.deps.length) return node;
 
@@ -36,14 +26,12 @@ function computeDepDepth(node, depth) {
  * Given a single package info, attempts
  * to build the local-only graph. Use
  * this function for recursion
- *
- * @param {PackageInfo} packageInfo
- * @param {Map<string, PackageInfo>} allPackagesByName
- * @param {DepType} depType
- *
- * @returns {LocalDependencyGraphNode}
  */
-function buildGraphForPackageInfo(packageInfo, allPackagesByName, depType) {
+function buildGraphForPackageInfo(
+  packageInfo: PackageInfo,
+  allPackagesByName: Map<string, PackageInfo>,
+  depType: DepType,
+): LocalDependencyGraphNode {
   const node = new LocalDependencyGraphNode({
     ...packageInfo,
     depType,

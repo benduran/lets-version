@@ -6,7 +6,7 @@
       "DOM"
     ],
     "module": "NodeNext",
-    "moduleResolution": "nodenext",
+    "moduleResolution": "NodeNext",
     "allowJs": true,
     "checkJs": true,
     "declaration": true,

@@ -1,18 +1,11 @@
 #!/usr/bin/env node
 
-/**
- * @typedef {import('type-fest').PackageJson} PackageJson
- * @typedef {import('yargs').Argv} Argv
- *
- * @typedef {import('./types.js').LocalDependencyGraphNode} LocalDependencyGraphNode
- * @typedef {import('./types.js').PackageInfo} PackageInfo
- * */
+import { promises as fs } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-import { promises as fs } from 'fs';
-import os from 'os';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import createCLI from 'yargs';
+import createCLI, { Argv } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
 import { fixCWD } from './cwd.js';
@@ -28,16 +21,15 @@ import {
   listPackages,
   localDepGraph,
 } from './lets-version.js';
-import { BumpTypeToString } from './types.js';
+import { BumpTypeToString, LocalDependencyGraphNode, PackageInfo, ReleaseAsPresets } from './types.js';
 import { indentStr } from './util.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * Returns a baseline set of arguments that are applicable to all commands
- * @param {Argv} yargs
  */
-const getSharedYargs = yargs =>
+const getSharedYargs = (yargs: Argv) =>
   yargs
     .option('cwd', {
       default: process.cwd(),
@@ -52,9 +44,8 @@ const getSharedYargs = yargs =>
 
 /**
  * Returns baseline set of arguments that are applicable to all version-specific commands
- * @param {Argv} yargs
  */
-const getSharedVersionYargs = yargs =>
+const getSharedVersionYargs = (yargs: Argv) =>
   getSharedYargs(yargs)
     .option('package', {
       alias: 'p',
@@ -75,9 +66,8 @@ const getSharedVersionYargs = yargs =>
 
 /**
  * Returns baseline set of arguments that are applicable to all branch-specific commands
- * @param {Argv} yargs
  */
-const getSharedBranchYargs = yargs =>
+const getSharedBranchYargs = (yargs: Argv) =>
   getSharedYargs(yargs)
     .option('branch', {
       alias: 'b',
@@ -94,9 +84,8 @@ const getSharedBranchYargs = yargs =>
 
 /**
  * Returns a byName argument
- * @param {Argv} yargs
  */
-const addByNameYargs = yargs =>
+const addByNameYargs = (yargs: Argv) =>
   yargs.option('byName', {
     default: false,
     description:
@@ -106,9 +95,8 @@ const addByNameYargs = yargs =>
 
 /**
  * Returns baseline set of arguments that are applicable to all bump operation commands
- * @param {Argv} yargs
  */
-const getSharedBumpArgs = yargs =>
+const getSharedBumpArgs = (yargs: Argv) =>
   getSharedVersionYargs(yargs)
     .option('releaseAs', {
       default: 'auto',
@@ -146,11 +134,8 @@ const getSharedBumpArgs = yargs =>
 
 /**
  * Prints package changes based on input parameters
- * @param {PackageInfo[]} changedPackages
- * @param {boolean} byName
- * @param {string} cwd
  */
-const reportChangedPackages = (changedPackages, byName, cwd) => {
+const reportChangedPackages = (changedPackages: PackageInfo[], byName: boolean, cwd: string) => {
   return changedPackages.forEach(p => {
     let changedStr = '';
     if (byName) changedStr = `${p.name}${os.EOL}`;
@@ -194,7 +179,7 @@ async function setupCLI() {
       'Lists all detected packages for this repository',
       y => getSharedYargs(y),
       async args => {
-        const packages = await listPackages(args.cwd);
+        const packages = await listPackages(args);
 
         if (args.json) return console.info(JSON.stringify(packages, null, 2));
 
@@ -214,12 +199,7 @@ async function setupCLI() {
 
         if (!nodes.length) return console.warn('No packages were detected');
 
-        /**
-         *
-         * @param {LocalDependencyGraphNode} node
-         * @param {number} depth
-         */
-        const printGraph = (node, depth) => {
+        const printGraph = (node: LocalDependencyGraphNode, depth: number) => {
           console.info(
             indentStr(
               `${node.name}@${node.version} - depType: ${node.depType}, localDepDepth: ${node.localDepDepth}`,
@@ -238,7 +218,7 @@ async function setupCLI() {
       async args => {
         const allResults = await getLastVersionTagsByPackageName({
           cwd: args.cwd,
-          names: args.package,
+          names: args.package as string[],
           noFetchTags: args.noFetchTags,
         });
 
@@ -259,7 +239,7 @@ async function setupCLI() {
       async args => {
         const changedFiles = await getChangedFilesSinceBump({
           cwd: args.cwd,
-          names: args.package,
+          names: args.package as string[],
           noFetchTags: args.noFetchTags,
         });
 
@@ -301,7 +281,7 @@ async function setupCLI() {
       async args => {
         const commits = await getConventionalCommitsByPackage({
           cwd: args.cwd,
-          names: args.package,
+          names: args.package as string[],
         });
 
         if (args.json) return console.info(JSON.stringify(commits, null, 2));
@@ -328,11 +308,11 @@ async function setupCLI() {
         const { bumps } = await getRecommendedBumpsByPackage({
           cwd: args.cwd,
           forceAll: args.forceAll,
-          names: args.package,
+          names: args.package as string[],
           noFetchAll: args.noFetchAll,
           noFetchTags: args.noFetchTags,
           preid: args.preid,
-          releaseAs: args.releaseAs,
+          releaseAs: args.releaseAs as ReleaseAsPresets,
           uniqify: args.uniqify,
           updateOptional: args.updateOptional,
           updatePeer: args.updatePeer,
@@ -428,7 +408,7 @@ async function setupCLI() {
           noInstall: args.noInstall,
           noPush: args.noPush,
           preid: args.preid,
-          releaseAs: args.releaseAs,
+          releaseAs: args.releaseAs as ReleaseAsPresets,
           rollupChangelog: args.rollupChangelog,
           uniqify: args.uniqify,
           saveExact: args.saveExact,

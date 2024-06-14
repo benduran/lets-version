@@ -8,9 +8,6 @@ import { fixCWD } from './cwd.js';
 
 /**
  * Attempts to detect whether this repository is a multi-package monorepo.
- *
- * @param {string} [cwd=appRootPath.toString()]
- * @returns {Promise<boolean>}
  */
 export async function detectIfMonorepo(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
@@ -22,12 +19,10 @@ export async function detectIfMonorepo(cwd = appRootPath.toString()) {
       try {
         const workspaceFileContents = await fs.readFile(pnpmWorkspaceFilePath, 'utf-8');
 
-        /**
-         * @typedef {Object} PNPMWorkspaces
-         * @property {string[]} [packages]
-         */
-        /** @type {PNPMWorkspaces} */
-        const parsedYaml = yaml.parse(workspaceFileContents) ?? {};
+        type PNPMWorkspaces = {
+          packages?: string[];
+        };
+        const parsedYaml: PNPMWorkspaces = yaml.parse(workspaceFileContents) ?? {};
 
         return Boolean(parsedYaml);
       } catch (err) {

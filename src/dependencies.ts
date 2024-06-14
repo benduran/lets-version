@@ -8,40 +8,19 @@ import { BumpRecommendation, BumpType, PackageInfo, ReleaseAsPresets } from './t
 import { isPackageJSONDependencyKeySupported } from './util.js';
 
 /**
- * Checks whether or not a package.json key is allowed to be updated / managed by "lets-version"
- *
- * @param {string} key
- * @param {boolean} updatePeer
- * @param {boolean} updateOptional
- *
- * @returns {boolean}
- */
-
-/**
  * Given a parsed packageInfo object and some parameters,
  * performs a semver.inc()
- *
- * @param {PackageInfo} packageInfo
- * @param {string | null} from
- * @param {BumpType} bumpType
- * @param {BumpRecommendation} [parentBump]
- * @param {ReleaseAsPresets} [releaseAs]
- * @param {string} [preid]
- * @param {boolean} [uniqify]
- * @param {string} [cwd=appRooPath.toString()]
- *
- * @returns {Promise<BumpRecommendation>}
  */
 export async function getBumpRecommendationForPackageInfo(
-  packageInfo,
-  from,
-  bumpType,
-  parentBump,
-  releaseAs,
-  preid,
-  uniqify,
+  packageInfo: PackageInfo,
+  from: string | null,
+  bumpType: BumpType,
+  parentBump?: BumpRecommendation,
+  releaseAs?: ReleaseAsPresets,
+  preid?: string,
+  uniqify = false,
   cwd = appRootPath.toString(),
-) {
+): Promise<BumpRecommendation> {
   const fixedCWD = fixCWD(cwd);
   const isExactRelease = Boolean(semver.coerce(releaseAs));
 
@@ -108,32 +87,19 @@ export async function getBumpRecommendationForPackageInfo(
  * Applies bumps to top-level packages, then attempts to recursively
  * synchronize package versions and applies bumps if a package hasn't already
  * been bumped (but might receive one as a result from this operation)
- *
- * @param {BumpRecommendation[]} bumps
- * @param {Map<string, BumpRecommendation>} bumpsByPackageName
- * @param {PackageInfo[]} allPackages
- * @param {ReleaseAsPresets} releaseAs
- * @param {string | undefined} preid
- * @param {boolean} uniqify
- * @param {boolean} saveExact
- * @param {boolean} updatePeer
- * @param {boolean} updateOptional
- * @param {string} [cwd=appRootPath.toString()]
- *
- * @returns {Promise<SynchronizeBumpsReturnType>}
  */
 export async function synchronizeBumps(
-  bumps,
-  bumpsByPackageName,
-  allPackages,
-  releaseAs,
-  preid,
-  uniqify,
-  saveExact,
-  updatePeer,
-  updateOptional,
+  bumps: BumpRecommendation[],
+  bumpsByPackageName: Map<string, BumpRecommendation>,
+  allPackages: PackageInfo[],
+  releaseAs: ReleaseAsPresets,
+  preid: string | undefined,
+  uniqify: boolean,
+  saveExact: boolean,
+  updatePeer: boolean,
+  updateOptional: boolean,
   cwd = appRootPath.toString(),
-) {
+): Promise<SynchronizeBumpsReturnType> {
   const fixedCWD = fixCWD(cwd);
   const clonedBumpsByPackageName = new Map(bumpsByPackageName.entries());
 
