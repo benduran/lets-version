@@ -225,7 +225,6 @@ export type DepType = 'self' | 'devDependencies' | 'dependencies' | 'optionalDep
 export interface LocalDependencyGraphNodeOpts extends PackageInfoOpts {
   depType: DepType;
   deps: LocalDependencyGraphNode[];
-  localDepDepth: number;
 }
 
 /**
@@ -235,13 +234,11 @@ export interface LocalDependencyGraphNodeOpts extends PackageInfoOpts {
 export class LocalDependencyGraphNode extends PackageInfo {
   depType: DepType;
   deps: LocalDependencyGraphNode[];
-  localDepDepth: number;
 
-  constructor({ depType, deps, localDepDepth, ...info }: LocalDependencyGraphNodeOpts) {
+  constructor({ depType, deps, ...info }: LocalDependencyGraphNodeOpts) {
     super(info);
     this.depType = depType;
     this.deps = deps;
-    this.localDepDepth = localDepDepth;
   }
 }
 

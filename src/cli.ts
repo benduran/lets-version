@@ -226,12 +226,7 @@ async function setupCLI() {
         if (!nodes.length) return console.warn('No packages were detected');
 
         const printGraph = (node: LocalDependencyGraphNode, depth: number) => {
-          console.info(
-            indentStr(
-              `${node.name}@${node.version} - depType: ${node.depType}, localDepDepth: ${node.localDepDepth}`,
-              depth,
-            ),
-          );
+          console.info(indentStr(`${node.name}@${node.version} - depType: ${node.depType}`, depth));
           for (const childNode of node.deps) printGraph(childNode, depth + 2);
         };
         for (const node of nodes) printGraph(node, 0);

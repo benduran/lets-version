@@ -2,84 +2,45 @@ import appRootPath from 'app-root-path';
 
 import { fixCWD } from './cwd.js';
 import { getPackages } from './getPackages.js';
-import { DepType, LocalDependencyGraphNode, PackageInfo } from './types.js';
+import { DepType, LocalDependencyGraphNode } from './types.js';
 import { isPackageJSONDependencyKeySupported } from './util.js';
-
-/**
- * Given a dependency node graph instance,
- * computes how deep the local-dep tree goes
- */
-function computeDepDepth(node: LocalDependencyGraphNode, depth: number): LocalDependencyGraphNode {
-  node.localDepDepth = depth;
-  if (!node.deps.length) return node;
-
-  for (const childNode of node.deps) {
-    const updatedChildNode = computeDepDepth(childNode, depth + 1);
-    node.localDepDepth = Math.max(node.localDepDepth, updatedChildNode.localDepDepth);
-    computeDepDepth(childNode, 0);
-  }
-
-  return node;
-}
-
-/**
- * Given a single package info, attempts
- * to build the local-only graph. Use
- * this function for recursion
- */
-function buildGraphForPackageInfo(
-  packageInfo: PackageInfo,
-  allPackagesByName: Map<string, PackageInfo>,
-  depType: DepType,
-): LocalDependencyGraphNode {
-  const node = new LocalDependencyGraphNode({
-    ...packageInfo,
-    depType,
-    deps: [],
-    localDepDepth: 0,
-  });
-
-  for (const pkey in packageInfo.pkg) {
-    if (!isPackageJSONDependencyKeySupported(pkey, true, true)) continue;
-
-    const pkeyDeps = packageInfo.pkg[pkey] ?? {};
-    const pkeyDepsNames = Object.keys(pkeyDeps);
-    // loop through and find any local-only deps
-    for (const pkeyDepName of pkeyDepsNames) {
-      const localMatch = allPackagesByName.get(pkeyDepName);
-      if (!localMatch) continue;
-
-      // @ts-ignore
-      node.deps.push(buildGraphForPackageInfo(localMatch, allPackagesByName, pkey));
-    }
-  }
-
-  return node;
-}
 
 /**
  * Scans the repository for all packages
  * and builds a local-only dependency graph
  * representation
- *
- * @param {string} [cwd=appRootPath.toString()]
- *
- * @returns {Promise<LocalDependencyGraphNode[]>}
  */
-export async function buildLocalDependencyGraph(cwd = appRootPath.toString()) {
+export async function buildLocalDependencyGraph(cwd = appRootPath.toString()): Promise<LocalDependencyGraphNode[]> {
   const fixedCWD = fixCWD(cwd);
 
-  /** @type {LocalDependencyGraphNode[]} */
-  const nodes = [];
-
   const allPackages = await getPackages(fixedCWD);
-  const allPackagesByName = new Map(allPackages.map(p => [p.name, p]));
+  const allPackagesByName = new Map(
+    allPackages.map(p => [p.name, new LocalDependencyGraphNode({ ...p, depType: 'self', deps: [] })]),
+  );
 
-  for (const p of allPackages) {
-    nodes.push(buildGraphForPackageInfo(p, allPackagesByName, 'self'));
+  const makeMagic = (node: LocalDependencyGraphNode) => {
+    for (const pjsonKey of Object.keys(node.pkg)) {
+      if (!isPackageJSONDependencyKeySupported(pjsonKey, true, true)) continue;
+
+      // we are now in dep-land
+      for (const depname of Object.keys(node.pkg[pjsonKey] ?? {})) {
+        const isMonorepoDep = allPackagesByName.get(depname);
+        if (!isMonorepoDep) continue;
+
+        // we have a monorepo-specific dep
+        const monorepoDepNode = new LocalDependencyGraphNode({
+          ...isMonorepoDep,
+          depType: depname as DepType,
+          deps: [],
+        });
+        node.deps.push(monorepoDepNode);
+        makeMagic(monorepoDepNode);
+      }
+    }
+  };
+  for (const node of allPackagesByName.values()) {
+    makeMagic(node);
   }
 
-  for (const node of nodes) computeDepDepth(node, 0);
-
-  return nodes;
+  return Array.from(allPackagesByName.values());
 }
