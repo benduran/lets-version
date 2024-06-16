@@ -60,11 +60,11 @@ export function isPackageJSONDependencyKeySupported(
 /**
  * Left-indents content to a certain depth
  */
-export function indentStr(content: string, depth = 0) {
+export function indentStr(content: string, indentChar = ' ', depth = 0) {
   let out = content;
 
   for (let i = 0; i < depth; i++) {
-    out = ` ${out}`;
+    out = `${indentChar}${out}`;
   }
 
   return out;

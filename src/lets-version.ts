@@ -698,7 +698,6 @@ export async function applyRecommendedBumpsByPackage(
 
 /**
  * Builds a local repository-only dependency graph. If you are in a monorepo, this is useful to visualize how the dependencies in said monorepo relate to each other.
- * @param {string} [cwd=appRootPath.toString()]
  */
 export async function localDepGraph(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);

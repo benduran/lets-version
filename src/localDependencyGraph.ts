@@ -10,13 +10,15 @@ import { isPackageJSONDependencyKeySupported } from './util.js';
  * and builds a local-only dependency graph
  * representation
  */
-export async function buildLocalDependencyGraph(cwd = appRootPath.toString()): Promise<LocalDependencyGraphNode[]> {
+export async function buildLocalDependencyGraph(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   const allPackages = await getPackages(fixedCWD);
   const allPackagesByName = new Map(
     allPackages.map(p => [p.name, new LocalDependencyGraphNode({ ...p, depType: 'self', deps: [] })]),
   );
+
+  const cycles: Array<[LocalDependencyGraphNode, LocalDependencyGraphNode]> = [];
 
   const makeMagic = (node: LocalDependencyGraphNode) => {
     for (const pjsonKey of Object.keys(node.pkg)) {
@@ -30,9 +32,22 @@ export async function buildLocalDependencyGraph(cwd = appRootPath.toString()): P
         // we have a monorepo-specific dep
         const monorepoDepNode = new LocalDependencyGraphNode({
           ...isMonorepoDep,
-          depType: depname as DepType,
+          depType: pjsonKey as DepType,
           deps: [],
         });
+
+        // before pushing, we need to check to see if
+        // there are any entries with this node name that already
+        // exist. if there are, it means the user has a cycle in their
+        // local dep graph, which will cause an infinite recursion loop
+        // to occur here
+        const cycleDetected = node.deps.some(d => d.name === monorepoDepNode.name);
+
+        if (cycleDetected) {
+          cycles.push([node, monorepoDepNode]);
+          continue;
+        }
+
         node.deps.push(monorepoDepNode);
         makeMagic(monorepoDepNode);
       }
@@ -42,5 +57,5 @@ export async function buildLocalDependencyGraph(cwd = appRootPath.toString()): P
     makeMagic(node);
   }
 
-  return Array.from(allPackagesByName.values());
+  return { cycles, depGraph: Array.from(allPackagesByName.values()) };
 }

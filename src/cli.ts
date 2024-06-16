@@ -5,6 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import chalk from 'chalk';
 import createCLI, { ArgumentsCamelCase, Argv } from 'yargs';
 import { hideBin } from 'yargs/helpers';
 
@@ -219,14 +220,22 @@ async function setupCLI() {
       'Builds a local repository-only dependency graph. If you are in a monorepo, this is useful to visualize how the dependencies in said monorepo relate to each other.',
       y => getSharedYargs(y),
       async args => {
-        const nodes = await localDepGraph(args.cwd);
+        const { depGraph: nodes } = await localDepGraph(args.cwd);
 
         if (args.json) return console.info(JSON.stringify(nodes, null, 2));
 
         if (!nodes.length) return console.warn('No packages were detected');
 
         const printGraph = (node: LocalDependencyGraphNode, depth: number) => {
-          console.info(indentStr(`${node.name}@${node.version} - depType: ${node.depType}`, depth));
+          let prefix = `${node.name}@${node.version}`;
+          let suffix = ` - depType: ${node.depType}`;
+
+          if (depth <= 0) {
+            prefix = chalk.blue(prefix);
+            suffix = chalk.blue(suffix);
+          }
+
+          console.info(indentStr(`${prefix}${suffix}`, '-', depth));
           for (const childNode of node.deps) printGraph(childNode, depth + 2);
         };
         for (const node of nodes) printGraph(node, 0);
