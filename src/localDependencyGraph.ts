@@ -1,4 +1,7 @@
+import os from 'node:os';
+
 import appRootPath from 'app-root-path';
+import chalk from 'chalk';
 
 import { fixCWD } from './cwd.js';
 import { getPackages } from './getPackages.js';
@@ -18,9 +21,23 @@ export async function buildLocalDependencyGraph(cwd = appRootPath.toString()) {
     allPackages.map(p => [p.name, new LocalDependencyGraphNode({ ...p, depType: 'self', deps: [] })]),
   );
 
-  const cycles: Array<[LocalDependencyGraphNode, LocalDependencyGraphNode]> = [];
+  const makeMagic = (node: LocalDependencyGraphNode, visited: Set<string>, stack: Set<string>) => {
+    if (stack.has(node.name)) {
+      // Cycle detected
+      throw new Error(
+        `a cycle was detected in your dependency graph. check the package.json files for the following packages:${
+          os.EOL
+        }${chalk.magenta('➡️')} ${chalk.magenta(Array.from(stack).join(' ➡️ '))}`,
+      );
+    }
 
-  const makeMagic = (node: LocalDependencyGraphNode) => {
+    if (visited.has(node.name)) {
+      return;
+    }
+
+    visited.add(node.name);
+    stack.add(node.name);
+
     for (const pjsonKey of Object.keys(node.pkg)) {
       if (!isPackageJSONDependencyKeySupported(pjsonKey, true, true)) continue;
 
@@ -36,26 +53,17 @@ export async function buildLocalDependencyGraph(cwd = appRootPath.toString()) {
           deps: [],
         });
 
-        // before pushing, we need to check to see if
-        // there are any entries with this node name that already
-        // exist. if there are, it means the user has a cycle in their
-        // local dep graph, which will cause an infinite recursion loop
-        // to occur here
-        const cycleDetected = node.deps.some(d => d.name === monorepoDepNode.name);
-
-        if (cycleDetected) {
-          cycles.push([node, monorepoDepNode]);
-          continue;
-        }
-
         node.deps.push(monorepoDepNode);
-        makeMagic(monorepoDepNode);
+        makeMagic(monorepoDepNode, visited, stack);
       }
     }
+
+    stack.delete(node.name);
   };
+
   for (const node of allPackagesByName.values()) {
-    makeMagic(node);
+    makeMagic(node, new Set(), new Set());
   }
 
-  return { cycles, depGraph: Array.from(allPackagesByName.values()) };
+  return Array.from(allPackagesByName.values());
 }
