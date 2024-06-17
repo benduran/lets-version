@@ -1,3 +1,11 @@
+## 0.8.5-beta.1 (2024-06-17)
+
+### 🛠️ Fixes 🛠️
+
+- fix: fixed type exports (5dfed9c7919f5809bbf3254c9be380736de8cfde)
+
+---
+
 ## 0.8.5-beta.0 (2024-06-17)
 
 ### 🔀 Miscellaneous 🔀
