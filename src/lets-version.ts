@@ -25,7 +25,12 @@ import {
 } from './git.js';
 import { buildLocalDependencyGraph } from './localDependencyGraph.js';
 import { conventionalCommitToBumpType } from './parser.js';
-import { defineLetsVersionConfig, LetsVersionConfig, readLetsVersionConfig } from './readUserConfig.js';
+import {
+  ChangelogConfig,
+  defineLetsVersionConfig,
+  LetsVersionConfig,
+  readLetsVersionConfig,
+} from './readUserConfig.js';
 import {
   BumpRecommendation,
   BumpType,
@@ -42,6 +47,8 @@ import {
 } from './types.js';
 
 export { defineLetsVersionConfig };
+
+export type { ChangelogConfig, LetsVersionConfig };
 
 export interface AllCommandsBaseOpts {
   cwd?: string;
