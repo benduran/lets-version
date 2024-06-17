@@ -126,24 +126,24 @@ export async function synchronizeBumps(
     // package as a dependency and apply at least the same bump as the parent
     // (or defer to whichever existing bump the child has, if it's larger)
 
-    const dependants = depGraph.filter(node => node.deps.some(dep => dep.name === bump.packageInfo.name));
+    const dependents = depGraph.filter(node => node.deps.some(dep => dep.name === bump.packageInfo.name));
 
-    for (const dependant of dependants) {
-      // we now need to update the version of the dep for each dependant,
+    for (const dependent of dependents) {
+      // we now need to update the version of the dep for each dependent,
       // ensuring we keep the correct semver range marker (if it's present)
-      for (const dependantPjsonKey of Object.keys(dependant.pkg)) {
-        if (!isPackageJSONDependencyKeySupported(dependantPjsonKey, updatePeer, updateOptional)) continue;
+      for (const dependentPjsonKey of Object.keys(dependent.pkg)) {
+        if (!isPackageJSONDependencyKeySupported(dependentPjsonKey, updatePeer, updateOptional)) continue;
 
-        for (const dependantDepName of Object.keys(dependant.pkg[dependantPjsonKey] ?? {})) {
-          if (dependantDepName !== bump.packageInfo.name) continue;
+        for (const dependentDepName of Object.keys(dependent.pkg[dependentPjsonKey] ?? {})) {
+          if (dependentDepName !== bump.packageInfo.name) continue;
 
           // @ts-ignore
-          const existingDependantDepSemver = String(dependant.pkg[dependantPjsonKey][dependantDepName]);
-          const [semverDetails] = semverUtils.parseRange(existingDependantDepSemver);
+          const existingdependentDepSemver = String(dependent.pkg[dependentPjsonKey][dependentDepName]);
+          const [semverDetails] = semverUtils.parseRange(existingdependentDepSemver);
 
           if (!semverDetails?.operator) {
             throw new Error(
-              `unable to synchronize deps because ${dependant.name} has a bad semver specified for ${dependantDepName} of ${existingDependantDepSemver}`,
+              `unable to synchronize deps because ${dependent.name} has a bad semver specified for ${dependentDepName} of ${existingdependentDepSemver}`,
             );
           }
           const { operator } = semverDetails;
@@ -159,10 +159,10 @@ export async function synchronizeBumps(
           ) {
             operatorTouse = '^';
           }
-          const existingChildBumpRec = bumpsByPackageName.get(dependant.name);
+          const existingChildBumpRec = bumpsByPackageName.get(dependent.name);
           const childBumpRec = await getBumpRecommendationForPackageInfo(
-            dependant,
-            dependant.version,
+            dependent,
+            dependent.version,
             Math.max(bump.type, existingChildBumpRec?.type ?? bump.type),
             bump,
             releaseAs,
