@@ -1,3 +1,28 @@
+## 0.8.5-beta.0 (2024-06-17)
+
+### 🔀 Miscellaneous 🔀
+
+- chore: changed typo of 'dependant' to 'dependent' (0564c45813f23b3bf8d42c3ff78b3e01443c5c13)
+- chore: newt hotness logic for computing transitive bumps also fixed a bug that would cause parent MAJOR bumps to not get applied to the children, yay! (5337da2894050bde004f2e642eed2f0dc62df830)
+- chore: started making tweaks to creating the dep graph (853faf59b81ca998714202e97f76525bdb5a1721)
+- chore: fixed tests (77f3a56e65e1fa02cefd0036ff8654ba7f1b3626)
+- chore: migrated last files to typescript (99a4974787d60db4ea405b829b2f32b940fc4287)
+
+
+
+### ✨ Features ✨
+
+- feat: improved package.json graph parsing and added cycle detection (8850482f3612742e5796f28629582013beee48b0)
+- feat: improved logic for getting local dep graph (16056ab223a241ac88c9d652c680d4b9676f2e15)
+
+
+
+### 🚨 Breaking Changes 🚨
+
+- feat!: started converting things to typescript (3d1dc2cd1b51e75bd3e798efa9599c77065a2941)
+
+---
+
 ## 0.8.4 (2024-04-25)
 
 ### 🔀 Miscellaneous 🔀
