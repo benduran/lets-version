@@ -208,7 +208,7 @@ export interface GetRecommendedBumpsByPackageOpts {
   preid?: string;
   uniqify?: boolean;
   saveExact?: boolean;
-  forceAll?: boolean;
+  force?: boolean;
   noFetchAll?: boolean;
   noFetchTags?: boolean;
   updatePeer?: boolean;
@@ -231,7 +231,7 @@ export async function getRecommendedBumpsByPackage(
     releaseAs = ReleaseAsPresets.AUTO,
     uniqify = false,
     saveExact = false,
-    forceAll = false,
+    force = false,
     noFetchAll = false,
     noFetchTags = false,
     updatePeer = false,
@@ -315,37 +315,11 @@ export async function getRecommendedBumpsByPackage(
     }
   }
 
-  if (forceAll || isExactRelease) {
+  if (isExactRelease) {
     // loop over all packages and set any packages that don't
     // already have an entry to a PATCH
     for (const packageInfo of filteredPackages) {
-      if (isExactRelease) {
-        bumpTypeByPackageName.set(packageInfo.name, BumpType.EXACT);
-        continue;
-      }
-
-      if (bumpTypeByPackageName.has(packageInfo.name)) continue;
-
-      let forcedBumpType = BumpType.PATCH;
-      switch (releaseAs) {
-        case ReleaseAsPresets.ALPHA:
-        case ReleaseAsPresets.BETA:
-          forcedBumpType = BumpType.PRERELEASE;
-          break;
-        case ReleaseAsPresets.MAJOR:
-          forcedBumpType = BumpType.MAJOR;
-          break;
-        case ReleaseAsPresets.MINOR:
-          forcedBumpType = BumpType.MINOR;
-          break;
-        case ReleaseAsPresets.PATCH:
-          forcedBumpType = BumpType.PATCH;
-          break;
-        default:
-          break;
-      }
-
-      bumpTypeByPackageName.set(packageInfo.name, forcedBumpType);
+      bumpTypeByPackageName.set(packageInfo.name, BumpType.EXACT);
     }
   }
 
@@ -357,7 +331,7 @@ export async function getRecommendedBumpsByPackage(
     const tagInfo = tagsForPackagesMap.get(packageName);
 
     // preids take precedence above all
-    const from = forceAll || preid || isExactRelease || tagInfo?.sha ? packageInfo.version : null;
+    const from = force || preid || isExactRelease || tagInfo?.sha ? packageInfo.version : null;
 
     out.bumps.push(
       await getBumpRecommendationForPackageInfo(
@@ -386,6 +360,35 @@ export async function getRecommendedBumpsByPackage(
     fixedCWD,
   );
 
+  if (force) {
+    for (const packageInfo of filteredPackages) {
+      // any package that DOESN'T have a bump needs to get one.
+      // leave any that received a bump as-is, for accuracy
+      if (bumpTypeByPackageName.has(packageInfo.name)) continue;
+
+      let forcedBumpType = BumpType.PATCH;
+      switch (releaseAs) {
+        case ReleaseAsPresets.ALPHA:
+        case ReleaseAsPresets.BETA:
+          forcedBumpType = BumpType.PRERELEASE;
+          break;
+        case ReleaseAsPresets.MAJOR:
+          forcedBumpType = BumpType.MAJOR;
+          break;
+        case ReleaseAsPresets.MINOR:
+          forcedBumpType = BumpType.MINOR;
+          break;
+        case ReleaseAsPresets.PATCH:
+          forcedBumpType = BumpType.PATCH;
+          break;
+        default:
+          break;
+      }
+
+      bumpTypeByPackageName.set(packageInfo.name, forcedBumpType);
+    }
+  }
+
   return { ...synchronized, conventional };
 }
 
@@ -395,7 +398,7 @@ export interface ApplyRecommendedBumpsByPackageOpts {
   preid?: string;
   uniqify?: boolean;
   saveExact?: boolean;
-  forceAll?: boolean;
+  force?: boolean;
   noCommit?: boolean;
   noFetchAll?: boolean;
   noFetchTags?: boolean;
@@ -428,7 +431,7 @@ export async function applyRecommendedBumpsByPackage(
     customConfig: customConfigOverride,
     cwd = appRootPath.toString(),
     dryRun = false,
-    forceAll = false,
+    force = false,
     names,
     noChangelog = false,
     noCommit = false,
@@ -475,7 +478,7 @@ export async function applyRecommendedBumpsByPackage(
     preid,
     uniqify,
     saveExact,
-    forceAll,
+    force,
     noFetchAll,
     noFetchTags,
     updatePeer,

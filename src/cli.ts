@@ -339,7 +339,7 @@ async function setupCLI() {
       async (args: GetSharedYargsType & GetSharedBumpArgsType & GetSharedVersionYargsType) => {
         const { bumps } = await getRecommendedBumpsByPackage({
           cwd: args.cwd,
-          forceAll: args.forceAll,
+          force: args.forceAll || args.force,
           names: args.package as string[],
           noFetchAll: args.noFetchAll,
           noFetchTags: args.noFetchTags,
@@ -431,7 +431,7 @@ async function setupCLI() {
           allowUncommitted: args.allowUncommitted,
           cwd: args.cwd,
           dryRun: args.dryRun,
-          forceAll: args.forceAll,
+          force: args.forceAll || args.force,
           names: args.package,
           noChangelog: args.noChangelog,
           noCommit: args.noCommit,
