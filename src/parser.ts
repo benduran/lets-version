@@ -1,12 +1,9 @@
-/**
- * @typedef {import('./types.js').GitCommit} GitCommit
- */
-
 import { sync as conventionalParser } from 'conventional-commits-parser';
 
 import {
   BumpType,
   ConventionalCommitType,
+  GitCommit,
   GitCommitWithConventional,
   GitConventional,
   GitConventionalNote,
@@ -14,11 +11,8 @@ import {
 
 /**
  * Given a full commit message, attempts to determine if it is a breaking change
- *
- * @param {string} msg
- *
  */
-function extractCommit(msg) {
+function extractCommit(msg: string) {
   const looseConventionalFormat = /^([a-z0-9-]+)(\([a-z0-9-]+\))?(!)?:\s?(.+)((\n|\r\n){2}(BREAKING CHANGE:)\s?.+)?$/im;
 
   const things = looseConventionalFormat.exec(msg);
@@ -35,11 +29,8 @@ function extractCommit(msg) {
  * Given an array of already parsed commits, attempts
  * to use the official conventional commits parser
  * to map details into an enriched Commit object
- * @param {GitCommit[]} commits
- *
- * @returns {GitCommitWithConventional[]}
  */
-export function parseToConventional(commits) {
+export function parseToConventional(commits: GitCommit[]): GitCommitWithConventional[] {
   const mergePattern =
     /^merge\s+(branch|tag|commit|pull\srequest|remote-tracking\s+branch)\s+'([^']+)'(?:\s+of\s+(.*))?$/i;
 
@@ -67,7 +58,7 @@ export function parseToConventional(commits) {
         scope: details.scope,
         sha: c.sha,
         subject: details.subject || extracted.subject,
-        type: details.type,
+        type: details.type as ConventionalCommitType,
         email: c.email,
         author: c.author,
       }),
@@ -78,12 +69,8 @@ export function parseToConventional(commits) {
 /**
  * Given a git commit that's been parsed into a conventional commit format
  * returns a bump type recommendation
- *
- * @param {GitCommitWithConventional} commit
- *
- * @returns {BumpType}
  */
-export function conventionalCommitToBumpType(commit) {
+export function conventionalCommitToBumpType(commit: GitCommitWithConventional): BumpType {
   const {
     conventional: { breaking, type },
   } = commit;

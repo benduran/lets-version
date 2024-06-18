@@ -2,5 +2,6 @@
 . "$(dirname -- "$0")/_/husky.sh"
 
 # Perform lint and typechecking
-npx lint-staged
+npm run lint
+npm run typecheck
 npm test

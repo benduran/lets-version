@@ -1,15 +1,13 @@
-/** @typedef {import('type-fest').PackageJson} PackageJson */
-/** @typedef {import('../types.js').PackageInfo} PackageInfo */
+import path from 'node:path';
 
 import fs from 'fs-extra';
-import path from 'path';
 import semver from 'semver';
 import { describe, expect, it } from 'vitest';
 
 import { getBumpRecommendationForPackageInfo } from '../dependencies.js';
 import { getPackages } from '../getPackages.js';
 import { gitCurrentSHA } from '../git.js';
-import { BumpType, ReleaseAsPresets } from '../types.js';
+import { BumpType, PackageInfo, ReleaseAsPresets } from '../types.js';
 import { isPackageJSONDependencyKeySupported } from '../util.js';
 
 describe('dependencies.js tests', () => {
@@ -43,9 +41,7 @@ describe('dependencies.js tests', () => {
 
     expect(packageInfo).toBeDefined();
 
-    /** @type {PackageInfo} */
-    // @ts-ignore
-    const pinfo = packageInfo;
+    const pinfo = packageInfo as PackageInfo;
 
     // When there is no "from," the bump gets released "as-is," regardless of the bump type
     const bump1 = await getBumpRecommendationForPackageInfo(pinfo, null, BumpType.PATCH, undefined, undefined);
@@ -86,7 +82,14 @@ describe('dependencies.js tests', () => {
     expect(bump3.type).toBe(BumpType.PRERELEASE);
 
     // if a "releaseAs" is provided, we should wholesale ignore the BumpType and it should default to the type of "releaseAs"
-    const bump4 = await getBumpRecommendationForPackageInfo(pinfo, null, BumpType.MAJOR, undefined, 'beta', undefined);
+    const bump4 = await getBumpRecommendationForPackageInfo(
+      pinfo,
+      null,
+      BumpType.MAJOR,
+      undefined,
+      ReleaseAsPresets.BETA,
+      undefined,
+    );
     expect(bump4.from).toBe(pinfo.version);
     expect(bump4.isValid).toBeTruthy();
     expect(bump4.packageInfo).toBe(pinfo);

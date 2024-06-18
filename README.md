@@ -268,7 +268,7 @@ Options:
       --help            Show help                                      [boolean]
       --cwd             The folder to use as root when running command. Defaults
                          to your session's CWD
-
+       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
       --json            If true, lists results as a JSON blob piped to your term
                         inal                          [boolean] [default: false]
   -p, --package         One or more packages to check. You can specify multiple
@@ -295,6 +295,12 @@ Options:
                         egardless of whether they have changed. What this means,
                          in practice, is that any package that would not normall
                         y be changed will receive a PATCH update (or an equivale
+                        nt if --preid is set)
+                    [deprecated: Use --force instead] [boolean] [default: false]
+      --force           If true, forces all packages to receive a bump update, r
+                        egardless of whether they have changed. What this means,
+                         in practice, is that any package that would not normall
+                        y be changed will receive a PATCH update (or an equivale
                         nt if --preid is set)         [boolean] [default: false]
       --updatePeer      If true, will update any dependent "package.json#peerDep
                         endencies" fields             [boolean] [default: false]
@@ -318,7 +324,7 @@ Options:
       --help              Show help                                    [boolean]
       --cwd               The folder to use as root when running command. Defaul
                           ts to your session's CWD
-
+       [string] [default: "/Users/benjaminduran/devlop/opensource/lets-version"]
       --json              If true, lists results as a JSON blob piped to your te
                           rminal                      [boolean] [default: false]
   -p, --package           One or more packages to check. You can specify multipl
@@ -341,10 +347,13 @@ Options:
       --uniqify           If true, will append the git SHA at version bump time
                           to the end of the version number (while maintaining va
                           lid semver)                 [boolean] [default: false]
-      --saveExact         If true, saved dependencies will be configured with an
-                          exact version rather than using npm's default semver r
-                          ange operator.              [boolean] [default: false]
       --forceAll          If true, forces all packages to receive a bump update,
+                           regardless of whether they have changed. What this me
+                          ans, in practice, is that any package that would not n
+                          ormally be changed will receive a PATCH update (or an
+                          equivalent if --preid is set)
+                    [deprecated: Use --force instead] [boolean] [default: false]
+      --force             If true, forces all packages to receive a bump update,
                            regardless of whether they have changed. What this me
                           ans, in practice, is that any package that would not n
                           ormally be changed will receive a PATCH update (or an
@@ -354,6 +363,9 @@ Options:
                           ependencies" fields         [boolean] [default: false]
       --updateOptional    If true, will update any dependent "package.json#optio
                           nalDependencies" fields     [boolean] [default: false]
+      --saveExact         If true, saved dependencies will be configured with an
+                           exact version rather than using npm's default semver
+                          range operator              [boolean] [default: false]
       --allowUncommitted  If true, will allow the version operation to continue
                           when there are uncommitted files in the repo at versio
                           n bump time. This is usefull if you have some scripts

@@ -1,5 +1,3 @@
-/** @typedef {import('./types.js').PackageInfo} PackageInfo */
-
 import appRootPath from 'app-root-path';
 import fs from 'fs-extra';
 import os from 'os';
@@ -9,7 +7,7 @@ import semver from 'semver';
 import { fixCWD } from './cwd.js';
 import { execAsync, execSync } from './exec.js';
 import { parseToConventional } from './parser.js';
-import { GitCommit, GitCommitWithConventionalAndPackageInfo, PublishTagInfo } from './types.js';
+import { GitCommit, GitCommitWithConventionalAndPackageInfo, PackageInfo, PublishTagInfo } from './types.js';
 import { chunkArray } from './util.js';
 
 let didFetchAll = false;
@@ -77,20 +75,22 @@ export async function gitCommitsSince(since = '', relPath = '', cwd = appRootPat
 
   const { stdout } = await execAsync(cmd, { cwd: fixedCWD, stdio: 'pipe' });
 
-  return stdout
-    .split(LINE_DELIMITER)
-    .filter(Boolean)
-    .map(line => {
-      const trimmed = line.trim();
+  return (
+    stdout
+      ?.split(LINE_DELIMITER)
+      .filter(Boolean)
+      .map(line => {
+        const trimmed = line.trim();
 
-      const [sha = '', author = '', email = '', date = '', message = ''] = trimmed.split(DELIMITER).filter(Boolean);
-      return new GitCommit(author, date, email, message, sha);
-    })
-    .filter(commit => Boolean(commit.sha));
+        const [sha = '', author = '', email = '', date = '', message = ''] = trimmed.split(DELIMITER).filter(Boolean);
+        return new GitCommit(author, date, email, message, sha);
+      })
+      .filter(commit => Boolean(commit.sha)) ?? []
+  );
 }
 
-/** @type {Array<[string, string]> | null} */
-let remoteTagsCache = null;
+let remoteTagsCache: Array<[string, string]> | null = null;
+
 /**
  * Grabs the full list of all tags available on upstream
  *
@@ -105,21 +105,21 @@ export function gitRemoteTags(cwd = appRootPath.toString()) {
 
   // since this function may be called multiple times in a workflow,
   // we want to avoid accidentally getting different results
-  remoteTagsCache = execSync('git ls-remote --tags origin', { cwd: fixedCWD, stdio: 'pipe' })
-    .stdout.trim()
-    .split(os.EOL)
-    .filter(Boolean)
-    .map(t => {
-      const [sha = '', ref = ''] = t.split(/\s+/);
+  remoteTagsCache =
+    execSync('git ls-remote --tags origin', { cwd: fixedCWD, stdio: 'pipe' })
+      .stdout?.trim()
+      .split(os.EOL)
+      .filter(Boolean)
+      .map(t => {
+        const [sha = '', ref = ''] = t.split(/\s+/);
 
-      return [ref.replace('refs/tags/', ''), sha];
-    });
+        return [ref.replace('refs/tags/', ''), sha];
+      }) ?? null;
 
   return remoteTagsCache;
 }
 
-/** @type {Array<[string, string]> | null} */
-let localTagsCache = null;
+let localTagsCache: Array<[string, string]> | null = null;
 /**
  * Grabs the full list of all tags available locally
  *
@@ -134,15 +134,16 @@ export function gitLocalTags(cwd = appRootPath.toString()) {
   try {
     // since this function may be called multiple times in a workflow,
     // we want to avoid accidentally getting different results
-    localTagsCache = execSync('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' })
-      .stdout.trim()
-      .split(os.EOL)
-      .filter(Boolean)
-      .map(t => {
-        const [sha = '', ref = ''] = t.split(/\s+/);
+    localTagsCache =
+      execSync('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' })
+        .stdout?.trim()
+        .split(os.EOL)
+        .filter(Boolean)
+        .map(t => {
+          const [sha = '', ref = ''] = t.split(/\s+/);
 
-        return [ref.replace('refs/tags/', ''), sha];
-      });
+          return [ref.replace('refs/tags/', ''), sha];
+        }) ?? null;
 
     return localTagsCache;
   } catch (error) {
@@ -156,12 +157,8 @@ export function gitLocalTags(cwd = appRootPath.toString()) {
 /**
  * Given a package info object, returns a formatted string
  * that can be safely used as a git version tag
- *
- * @param {PackageInfo} packageInfo
- *
- * @returns {string}
  */
-export function formatVersionTagForPackage(packageInfo) {
+export function formatVersionTagForPackage(packageInfo: PackageInfo): string {
   return `${packageInfo.name}@${packageInfo.version}`;
 }
 
@@ -171,12 +168,11 @@ export function formatVersionTagForPackage(packageInfo) {
  * If one for the current version is not found, all existing tags are scanned
  * to find the closest match, and that is returned. If one isn't found, null
  * is returned.
- *
- * @param {PackageInfo} packageInfo
- *
- * @returns {Promise<PublishTagInfo | null>}
  */
-export async function gitLastKnownPublishTagInfoForPackage(packageInfo, cwd = appRootPath.toString()) {
+export async function gitLastKnownPublishTagInfoForPackage(
+  packageInfo: PackageInfo,
+  cwd = appRootPath.toString(),
+): Promise<PublishTagInfo | null> {
   const fixedCWD = fixCWD(cwd);
 
   // tag may either be on upstream or local-only. We need to treat both cases as "exists"
@@ -184,7 +180,7 @@ export async function gitLastKnownPublishTagInfoForPackage(packageInfo, cwd = ap
   const allLocalTags = gitLocalTags(fixedCWD);
 
   // newest / largest tags first
-  const allTags = [...allRemoteTag, ...allLocalTags].sort((a, b) => b[0].localeCompare(a[0]));
+  const allTags = [...(allRemoteTag ?? []), ...(allLocalTags ?? [])].sort((a, b) => b[0].localeCompare(a[0]));
 
   const allRemoteTagsMap = new Map(allTags);
 
@@ -221,14 +217,12 @@ export async function gitLastKnownPublishTagInfoForPackage(packageInfo, cwd = ap
 
 /**
  * Checks to see if there is a Git tag used for the last publish for a list of packages
- *
- * @param {PackageInfo[]} packages
- * @param {boolean} noFetchTags
- * @param {string} [cwd=appRootPath.toString]
- *
- * @returns {Promise<PublishTagInfo[]>}
  */
-export async function getLastKnownPublishTagInfoForAllPackages(packages, noFetchTags, cwd = appRootPath.toString()) {
+export async function getLastKnownPublishTagInfoForAllPackages(
+  packages: PackageInfo[],
+  noFetchTags: boolean,
+  cwd = appRootPath.toString(),
+): Promise<PublishTagInfo[]> {
   const fixedCWD = fixCWD(cwd);
 
   if (!noFetchTags) gitFetchAllTags(fixedCWD);
@@ -249,33 +243,30 @@ export async function getLastKnownPublishTagInfoForAllPackages(packages, noFetch
 /**
  * Given a specific git sha, finds all files that have been modified
  * since the sha and returns the absolute filepaths
- *
- * @param {string} sha
- * @param {string} [cwd=appRootPath.toString()]
- *
- * @returns {Promise<string[]>}
  */
-export async function gitAllFilesChangedSinceSha(sha, cwd = appRootPath.toString()) {
+export async function gitAllFilesChangedSinceSha(sha: string, cwd = appRootPath.toString()): Promise<string[]> {
   const fixedCWD = fixCWD(cwd);
 
   const { stdout } = await execAsync(`git --no-pager diff --name-only ${sha}..`, { cwd: fixedCWD, stdio: 'pipe' });
-  return stdout
-    .trim()
-    .split(os.EOL)
-    .filter(Boolean)
-    .map(fp => path.resolve(path.join(cwd, fp)));
+  return (
+    stdout
+      ?.trim()
+      .split(os.EOL)
+      .filter(Boolean)
+      .map(fp => path.resolve(path.join(cwd, fp))) ?? []
+  );
 }
 
 /**
  * Given an input of parsed git tag infos,
  * returns all the files that have changed since any of these git tags
  * have occured, with duplicates removed
- *
- * @param {PackageInfo[]} filteredPackages
- * @param {PublishTagInfo[]} tagInfos
- * @param {string} [cwd=appRootPath.toString()]
  */
-export async function getAllFilesChangedSinceTagInfos(filteredPackages, tagInfos, cwd = appRootPath.toString()) {
+export async function getAllFilesChangedSinceTagInfos(
+  filteredPackages: PackageInfo[],
+  tagInfos: PublishTagInfo[],
+  cwd = appRootPath.toString(),
+) {
   const fixedCWD = fixCWD(cwd);
 
   const packageNameLookup = new Map(filteredPackages.map(p => [p.name, p]));
@@ -302,12 +293,12 @@ export async function getAllFilesChangedSinceTagInfos(filteredPackages, tagInfos
 /**
  * Given an input of the "main" branch name,
  * returns all the files that have changed since the current branch was created
- *
- * @param {PackageInfo[]} filteredPackages
- * @param {string} branch
- * @param {string} [cwd=appRootPath.toString()]
  */
-export async function getAllFilesChangedSinceBranch(filteredPackages, branch, cwd = appRootPath.toString()) {
+export async function getAllFilesChangedSinceBranch(
+  filteredPackages: PackageInfo[],
+  branch: string,
+  cwd = appRootPath.toString(),
+) {
   const fixedCWD = fixCWD(cwd);
   const allFiles = await gitAllFilesChangedSinceSha(branch, fixedCWD);
 
@@ -323,19 +314,24 @@ export async function getAllFilesChangedSinceBranch(filteredPackages, branch, cw
 /**
  * Gets full git commit, with conventional commits parsed data,
  * for a single, parsed package info
- *
- * @param {PackageInfo} packageInfo
- * @param {boolean} [noFetchAll=false]
- * @param {string} [cwd=appRootPath.toString()]
- *
- * @returns {Promise<GitCommitWithConventionalAndPackageInfo[]>}
  */
-export async function gitConventionalForPackage(packageInfo, noFetchAll = false, cwd = appRootPath.toString()) {
+export async function gitConventionalForPackage(
+  packageInfo: PackageInfo,
+  noFetchAll = false,
+  cwd = appRootPath.toString(),
+): Promise<GitCommitWithConventionalAndPackageInfo[]> {
   const fixedCWD = fixCWD(cwd);
 
   if (!noFetchAll) gitFetchAll(fixedCWD);
   const taginfo = await gitLastKnownPublishTagInfoForPackage(packageInfo, fixedCWD);
   const relPackagePath = path.relative(cwd, packageInfo.packagePath);
+
+  if (!taginfo?.sha) {
+    throw new Error(
+      `unable to git conventional commits for package because no git sha was returned when computing last known publish tag for package ${packageInfo.name}`,
+    );
+  }
+
   const results = await gitCommitsSince(taginfo?.sha, relPackagePath, fixedCWD);
   const conventional = parseToConventional(results);
 
@@ -356,14 +352,12 @@ export async function gitConventionalForPackage(packageInfo, noFetchAll = false,
 /**
  * Gets full git commit, with conventional commits parsed data,
  * for all provided packages
- *
- * @param {PackageInfo[]} packageInfos
- * @param {boolean} [noFetchAll=false]
- * @param {string} [cwd=appRootPath.toString()]
- *
- * @returns {Promise<GitCommitWithConventionalAndPackageInfo[]>}
  */
-export async function gitConventionalForAllPackages(packageInfos, noFetchAll = false, cwd = appRootPath.toString()) {
+export async function gitConventionalForAllPackages(
+  packageInfos: PackageInfo[],
+  noFetchAll = false,
+  cwd = appRootPath.toString(),
+): Promise<GitCommitWithConventionalAndPackageInfo[]> {
   const fixedCWD = fixCWD(cwd);
 
   return (await Promise.all(packageInfos.map(async p => gitConventionalForPackage(p, noFetchAll, fixedCWD)))).flat();
@@ -371,13 +365,8 @@ export async function gitConventionalForAllPackages(packageInfos, noFetchAll = f
 
 /**
  * Creates a git commit, based on whatever changes are active
- *
- * @param {string} header
- * @param {string} [body]
- * @param {string} [footer]
- * @param {string} [cwd=appRootPath.toString()]
  */
-export async function gitCommit(header, body, footer, cwd = appRootPath.toString()) {
+export async function gitCommit(header: string, body?: string, footer?: string, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   // add files silently
@@ -401,8 +390,6 @@ export async function gitCommit(header, body, footer, cwd = appRootPath.toString
 
 /**
  * Pushes current local changes to upstream / origin
- *
- * @param {string} [cwd=appRootPath.toString()]
  */
 export async function gitPush(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
@@ -412,11 +399,8 @@ export async function gitPush(cwd = appRootPath.toString()) {
 
 /**
  * Git pushes a single tag to upstream / origin
- *
- * @param {string} tag
- * @param {string} [cwd=appRooPath.toString()]
  */
-export async function gitPushTag(tag, cwd = appRootPath.toString()) {
+export async function gitPushTag(tag: string, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   await execAsync(`git push origin ${tag} --no-verify`, { cwd: fixedCWD, stdio: 'inherit' });
@@ -424,11 +408,8 @@ export async function gitPushTag(tag, cwd = appRootPath.toString()) {
 
 /**
  * Git pushes multiple tags at the same time
- *
- * @param {string[]} tags
- * @param {string} [cwd=appRootPath.toString()]
  */
-export async function gitPushTags(tags, cwd = appRootPath.toString()) {
+export async function gitPushTags(tags: string[], cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   // only push 5 at a time
@@ -441,11 +422,8 @@ export async function gitPushTags(tags, cwd = appRootPath.toString()) {
 
 /**
  * Creates a git tag
- *
- * @param {string} tag
- * @param {string} [cwd=appRootPath.toString()]
  */
-export async function gitTag(tag, cwd = appRootPath.toString()) {
+export async function gitTag(tag: string, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
   await execAsync(`git tag ${tag}`, { cwd: fixedCWD, stdio: 'ignore' });
@@ -461,7 +439,7 @@ export async function gitTag(tag, cwd = appRootPath.toString()) {
 export async function gitWorkdirUnclean(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  const statusResult = (await execAsync('git status -s', { cwd: fixedCWD, stdio: 'pipe' })).stdout.trim();
+  const statusResult = (await execAsync('git status -s', { cwd: fixedCWD, stdio: 'pipe' })).stdout?.trim() ?? '';
 
   // split by newlines, just in case
   return statusResult.split(os.EOL).filter(Boolean).length > 0;
@@ -475,7 +453,7 @@ export async function gitWorkdirUnclean(cwd = appRootPath.toString()) {
 export async function gitCurrentSHA(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  const result = (await execAsync('git rev-parse --short HEAD', { cwd: fixedCWD, stdio: 'pipe' })).stdout.trim();
+  const result = (await execAsync('git rev-parse --short HEAD', { cwd: fixedCWD, stdio: 'pipe' })).stdout?.trim() ?? '';
 
   return result;
 }
