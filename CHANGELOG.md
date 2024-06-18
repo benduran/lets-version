@@ -1,3 +1,17 @@
+## 1.0.0 (2024-06-18)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #22 from benduran/bduran/graph (a4091ce6f0171c22054af66968ce0b0be6cd3380)
+
+
+
+### 🛠️ Fixes 🛠️
+
+- fix: force flag now respects any computed bumps and doesn't automatically apply a PATCH bump unless one didn't exist (2864dd5c5a185cc1552978993f21facb55d1dd97)
+
+---
+
 ## 0.8.5-beta.1 (2024-06-17)
 
 ### 🛠️ Fixes 🛠️
