@@ -73,7 +73,7 @@ const getSharedVersionYargs = (yargs: Argv) =>
  */
 const getGitYargs = (yargs: Argv) =>
   yargs.option('commitDateFormat', {
-    default: 'iso8601',
+    default: 'iso-strict',
     description:
       'Formats the date/timestamp returned by any "git log" calls. Supports all of the options available to "git log." For more information on these formats, please consult the official git CLI documentation: https://git-scm.com/docs/git-log#Documentation/git-log.txt---dateltformatgt',
     type: 'string',
