@@ -1,3 +1,18 @@
+## 1.1.0 (2024-06-19)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #24 from benduran/bduran/#23-git-log-date-format (56589b0cc07500d0ce0210a34cdf49279f9232b9)
+- chore: made the default date format 'iso-strict' (246957d35acc861d4c7eb324ce6fcf65da34a52f)
+
+
+
+### ✨ Features ✨
+
+- feat: added customizable date format for the git commits (86cb9bf8c62a25479c4473aa375a4866095ef5e7)
+
+---
+
 ## 1.0.0 (2024-06-18)
 
 ### 🔀 Miscellaneous 🔀
