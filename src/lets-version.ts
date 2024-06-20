@@ -17,6 +17,7 @@ import {
   getAllFilesChangedSinceTagInfos,
   getLastKnownPublishTagInfoForAllPackages,
   gitCommit,
+  GitCommitsSinceOpts,
   gitConventionalForAllPackages,
   gitPush,
   gitPushTags,
@@ -171,7 +172,7 @@ export async function getChangedPackagesSinceBranch(opts?: GetChangedFilesSinceB
   return getAllPackagesChangedBasedOnFilesModified(changedFiles, deduped, fixedCWD);
 }
 
-export interface GetConventionalCommitsByPackageOpts {
+export interface GetConventionalCommitsByPackageOpts extends Pick<GitCommitsSinceOpts, 'commitDateFormat'> {
   cwd?: string;
   names?: string[];
   noFetchTags?: boolean;
@@ -185,14 +186,19 @@ export interface GetConventionalCommitsByPackageOpts {
 export async function getConventionalCommitsByPackage(
   opts?: GetConventionalCommitsByPackageOpts,
 ): Promise<GitCommitWithConventionalAndPackageInfo[]> {
-  const { names, noFetchAll = false, cwd = appRootPath.toString() } = opts ?? {};
+  const { commitDateFormat, cwd = appRootPath.toString(), names, noFetchAll = false } = opts ?? {};
   const fixedCWD = fixCWD(cwd);
 
   const filteredPackages = await filterPackagesByNames(await getPackages(fixedCWD), names, fixedCWD);
 
   if (!filteredPackages.length) return [];
 
-  return gitConventionalForAllPackages(filteredPackages, noFetchAll, fixedCWD);
+  return gitConventionalForAllPackages({
+    commitDateFormat,
+    cwd: fixedCWD,
+    packageInfos: filteredPackages,
+    noFetchAll,
+  });
 }
 
 export interface GetRecommendedBumpsByPackageReturnType {
@@ -202,7 +208,7 @@ export interface GetRecommendedBumpsByPackageReturnType {
   conventional: GitCommitWithConventionalAndPackageInfo[];
 }
 
-export interface GetRecommendedBumpsByPackageOpts {
+export interface GetRecommendedBumpsByPackageOpts extends Pick<GitCommitsSinceOpts, 'commitDateFormat'> {
   names?: string[];
   releaseAs?: ReleaseAsPresets;
   preid?: string;
@@ -227,6 +233,7 @@ export async function getRecommendedBumpsByPackage(
   opts?: GetRecommendedBumpsByPackageOpts,
 ): Promise<GetRecommendedBumpsByPackageReturnType> {
   const {
+    commitDateFormat,
     names,
     releaseAs = ReleaseAsPresets.AUTO,
     uniqify = false,
@@ -255,7 +262,12 @@ export async function getRecommendedBumpsByPackage(
 
   const filteredPackagesByName = new Map(filteredPackages.map(p => [p.name, p]));
 
-  const conventional = await gitConventionalForAllPackages(filteredPackages, noFetchAll, fixedCWD);
+  const conventional = await gitConventionalForAllPackages({
+    commitDateFormat,
+    cwd: fixedCWD,
+    packageInfos: filteredPackages,
+    noFetchAll,
+  });
   out.commits = conventional;
 
   const tagsForPackagesMap = new Map(
@@ -393,6 +405,7 @@ export async function getRecommendedBumpsByPackage(
 }
 
 export interface ApplyRecommendedBumpsByPackageOpts {
+  commitDateFormat?: string;
   names?: string[];
   releaseAs?: ReleaseAsPresets;
   preid?: string;

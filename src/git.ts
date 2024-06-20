@@ -15,8 +15,6 @@ let didFetchAll = false;
  * Fetches all tracking information from origin.
  * Most importantly, this tries to detect whether we're currently
  * in a shallow clone.
- *
- * @param {string} [cwd=appRootPath.toString()]
  */
 export function gitFetchAll(cwd = appRootPath.toString()) {
   if (didFetchAll) return;
@@ -40,7 +38,6 @@ export function gitFetchAll(cwd = appRootPath.toString()) {
 let didFetchAllTags = false;
 /**
  * Pulls in all tags from origin and forces local to be updated
- * @param {string} [cwd=appRootPath.toString()]
  */
 export function gitFetchAllTags(cwd = appRootPath.toString()) {
   if (didFetchAllTags) return;
@@ -51,17 +48,19 @@ export function gitFetchAllTags(cwd = appRootPath.toString()) {
   didFetchAllTags = true;
 }
 
+export interface GitCommitsSinceOpts {
+  commitDateFormat?: string;
+  cwd?: string;
+  since?: string;
+  relPath?: string;
+}
 /**
  * Returns commits since a particular git SHA or tag.
  * If the "since" parameter isn't provided, all commits
  * from the dawn of man are returned
- *
- * @param {string | null | undefined} [since=''] - If provided, fetches all commits since this particular git SHA or Tag
- * @param {string | null | undefined} [relPath=''] - If provided, scopes gitLog to only check for changes within a specific subdirectory
- * @param {string} [cwd=appRootPath.toString] - Where the git logic should run. Defaults to your repository root
- * @returns {Promise<GitCommit[]>}
  */
-export async function gitCommitsSince(since = '', relPath = '', cwd = appRootPath.toString()) {
+export async function gitCommitsSince(opts?: GitCommitsSinceOpts): Promise<GitCommit[]> {
+  const { cwd = appRootPath.toString(), commitDateFormat = 'iso-strict', relPath = '', since = '' } = opts ?? {};
   const fixedCWD = fixCWD(cwd);
 
   let cmd = 'git --no-pager log';
@@ -70,6 +69,7 @@ export async function gitCommitsSince(since = '', relPath = '', cwd = appRootPat
   const LINE_DELIMITER = '====----====++++====';
 
   cmd += ` --format=${DELIMITER}%H${DELIMITER}%an${DELIMITER}%ae${DELIMITER}%ad${DELIMITER}%B${LINE_DELIMITER}`;
+  if (commitDateFormat) cmd += ` --date=${commitDateFormat}`;
   if (since) cmd += ` ${since}..`;
   if (relPath) cmd += ` -- ${relPath}`;
 
@@ -93,12 +93,8 @@ let remoteTagsCache: Array<[string, string]> | null = null;
 
 /**
  * Grabs the full list of all tags available on upstream
- *
- * @param {string} [cwd=appRootPath.toString()] - Nearest .git repo
- *
- * @returns {Array<[string, string]>}
  */
-export function gitRemoteTags(cwd = appRootPath.toString()) {
+export function gitRemoteTags(cwd = appRootPath.toString()): Array<[string, string]> {
   if (remoteTagsCache) return remoteTagsCache;
 
   const fixedCWD = fixCWD(cwd);
@@ -116,17 +112,14 @@ export function gitRemoteTags(cwd = appRootPath.toString()) {
         return [ref.replace('refs/tags/', ''), sha];
       }) ?? null;
 
-  return remoteTagsCache;
+  return remoteTagsCache ?? [];
 }
 
 let localTagsCache: Array<[string, string]> | null = null;
 /**
  * Grabs the full list of all tags available locally
- *
- * @param {string} [cwd=appRootPath.toString()] - Neartest .git repo
- * @returns {Array<[string, string]>}
  */
-export function gitLocalTags(cwd = appRootPath.toString()) {
+export function gitLocalTags(cwd = appRootPath.toString()): Array<[string, string]> {
   if (localTagsCache) return localTagsCache;
 
   const fixedCWD = fixCWD(cwd);
@@ -145,7 +138,7 @@ export function gitLocalTags(cwd = appRootPath.toString()) {
           return [ref.replace('refs/tags/', ''), sha];
         }) ?? null;
 
-    return localTagsCache;
+    return localTagsCache ?? [];
   } catch (error) {
     // According to the official git documentation, zero results will cause an exit code of "1"
     // https://git-scm.com/docs/git-show-ref#_examples
@@ -311,15 +304,18 @@ export async function getAllFilesChangedSinceBranch(
   return Array.from(new Set(results));
 }
 
+interface GitConventionalForPackageOpts extends GitCommitsSinceOpts {
+  noFetchAll?: boolean;
+  packageInfo: PackageInfo;
+}
 /**
  * Gets full git commit, with conventional commits parsed data,
  * for a single, parsed package info
  */
 export async function gitConventionalForPackage(
-  packageInfo: PackageInfo,
-  noFetchAll = false,
-  cwd = appRootPath.toString(),
+  opts: GitConventionalForPackageOpts,
 ): Promise<GitCommitWithConventionalAndPackageInfo[]> {
+  const { packageInfo, noFetchAll = false, cwd = appRootPath.toString(), ...rest } = opts;
   const fixedCWD = fixCWD(cwd);
 
   if (!noFetchAll) gitFetchAll(fixedCWD);
@@ -332,7 +328,8 @@ export async function gitConventionalForPackage(
     );
   }
 
-  const results = await gitCommitsSince(taginfo?.sha, relPackagePath, fixedCWD);
+  // const results = await gitCommitsSince(taginfo?.sha, relPackagePath, fixedCWD);
+  const results = await gitCommitsSince({ ...rest, cwd: fixedCWD, relPath: relPackagePath, since: taginfo?.sha });
   const conventional = parseToConventional(results);
 
   return conventional.map(
@@ -354,13 +351,23 @@ export async function gitConventionalForPackage(
  * for all provided packages
  */
 export async function gitConventionalForAllPackages(
-  packageInfos: PackageInfo[],
-  noFetchAll = false,
-  cwd = appRootPath.toString(),
+  opts: Omit<GitConventionalForPackageOpts, 'packageInfo'> & { packageInfos: PackageInfo[] },
 ): Promise<GitCommitWithConventionalAndPackageInfo[]> {
+  const { packageInfos, noFetchAll = false, cwd = appRootPath.toString(), ...rest } = opts;
   const fixedCWD = fixCWD(cwd);
 
-  return (await Promise.all(packageInfos.map(async p => gitConventionalForPackage(p, noFetchAll, fixedCWD)))).flat();
+  return (
+    await Promise.all(
+      packageInfos.map(async p =>
+        gitConventionalForPackage({
+          ...rest,
+          cwd: fixedCWD,
+          noFetchAll,
+          packageInfo: p,
+        }),
+      ),
+    )
+  ).flat();
 }
 
 /**

@@ -68,6 +68,19 @@ const getSharedVersionYargs = (yargs: Argv) =>
       type: 'boolean',
     });
 
+/**
+ * Returns set of CLI arguments for any git-commit-heavy operations
+ */
+const getGitYargs = (yargs: Argv) =>
+  yargs.option('commitDateFormat', {
+    default: 'iso-strict',
+    description:
+      'Formats the date/timestamp returned by any "git log" calls. Supports all of the options available to "git log." For more information on these formats, please consult the official git CLI documentation: https://git-scm.com/docs/git-log#Documentation/git-log.txt---dateltformatgt',
+    type: 'string',
+  });
+
+type GetGitYargsType = ArgumentsCamelCase<{ commitDateFormat?: string }>;
+
 type GetSharedVersionYargsType = ArgumentsCamelCase<{ package?: string[]; noFetchAll: boolean; noFetchTags: boolean }>;
 
 /**
@@ -157,6 +170,18 @@ type GetSharedBumpArgsType = ArgumentsCamelCase<{
   forceAll: boolean;
   updatePeer: boolean;
   updateOptional: boolean;
+}>;
+
+type ApplyBumpsArgsType = ArgumentsCamelCase<{
+  saveExact?: boolean;
+  allowUncommitted?: boolean;
+  dryRun?: boolean;
+  rollupChangelog?: boolean;
+  noChangelog?: boolean;
+  noCommit?: boolean;
+  noInstall?: boolean;
+  noPush?: boolean;
+  yes?: boolean;
 }>;
 
 /**
@@ -287,7 +312,7 @@ async function setupCLI() {
       'changed-packages-since-bump',
       'Gets a list of all packages that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.',
       // @ts-ignore
-      y => getSharedYargs(addByNameYargs(getSharedVersionYargs(y))),
+      y => addByNameYargs(getSharedVersionYargs(y)),
       async (args: AddByNameYargsType & GetSharedVersionYargsType & GetSharedYargsType) => {
         const changedPackages = await getChangedPackagesSinceBump({
           cwd: args.cwd,
@@ -308,9 +333,11 @@ async function setupCLI() {
     .command(
       'get-conventional-since-bump',
       'Parsed git commits for a specific package or packages, using the official Conventional Commits parser',
-      y => getSharedVersionYargs(y),
-      async args => {
+      // @ts-ignore
+      y => getSharedVersionYargs(getGitYargs(y)),
+      async (args: GetGitYargsType & GetSharedBranchYargsType & GetSharedYargsType) => {
         const commits = await getConventionalCommitsByPackage({
+          commitDateFormat: args.commitDateFormat,
           cwd: args.cwd,
           names: args.package as string[],
         });
@@ -335,9 +362,10 @@ async function setupCLI() {
       'get-bumps',
       'Gets a series of recommended version bumps for a specific package or set of packages. NOTE: It is possible for your bump recommendation to not change. If this is the case, this means that your particular package has never had a version bump by the lets-version library.',
       // @ts-ignore
-      y => getSharedYargs(getSharedBumpArgs(y)),
-      async (args: GetSharedYargsType & GetSharedBumpArgsType & GetSharedVersionYargsType) => {
+      y => getSharedYargs(getSharedBumpArgs(getGitYargs(y))),
+      async (args: GetSharedYargsType & GetSharedBumpArgsType & GetSharedVersionYargsType & GetGitYargsType) => {
         const { bumps } = await getRecommendedBumpsByPackage({
+          commitDateFormat: args.commitDateFormat,
           cwd: args.cwd,
           force: args.forceAll || args.force,
           names: args.package as string[],
@@ -373,8 +401,9 @@ async function setupCLI() {
     .command(
       'apply-bumps',
       'Gets a series of recommended version bumps for a specific package or set of packages, applies the version bumps, and updates all repository dependents to match the version that has been updated.',
+      // @ts-ignore
       y =>
-        getSharedBumpArgs(y)
+        getSharedBumpArgs(getGitYargs(y))
           .option('saveExact', {
             default: false,
             description:
@@ -426,9 +455,17 @@ async function setupCLI() {
             description: 'If true, skips any confirmation prompts. Useful if you need to automate this process in CI',
             type: 'boolean',
           }),
-      async args => {
+      async (
+        args: GetGitYargsType &
+          GetSharedVersionYargsType &
+          GetSharedBranchYargsType &
+          GetSharedYargsType &
+          GetSharedBumpArgsType &
+          ApplyBumpsArgsType,
+      ) => {
         await applyRecommendedBumpsByPackage({
           allowUncommitted: args.allowUncommitted,
+          commitDateFormat: args.commitDateFormat,
           cwd: args.cwd,
           dryRun: args.dryRun,
           force: args.forceAll || args.force,
