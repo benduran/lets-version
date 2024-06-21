@@ -19,7 +19,7 @@ const readPJSON = async (fp: string): Promise<PackageJson> =>
 /**
  * Reads all proposed package.json files from the dummy monorepos
  */
-const readAllPJSONs = async (fp: string): Promise<PackageJson[]> => {
+const readAllPJSONs = async (): Promise<PackageJson[]> => {
   const allPjsons = (
     await Promise.all(
       (
@@ -58,7 +58,7 @@ describe('lets-version.js tests', () => {
   });
 
   it('Should list the only package in a multi-package NPM repository', async () => {
-    const allPjsons = await readAllPJSONs(multiNPMProjectPath);
+    const allPjsons = await readAllPJSONs();
     const results = await listPackages({ cwd: multiNPMProjectPath });
     expect(results.length).toBe(3);
 
@@ -77,7 +77,7 @@ describe('lets-version.js tests', () => {
   });
 
   it('Should list the only package in a multi-package PNPM repository', async () => {
-    const allPjsons = await readAllPJSONs(multiPNPMProjectPath);
+    const allPjsons = await readAllPJSONs();
     const results = await listPackages({ cwd: multiPNPMProjectPath });
     expect(results.length).toBe(3);
 
@@ -96,7 +96,7 @@ describe('lets-version.js tests', () => {
   });
 
   it('Should list the only package in a multi-package Yarn repository', async () => {
-    const allPjsons = await readAllPJSONs(multiYarnProjectPath);
+    const allPjsons = await readAllPJSONs();
     const results = await listPackages({ cwd: multiYarnProjectPath });
     expect(results.length).toBe(3);
 

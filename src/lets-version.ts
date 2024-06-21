@@ -658,7 +658,9 @@ export async function applyRecommendedBumpsByPackage(
         let existingChangelog = '';
         try {
           existingChangelog = await fs.readFile(changelogUpdates.changelogPath, 'utf-8');
-        } catch (error) {}
+        } catch (error) {
+          /* no-op */
+        }
 
         const updatesToWrite = customConfig?.changelog?.changeLogRollupFormatter
           ? customConfig?.changelog?.changeLogRollupFormatter(changelogUpdates)

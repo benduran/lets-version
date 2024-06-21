@@ -223,7 +223,7 @@ async function setupCLI() {
        */
       console.error(`lets-version ${currentCommand} failed`);
       console.error(err);
-      // @ts-ignore
+      // @ts-expect-error - status may or may not exist on the error
       process.exit(err.status || 1);
     })
     .command(
@@ -311,7 +311,7 @@ async function setupCLI() {
     .command(
       'changed-packages-since-bump',
       'Gets a list of all packages that have changed since the last publish for a specific package or set of packages. If no results are returned, it likely means that there was not a previous version tag detected in git.',
-      // @ts-ignore
+      // @ts-expect-error - yargs typings mismatch with what actually happens at runtime
       y => addByNameYargs(getSharedVersionYargs(y)),
       async (args: AddByNameYargsType & GetSharedVersionYargsType & GetSharedYargsType) => {
         const changedPackages = await getChangedPackagesSinceBump({
@@ -333,7 +333,7 @@ async function setupCLI() {
     .command(
       'get-conventional-since-bump',
       'Parsed git commits for a specific package or packages, using the official Conventional Commits parser',
-      // @ts-ignore
+      // @ts-expect-error - yargs typings mismatch with what actually happens at runtime
       y => getSharedVersionYargs(getGitYargs(y)),
       async (args: GetGitYargsType & GetSharedBranchYargsType & GetSharedYargsType) => {
         const commits = await getConventionalCommitsByPackage({
@@ -361,7 +361,7 @@ async function setupCLI() {
     .command(
       'get-bumps',
       'Gets a series of recommended version bumps for a specific package or set of packages. NOTE: It is possible for your bump recommendation to not change. If this is the case, this means that your particular package has never had a version bump by the lets-version library.',
-      // @ts-ignore
+      // @ts-expect-error - yargs typings mismatch with what actually happens at runtime
       y => getSharedYargs(getSharedBumpArgs(getGitYargs(y))),
       async (args: GetSharedYargsType & GetSharedBumpArgsType & GetSharedVersionYargsType & GetGitYargsType) => {
         const { bumps } = await getRecommendedBumpsByPackage({
@@ -401,7 +401,7 @@ async function setupCLI() {
     .command(
       'apply-bumps',
       'Gets a series of recommended version bumps for a specific package or set of packages, applies the version bumps, and updates all repository dependents to match the version that has been updated.',
-      // @ts-ignore
+      // @ts-expect-error - yargs typings mismatch with what actually happens at runtime
       y =>
         getSharedBumpArgs(getGitYargs(y))
           .option('saveExact', {
@@ -511,7 +511,7 @@ async function setupCLI() {
     .command(
       'changed-packages-since-branch',
       'Gets a list of all packages that have changed in the current branch.',
-      // @ts-ignore
+      // @ts-expect-error - yargs typings mismatch with what actually happens at runtime
       y => addByNameYargs(getSharedBranchYargs(y)),
       async (args: GetSharedYargsType & AddByNameYargsType & GetSharedBranchYargsType) => {
         const changedPackages = await getChangedPackagesSinceBranch({

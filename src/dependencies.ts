@@ -59,10 +59,10 @@ export async function getBumpRecommendationForPackageInfo(
         isPrerelease
           ? 'prerelease'
           : bumpTypeToUse === BumpType.PATCH
-          ? 'patch'
-          : bumpTypeToUse === BumpType.MINOR
-          ? 'minor'
-          : 'major',
+            ? 'patch'
+            : bumpTypeToUse === BumpType.MINOR
+              ? 'minor'
+              : 'major',
         undefined,
         preid,
       );
@@ -137,7 +137,7 @@ export async function synchronizeBumps(
         for (const dependentDepName of Object.keys(dependent.pkg[dependentPjsonKey] ?? {})) {
           if (dependentDepName !== bump.packageInfo.name) continue;
 
-          // @ts-ignore
+          // @ts-expect-error - silence tsc because accessors here are safe, as we've already checked for key existence
           const existingdependentDepSemver = String(dependent.pkg[dependentPjsonKey][dependentDepName]);
           const [semverDetails] = semverUtils.parseRange(existingdependentDepSemver);
 

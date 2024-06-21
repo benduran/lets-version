@@ -55,7 +55,10 @@ export class GitCommitWithPackageInfo extends GitCommit {
  * Represents notes detected on a conventional commit
  */
 export class GitConventionalNote {
-  constructor(public title: string, public text: string) {}
+  constructor(
+    public title: string,
+    public text: string,
+  ) {}
 }
 
 export interface GitConventionalOpts {
@@ -247,7 +250,11 @@ export class LocalDependencyGraphNode extends PackageInfo {
  * that corresponds to a version or publish event
  */
 export class PublishTagInfo {
-  constructor(public packageName: string, public tag: string | null, public sha: string | null) {}
+  constructor(
+    public packageName: string,
+    public tag: string | null,
+    public sha: string | null,
+  ) {}
 }
 
 /**
@@ -462,7 +469,11 @@ export class ChangelogAggregateUpdate {
    * @param {string} formattedDate
    * @param {ChangelogUpdate[]} changelogUpdates
    */
-  constructor(public cwd: string, public formattedDate: string, public changelogUpdates: ChangelogUpdate[]) {}
+  constructor(
+    public cwd: string,
+    public formattedDate: string,
+    public changelogUpdates: ChangelogUpdate[],
+  ) {}
 
   get changelogPath() {
     return path.join(this.cwd, 'CHANGELOG.md');
