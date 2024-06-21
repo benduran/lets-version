@@ -1,3 +1,11 @@
+## 1.1.1 (2024-06-21)
+
+### 🔀 Miscellaneous 🔀
+
+- chore: bumped to latest eslint config and fixed issues that came up as a result (f0c0de676f633a0f48b79535ae89d54df37ed2e0)
+
+---
+
 ## 1.1.0 (2024-06-19)
 
 ### 🔀 Miscellaneous 🔀
