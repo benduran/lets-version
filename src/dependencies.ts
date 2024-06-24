@@ -159,6 +159,10 @@ export async function synchronizeBumps(
           ) {
             operatorTouse = '^';
           }
+
+          // @ts-expect-error - silence tsc because accessors here are safe, as we've already checked for key existence
+          dependent.pkg[dependentPjsonKey][dependentDepName] = `${operatorTouse}${bump.to}`;
+
           const existingChildBumpRec = bumpsByPackageName.get(dependent.name);
           const childBumpRec = await getBumpRecommendationForPackageInfo(
             dependent,
