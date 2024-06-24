@@ -1,3 +1,17 @@
+## 1.1.2 (2024-06-24)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #25 from benduran/bduran/critical-bug-transitive-dep-updates (bd08331174f25690c84885acb976cf3c0378813b)
+
+
+
+### 🛠️ Fixes 🛠️
+
+- fix: apply missing bumps to deps for dependents (8f106cd4651aac0f6a2b2ff042c185a44364737b)
+
+---
+
 ## 1.1.1 (2024-06-21)
 
 ### 🔀 Miscellaneous 🔀
