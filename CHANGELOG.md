@@ -1,3 +1,11 @@
+## 1.1.3 (2024-07-05)
+
+### 🔀 Miscellaneous 🔀
+
+- chore: export the releaseas presets enum (2b91651e0ea8a57b15750747179367920d65d7f3)
+
+---
+
 ## 1.1.2 (2024-06-24)
 
 ### 🔀 Miscellaneous 🔀
