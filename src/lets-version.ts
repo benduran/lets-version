@@ -49,7 +49,7 @@ import {
 
 export { defineLetsVersionConfig };
 
-export type { ChangelogConfig, LetsVersionConfig };
+export type { ChangelogConfig, LetsVersionConfig, ReleaseAsPresets };
 
 export interface AllCommandsBaseOpts {
   cwd?: string;
