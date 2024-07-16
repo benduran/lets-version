@@ -1,3 +1,14 @@
+## 1.1.4 (2024-07-16)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #29 from artemdanylenko/adanylenko/monorepoBump (3c88d7e96f3bf9c424ea4e33084e67a64483920a)
+- Fix typo (4189f16502ced298321a18cffec7ec4969e2225e)
+- Do not regenerate the allPackages structure during the bumps synchronization (a883a5b2197d013c62342bd952c04118b8312f30)
+- chore: bumped deps (8742aab0ad766ccc518068976b2f18b50406a4c4)
+
+---
+
 ## 1.1.3 (2024-07-05)
 
 ### 🔀 Miscellaneous 🔀
