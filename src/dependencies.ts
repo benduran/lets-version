@@ -105,7 +105,7 @@ export async function synchronizeBumps(
 
   const packagesByName = new Map(bumps.map(b => [b.packageInfo.name, b.packageInfo]));
 
-  const depGraph = await buildLocalDependencyGraph(fixedCWD);
+  const depGraph = await buildLocalDependencyGraph(allPackages);
 
   for (const bump of clonedBumpsByPackageName.values()) {
     const toWrite = packagesByName.get(bump.packageInfo.name);

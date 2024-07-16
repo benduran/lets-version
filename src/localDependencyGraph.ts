@@ -1,11 +1,8 @@
 import os from 'node:os';
 
-import appRootPath from 'app-root-path';
 import chalk from 'chalk';
 
-import { fixCWD } from './cwd.js';
-import { getPackages } from './getPackages.js';
-import { DepType, LocalDependencyGraphNode } from './types.js';
+import { DepType, LocalDependencyGraphNode, PackageInfo } from './types.js';
 import { isPackageJSONDependencyKeySupported } from './util.js';
 
 /**
@@ -13,10 +10,7 @@ import { isPackageJSONDependencyKeySupported } from './util.js';
  * and builds a local-only dependency graph
  * representation
  */
-export async function buildLocalDependencyGraph(cwd = appRootPath.toString()) {
-  const fixedCWD = fixCWD(cwd);
-
-  const allPackages = await getPackages(fixedCWD);
+export async function buildLocalDependencyGraph(allPackages: PackageInfo[]) {
   const allPackagesByName = new Map(
     allPackages.map(p => [p.name, new LocalDependencyGraphNode({ ...p, depType: 'self', deps: [] })]),
   );
