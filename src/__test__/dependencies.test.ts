@@ -7,7 +7,15 @@ import { describe, expect, it } from 'vitest';
 import { getBumpRecommendationForPackageInfo } from '../dependencies.js';
 import { getPackages } from '../getPackages.js';
 import { gitCurrentSHA } from '../git.js';
-import { BumpType, PackageInfo, ReleaseAsPresets } from '../types.js';
+import { getSynchronizedBumpsByPackage } from '../lets-version.js';
+import {
+  BumpRecommendation,
+  BumpType,
+  GitCommitWithConventionalAndPackageInfo,
+  PackageInfo,
+  PublishTagInfo,
+  ReleaseAsPresets,
+} from '../types.js';
 import { isPackageJSONDependencyKeySupported } from '../util.js';
 
 describe('dependencies.js tests', () => {
@@ -189,5 +197,66 @@ describe('dependencies.js tests', () => {
       `${semver.inc(pjsonWithDifferentVersion.version ?? '', 'prerelease', undefined, 'beta')}.${sha}`,
     );
     expect(bump10.type).toBe(BumpType.PRERELEASE);
+  });
+
+  it('Should return a valid bump recommendation for a monorepo packages', async () => {
+    const cwd = path.join(__dirname, 'test1');
+    const packages = await getPackages(cwd);
+
+    expect(packages).toBeDefined();
+
+    const bumpTypeByPackageName: Map<string, BumpType> = new Map();
+    bumpTypeByPackageName.set('d', BumpType.PATCH);
+    const tagsForPackagesMap: Map<string, PublishTagInfo> = new Map();
+    const { bumps, packages: updatedPackages } = await getSynchronizedBumpsByPackage(
+      { cwd },
+      bumpTypeByPackageName,
+      packages,
+      tagsForPackagesMap,
+    );
+    expect(bumps).toBeDefined();
+    {
+      const [d, a, c, b] = bumps as [BumpRecommendation, BumpRecommendation, BumpRecommendation, BumpRecommendation];
+
+      expect(d).toBeDefined();
+      expect(d.packageInfo.name).toBe('d');
+      expect(d.from).toBe('1.0.0');
+      expect(d.to).toBe('1.0.1');
+      expect(d.type).toBe(BumpType.PATCH);
+
+      expect(a).toBeDefined();
+      expect(a.packageInfo.name).toBe('a');
+      expect(a.from).toBe('1.0.0');
+      expect(a.to).toBe('1.0.1');
+      expect(a.type).toBe(BumpType.PATCH);
+
+      expect(c).toBeDefined();
+      expect(c.packageInfo.name).toBe('c');
+      expect(c.from).toBe('1.0.0');
+      expect(c.to).toBe('1.0.1');
+      expect(c.type).toBe(BumpType.PATCH);
+
+      expect(b).toBeDefined();
+      expect(b.packageInfo.name).toBe('b');
+      expect(b.from).toBe('1.0.0');
+      expect(b.to).toBe('1.0.1');
+      expect(b.type).toBe(BumpType.PATCH);
+    }
+
+    expect(updatedPackages).toBeDefined();
+    {
+      const [d, a, c, b] = updatedPackages as [PackageInfo, PackageInfo, PackageInfo, PackageInfo];
+      expect(d.pkg.name).toBe('d');
+      expect(d.pkg.dependencies).toEqual({});
+
+      expect(a.pkg.name).toBe('a');
+      expect(a.pkg.dependencies).toEqual({ d: '^1.0.1' });
+
+      expect(c.pkg.name).toBe('c');
+      expect(c.pkg.dependencies).toEqual({ a: '^1.0.1', b: '^1.0.1' });
+
+      expect(b.pkg.name).toBe('b');
+      expect(b.pkg.dependencies).toEqual({ d: '^1.0.1' });
+    }
   });
 });

@@ -7,7 +7,7 @@ import path from 'path';
 import prompts from 'prompts';
 import semver from 'semver';
 
-import { GenerateChangelogOpts, getChangelogUpdateForPackageInfo, getFormattedChangelogDate } from './changelog.js';
+import { getChangelogUpdateForPackageInfo, getFormattedChangelogDate } from './changelog.js';
 import { fixCWD } from './cwd.js';
 import { getBumpRecommendationForPackageInfo, synchronizeBumps } from './dependencies.js';
 import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPackages } from './getPackages.js';
@@ -236,22 +236,12 @@ export async function getRecommendedBumpsByPackage(
     commitDateFormat,
     names,
     releaseAs = ReleaseAsPresets.AUTO,
-    uniqify = false,
-    saveExact = false,
-    force = false,
     noFetchAll = false,
     noFetchTags = false,
-    updatePeer = false,
-    updateOptional = false,
     cwd = appRootPath.toString(),
   } = opts ?? {};
 
   let preid = opts?.preid || '';
-
-  const out: GenerateChangelogOpts = {
-    bumps: [],
-    commits: [],
-  };
 
   const fixedCWD = fixCWD(cwd);
 
@@ -260,15 +250,12 @@ export async function getRecommendedBumpsByPackage(
 
   if (!filteredPackages) return { bumps: [], bumpsByPackageName: new Map(), conventional: [], packages: [] };
 
-  const filteredPackagesByName = new Map(filteredPackages.map(p => [p.name, p]));
-
   const conventional = await gitConventionalForAllPackages({
     commitDateFormat,
     cwd: fixedCWD,
     packageInfos: filteredPackages,
     noFetchAll,
   });
-  out.commits = conventional;
 
   const tagsForPackagesMap = new Map(
     (await getLastKnownPublishTagInfoForAllPackages(filteredPackages, noFetchTags, fixedCWD)).map(t => [
@@ -335,6 +322,40 @@ export async function getRecommendedBumpsByPackage(
     }
   }
 
+  const updatedOpts = { ...opts, preid, isExactRelease, releaseAs };
+  const synchronizedBumps = await getSynchronizedBumpsByPackage(
+    updatedOpts,
+    bumpTypeByPackageName,
+    allPackages,
+    tagsForPackagesMap,
+  );
+  return { ...synchronizedBumps, conventional };
+}
+
+export async function getSynchronizedBumpsByPackage(
+  opts: GetRecommendedBumpsByPackageOpts,
+  bumpTypeByPackageName: Map<string, BumpType>,
+  allPackages: PackageInfo[],
+  tagsForPackagesMap: Map<string, PublishTagInfo>,
+  isExactRelease: boolean = false,
+) {
+  const {
+    uniqify = false,
+    saveExact = false,
+    force = false,
+    updatePeer = false,
+    updateOptional = false,
+    preid = '',
+    cwd = appRootPath.toString(),
+    names,
+    releaseAs = ReleaseAsPresets.AUTO,
+  } = opts ?? {};
+  const fixedCWD = fixCWD(cwd);
+
+  const filteredPackages = await filterPackagesByNames(allPackages, names, fixedCWD);
+  const filteredPackagesByName = new Map(filteredPackages.map(p => [p.name, p]));
+
+  const bumps: BumpRecommendation[] = [];
   for (const [packageName, bumpType] of bumpTypeByPackageName.entries()) {
     const packageInfo = filteredPackagesByName.get(packageName);
     if (!packageInfo) {
@@ -345,7 +366,7 @@ export async function getRecommendedBumpsByPackage(
     // preids take precedence above all
     const from = force || preid || isExactRelease || tagInfo?.sha ? packageInfo.version : null;
 
-    out.bumps.push(
+    bumps.push(
       await getBumpRecommendationForPackageInfo(
         packageInfo,
         from,
@@ -360,8 +381,8 @@ export async function getRecommendedBumpsByPackage(
   }
 
   const synchronized = await synchronizeBumps(
-    out.bumps,
-    new Map(out.bumps.map(b => [b.packageInfo.name, b])),
+    bumps,
+    new Map(bumps.map(b => [b.packageInfo.name, b])),
     allPackages,
     releaseAs,
     preid,
@@ -401,7 +422,7 @@ export async function getRecommendedBumpsByPackage(
     }
   }
 
-  return { ...synchronized, conventional };
+  return { ...synchronized };
 }
 
 export interface ApplyRecommendedBumpsByPackageOpts {
@@ -726,5 +747,6 @@ export async function applyRecommendedBumpsByPackage(
  */
 export async function localDepGraph(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
-  return buildLocalDependencyGraph(fixedCWD);
+  const allPackages = await getPackages(fixedCWD);
+  return buildLocalDependencyGraph(allPackages);
 }
