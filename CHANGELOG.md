@@ -1,3 +1,11 @@
+## 1.1.5-beta.0 (2024-11-22)
+
+### 🛠️ Fixes 🛠️
+
+- fix: use exact version instead of range operator when bumping prerelease or with a specific preif (82540ece06f1a6dab5e0ce8c40af408f8c9259c3)
+
+---
+
 ## 1.1.4 (2024-07-16)
 
 ### 🔀 Miscellaneous 🔀
