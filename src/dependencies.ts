@@ -150,7 +150,10 @@ export async function synchronizeBumps(
 
           let operatorTouse = operator;
 
-          if (saveExact) {
+          const useExactVersion =
+            releaseAs === ReleaseAsPresets.ALPHA || releaseAs === ReleaseAsPresets.BETA || preid || saveExact;
+
+          if (useExactVersion) {
             operatorTouse = '';
           } else if (
             !operatorTouse.startsWith('>=') &&

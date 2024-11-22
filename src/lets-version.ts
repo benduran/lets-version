@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import appRootPath from 'app-root-path';
 import { execSync } from 'child_process';
 import { detect as detectPM } from 'detect-package-manager';

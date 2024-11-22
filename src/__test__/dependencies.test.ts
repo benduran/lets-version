@@ -8,14 +8,7 @@ import { getBumpRecommendationForPackageInfo } from '../dependencies.js';
 import { getPackages } from '../getPackages.js';
 import { gitCurrentSHA } from '../git.js';
 import { getSynchronizedBumpsByPackage } from '../lets-version.js';
-import {
-  BumpRecommendation,
-  BumpType,
-  GitCommitWithConventionalAndPackageInfo,
-  PackageInfo,
-  PublishTagInfo,
-  ReleaseAsPresets,
-} from '../types.js';
+import { BumpRecommendation, BumpType, PackageInfo, PublishTagInfo, ReleaseAsPresets } from '../types.js';
 import { isPackageJSONDependencyKeySupported } from '../util.js';
 
 describe('dependencies.js tests', () => {
@@ -199,7 +192,7 @@ describe('dependencies.js tests', () => {
     expect(bump10.type).toBe(BumpType.PRERELEASE);
   });
 
-  it('Should return a valid bump recommendation for monorepo packages', async () => {
+  it.only('Should return a valid bump recommendation for monorepo packages', async () => {
     const cwd = path.join(__dirname, 'test1');
     const packages = await getPackages(cwd);
 

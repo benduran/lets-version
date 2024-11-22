@@ -25,6 +25,7 @@ export async function detectIfMonorepo(cwd = appRootPath.toString()) {
         const parsedYaml: PNPMWorkspaces = yaml.parse(workspaceFileContents) ?? {};
 
         return Boolean(parsedYaml);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
       } catch (err) {
         /* file doesn't exist or the input is malformed */
         return false;
