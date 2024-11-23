@@ -192,7 +192,7 @@ describe('dependencies.js tests', () => {
     expect(bump10.type).toBe(BumpType.PRERELEASE);
   });
 
-  it.only('Should return a valid bump recommendation for monorepo packages', async () => {
+  it('Should return a valid bump recommendation for monorepo packages', async () => {
     const cwd = path.join(__dirname, 'test1');
     const packages = await getPackages(cwd);
 
