@@ -71,7 +71,6 @@
     "conventional-commits-parser": "^3.2.4",
     "dayjs": "^1.11.13",
     "detect-package-manager": "^3.0.2",
-    "execa": "^9.5.1",
     "fs-extra": "^11.2.0",
     "prompts": "^2.4.2",
     "semver": "^7.6.3",
