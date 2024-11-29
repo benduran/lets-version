@@ -1,3 +1,11 @@
+## 1.2.0 (2024-11-29)
+
+### 🔀 Miscellaneous 🔀
+
+- Version bump forced for all
+
+---
+
 ## 1.1.5-no-execa.0 (2024-11-26)
 
 ### 🚨 Breaking Changes 🚨
