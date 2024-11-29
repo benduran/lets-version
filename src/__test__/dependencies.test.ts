@@ -8,14 +8,7 @@ import { getBumpRecommendationForPackageInfo } from '../dependencies.js';
 import { getPackages } from '../getPackages.js';
 import { gitCurrentSHA } from '../git.js';
 import { getSynchronizedBumpsByPackage } from '../lets-version.js';
-import {
-  BumpRecommendation,
-  BumpType,
-  GitCommitWithConventionalAndPackageInfo,
-  PackageInfo,
-  PublishTagInfo,
-  ReleaseAsPresets,
-} from '../types.js';
+import { BumpRecommendation, BumpType, PackageInfo, PublishTagInfo, ReleaseAsPresets } from '../types.js';
 import { isPackageJSONDependencyKeySupported } from '../util.js';
 
 describe('dependencies.js tests', () => {
@@ -257,6 +250,123 @@ describe('dependencies.js tests', () => {
 
       expect(b.pkg.name).toBe('b');
       expect(b.pkg.dependencies).toEqual({ d: '^1.0.1' });
+    }
+  });
+
+  it('Should perform a prerelease bump and ensure that the semver updates has an explicit version and not a range when the bumpType is a prerelease', async () => {
+    const cwd = path.join(__dirname, 'test1');
+    const packages = await getPackages(cwd);
+
+    expect(packages).toBeDefined();
+
+    const updatedDepName = 'd';
+
+    const bumpTypeByPackageName: Map<string, BumpType> = new Map();
+    bumpTypeByPackageName.set(updatedDepName, BumpType.PRERELEASE);
+    const tagsForPackagesMap: Map<string, PublishTagInfo> = new Map();
+    const { bumps, packages: updatedPackages } = await getSynchronizedBumpsByPackage(
+      { cwd, releaseAs: ReleaseAsPresets.BETA },
+      bumpTypeByPackageName,
+      packages,
+      tagsForPackagesMap,
+    );
+    expect(bumps).toBeDefined();
+
+    const dBump = bumps.find(b => b.packageInfo.name === updatedDepName);
+    expect(dBump).toBeDefined();
+    expect(dBump).not.toBeNull();
+
+    for (const updatedPkg of updatedPackages) {
+      if (updatedPkg.name === updatedDepName) continue;
+
+      const d = updatedPkg.pkg.dependencies?.d;
+
+      if (!d) continue;
+
+      expect(/^\d/.test(d)).toBeTruthy();
+      expect(d).toBe(dBump?.to);
+    }
+  });
+
+  it('Should ensure saveExact is respected', async () => {
+    const cwd = path.join(__dirname, 'test1');
+    const packages = await getPackages(cwd);
+
+    expect(packages).toBeDefined();
+
+    const updatedDepName = 'd';
+
+    const bumpTypeByPackageName: Map<string, BumpType> = new Map();
+    bumpTypeByPackageName.set(updatedDepName, BumpType.MINOR);
+    const tagsForPackagesMap: Map<string, PublishTagInfo> = new Map();
+    const { bumps, packages: updatedPackages } = await getSynchronizedBumpsByPackage(
+      { cwd, saveExact: true },
+      bumpTypeByPackageName,
+      packages,
+      tagsForPackagesMap,
+    );
+    expect(bumps).toBeDefined();
+
+    const dBump = bumps.find(b => b.packageInfo.name === updatedDepName);
+    expect(dBump).toBeDefined();
+    expect(dBump).not.toBeNull();
+
+    for (const updatedPkg of updatedPackages) {
+      if (updatedPkg.name === updatedDepName) continue;
+
+      const d = updatedPkg.pkg.dependencies?.d;
+
+      if (!d) continue;
+
+      try {
+        expect(/^\d/.test(d)).toBeTruthy();
+      } catch (error) {
+        console.error('received an invalid semver range in test of', d);
+        throw error;
+      }
+      expect(d).toBe(dBump?.to);
+    }
+  });
+
+  it('Should ensure preids are treated as saveExact', async () => {
+    const cwd = path.join(__dirname, 'test1');
+    const packages = await getPackages(cwd);
+
+    expect(packages).toBeDefined();
+
+    const updatedDepName = 'd';
+    const preid = 'just-a-test';
+
+    const bumpTypeByPackageName: Map<string, BumpType> = new Map();
+    bumpTypeByPackageName.set(updatedDepName, BumpType.MINOR);
+    const tagsForPackagesMap: Map<string, PublishTagInfo> = new Map();
+    const { bumps, packages: updatedPackages } = await getSynchronizedBumpsByPackage(
+      { cwd, preid },
+      bumpTypeByPackageName,
+      packages,
+      tagsForPackagesMap,
+    );
+    expect(bumps).toBeDefined();
+
+    const dBump = bumps.find(b => b.packageInfo.name === updatedDepName);
+    expect(dBump).toBeDefined();
+    expect(dBump).not.toBeNull();
+
+    for (const updatedPkg of updatedPackages) {
+      if (updatedPkg.name === updatedDepName) continue;
+
+      const d = updatedPkg.pkg.dependencies?.d;
+
+      if (!d) continue;
+
+      try {
+        expect(/^\d/.test(d)).toBeTruthy();
+        expect(d).toContain(preid);
+      } catch (error) {
+        console.error('received an invalid semver range in test of', d);
+        throw error;
+      }
+      expect(d).toBe(dBump?.to);
     }
   });
 });

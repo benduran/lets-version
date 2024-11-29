@@ -1,3 +1,26 @@
+## 1.1.5-no-execa.0 (2024-11-26)
+
+### 🚨 Breaking Changes 🚨
+
+- feat!: dropped execa (d57019e1e936786e6fdb2dc4a6cda860735b1e0b)
+
+
+
+### 🔀 Miscellaneous 🔀
+
+- chore: added tests (e8613ebb32ffac5de61433510312cb9349ddfbd2)
+- chore: removed dangling .only() and fixed high severity deps (ab6307b829f74ab24e2c162dca023a21ec945a00)
+
+---
+
+## 1.1.5-beta.0 (2024-11-22)
+
+### 🛠️ Fixes 🛠️
+
+- fix: use exact version instead of range operator when bumping prerelease or with a specific preif (82540ece06f1a6dab5e0ce8c40af408f8c9259c3)
+
+---
+
 ## 1.1.4 (2024-07-16)
 
 ### 🔀 Miscellaneous 🔀
