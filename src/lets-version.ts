@@ -47,6 +47,7 @@ import {
   PublishTagInfo,
   ReleaseAsPresets,
 } from './types.js';
+import { writePackageJSON } from './writePackageJSON.js';
 
 export { defineLetsVersionConfig };
 
@@ -566,7 +567,7 @@ export async function applyRecommendedBumpsByPackage(
           `Will write package.json updates for ${b.packageInfo.name} to ${b.packageInfo.packageJSONPath}`,
         );
       }
-      return fs.writeFile(b.packageInfo.packageJSONPath, JSON.stringify(b.packageInfo.pkg, null, 2), 'utf-8');
+      return writePackageJSON(b.packageInfo.pkg, b.packageInfo.packageJSONPath);
     }),
   );
 
