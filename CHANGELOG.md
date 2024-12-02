@@ -1,3 +1,9 @@
+## 1.3.0 (2024-12-02)
+
+
+
+---
+
 ## 1.2.0 (2024-11-29)
 
 ### 🔀 Miscellaneous 🔀
@@ -759,6 +765,10 @@
 * added dependency graph changes (b2f3b3ca335ccfd4141f834784c96c2f3a691946)
 * added changelog generation on bump application (b162da0a860466e23a4dc7d839b36b9c5b2a4564)
 * added dry runs (908d14ef848bc6717321d4276203ef48318e73b3)
+
+---
+
+dry runs (908d14ef848bc6717321d4276203ef48318e73b3)
 
 ---
 
