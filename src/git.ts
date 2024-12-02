@@ -5,7 +5,7 @@ import path from 'path';
 import semver from 'semver';
 
 import { fixCWD } from './cwd.js';
-import { fuckYouWes } from './exec.js';
+import { exec } from './exec.js';
 import { parseToConventional } from './parser.js';
 import { GitCommit, GitCommitWithConventionalAndPackageInfo, PackageInfo, PublishTagInfo } from './types.js';
 import { chunkArray } from './util.js';
@@ -31,7 +31,7 @@ export async function gitFetchAll(cwd = appRootPath.toString()) {
     );
   }
 
-  await fuckYouWes('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' });
+  await exec('git fetch origin', { cwd: fixedCWD, stdio: 'ignore' });
   didFetchAll = true;
 }
 
@@ -44,7 +44,7 @@ export async function gitFetchAllTags(cwd = appRootPath.toString()) {
 
   const fixedCWD = fixCWD(cwd);
 
-  await fuckYouWes('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'ignore' });
+  await exec('git fetch origin --tags --force', { cwd: fixedCWD, stdio: 'ignore' });
   didFetchAllTags = true;
 }
 
@@ -73,7 +73,7 @@ export async function gitCommitsSince(opts?: GitCommitsSinceOpts): Promise<GitCo
   if (since) cmd += ` ${since}..`;
   if (relPath) cmd += ` -- ${relPath}`;
 
-  const stdout = await fuckYouWes(cmd, { cwd: fixedCWD, stdio: 'pipe' });
+  const stdout = await exec(cmd, { cwd: fixedCWD, stdio: 'pipe' });
 
   return (
     stdout
@@ -102,7 +102,7 @@ export async function gitRemoteTags(cwd = appRootPath.toString()): Promise<Array
   // since this function may be called multiple times in a workflow,
   // we want to avoid accidentally getting different results
   remoteTagsCache =
-    (await fuckYouWes('git ls-remote --tags origin', { cwd: fixedCWD, stdio: 'pipe' }))
+    (await exec('git ls-remote --tags origin', { cwd: fixedCWD, stdio: 'pipe' }))
       ?.trim()
       .split(os.EOL)
       .filter(Boolean)
@@ -128,7 +128,7 @@ export async function gitLocalTags(cwd = appRootPath.toString()): Promise<Array<
     // since this function may be called multiple times in a workflow,
     // we want to avoid accidentally getting different results
     localTagsCache =
-      (await fuckYouWes('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' }))
+      (await exec('git show-ref --tags', { cwd: fixedCWD, stdio: 'pipe' }))
         .trim()
         .split(os.EOL)
         .filter(Boolean)
@@ -239,7 +239,7 @@ export async function getLastKnownPublishTagInfoForAllPackages(
 export async function gitAllFilesChangedSinceSha(sha: string, cwd = appRootPath.toString()): Promise<string[]> {
   const fixedCWD = fixCWD(cwd);
 
-  const stdout = await fuckYouWes(`git --no-pager diff --name-only ${sha}..`, { cwd: fixedCWD, stdio: 'pipe' });
+  const stdout = await exec(`git --no-pager diff --name-only ${sha}..`, { cwd: fixedCWD, stdio: 'pipe' });
   return (
     stdout
       ?.trim()
@@ -376,7 +376,7 @@ export async function gitCommit(header: string, body?: string, footer?: string, 
   const fixedCWD = fixCWD(cwd);
 
   // add files silently
-  await fuckYouWes('git add .', { cwd, stdio: 'ignore' });
+  await exec('git add .', { cwd, stdio: 'ignore' });
 
   let message = header;
   if (body) message += `${os.EOL}${os.EOL}${body}`;
@@ -388,7 +388,7 @@ export async function gitCommit(header: string, body?: string, footer?: string, 
   await fs.writeFile(tempFilePath, message, 'utf-8');
 
   // commit silently
-  await fuckYouWes(`git commit -F ${tempFilePath} --no-verify`, { cwd: fixedCWD, stdio: 'ignore' });
+  await exec(`git commit -F ${tempFilePath} --no-verify`, { cwd: fixedCWD, stdio: 'ignore' });
 
   // remove the commit msg file
   await fs.remove(tempFilePath);
@@ -400,7 +400,7 @@ export async function gitCommit(header: string, body?: string, footer?: string, 
 export async function gitPush(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  await fuckYouWes('git push --no-verify', { cwd: fixedCWD, stdio: 'inherit' });
+  await exec('git push --no-verify', { cwd: fixedCWD, stdio: 'inherit' });
 }
 
 /**
@@ -409,7 +409,7 @@ export async function gitPush(cwd = appRootPath.toString()) {
 export async function gitPushTag(tag: string, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  await fuckYouWes(`git push origin ${tag} --no-verify`, { cwd: fixedCWD, stdio: 'inherit' });
+  await exec(`git push origin ${tag} --no-verify`, { cwd: fixedCWD, stdio: 'inherit' });
 }
 
 /**
@@ -432,7 +432,7 @@ export async function gitPushTags(tags: string[], cwd = appRootPath.toString()) 
 export async function gitTag(tag: string, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  await fuckYouWes(`git tag ${tag}`, { cwd: fixedCWD, stdio: 'ignore' });
+  await exec(`git tag ${tag}`, { cwd: fixedCWD, stdio: 'ignore' });
 }
 
 /**
@@ -445,7 +445,7 @@ export async function gitTag(tag: string, cwd = appRootPath.toString()) {
 export async function gitWorkdirUnclean(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  const statusResult = (await fuckYouWes('git status -s', { cwd: fixedCWD, stdio: 'pipe' })).trim() ?? '';
+  const statusResult = (await exec('git status -s', { cwd: fixedCWD, stdio: 'pipe' })).trim() ?? '';
 
   // split by newlines, just in case
   return statusResult.split(os.EOL).filter(Boolean).length > 0;
@@ -459,7 +459,7 @@ export async function gitWorkdirUnclean(cwd = appRootPath.toString()) {
 export async function gitCurrentSHA(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  const result = (await fuckYouWes('git rev-parse --short HEAD', { cwd: fixedCWD, stdio: 'pipe' })).trim() ?? '';
+  const result = (await exec('git rev-parse --short HEAD', { cwd: fixedCWD, stdio: 'pipe' })).trim() ?? '';
 
   return result;
 }
