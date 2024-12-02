@@ -1,3 +1,32 @@
+## 1.3.0 (2024-12-02)
+
+
+
+---
+
+## 1.2.0 (2024-11-29)
+
+### 🔀 Miscellaneous 🔀
+
+- Version bump forced for all
+
+---
+
+## 1.1.5-no-execa.0 (2024-11-26)
+
+### 🚨 Breaking Changes 🚨
+
+- feat!: dropped execa (d57019e1e936786e6fdb2dc4a6cda860735b1e0b)
+
+
+
+### 🔀 Miscellaneous 🔀
+
+- chore: added tests (e8613ebb32ffac5de61433510312cb9349ddfbd2)
+- chore: removed dangling .only() and fixed high severity deps (ab6307b829f74ab24e2c162dca023a21ec945a00)
+
+---
+
 ## 1.1.5-beta.0 (2024-11-22)
 
 ### 🛠️ Fixes 🛠️
@@ -736,6 +765,10 @@
 * added dependency graph changes (b2f3b3ca335ccfd4141f834784c96c2f3a691946)
 * added changelog generation on bump application (b162da0a860466e23a4dc7d839b36b9c5b2a4564)
 * added dry runs (908d14ef848bc6717321d4276203ef48318e73b3)
+
+---
+
+dry runs (908d14ef848bc6717321d4276203ef48318e73b3)
 
 ---
 
