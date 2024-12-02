@@ -6,7 +6,7 @@ export interface ExecAsyncOpts {
   verbose?: boolean;
 }
 
-export function fuckYouWes(
+export function exec(
   command: string,
   { verbose = process.env.LETS_VERSION_VERBOSE === 'true' || false, ...opts }: ExecAsyncOpts,
 ) {

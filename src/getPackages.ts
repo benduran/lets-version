@@ -6,7 +6,7 @@ import path from 'path';
 import { PackageJson } from 'type-fest';
 
 import { fixCWD } from './cwd.js';
-import { fuckYouWes } from './exec.js';
+import { exec } from './exec.js';
 import { PackageInfo } from './types.js';
 import { detectIfMonorepo } from './workspaces.js';
 
@@ -29,7 +29,7 @@ export async function getPackages(cwd = appRootPath.toString()) {
 
   if (pm === 'pnpm') {
     // this will also include the ROOT workspace, which we need to manually exclude
-    const pnpmOutput = await fuckYouWes('pnpm list -r --dept -1 --json', { cwd: fixedCWD, stdio: 'pipe' });
+    const pnpmOutput = await exec('pnpm list -r --dept -1 --json', { cwd: fixedCWD, stdio: 'pipe' });
 
     const foundPnpmWorkspaces: Array<{ name: string; path: string; private: boolean; version: string }> = JSON.parse(
       pnpmOutput || '',
