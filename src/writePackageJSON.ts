@@ -13,5 +13,5 @@ export async function writePackageJSON(contents: PackageJson, filePath: string) 
   const ogPackageJson = await fs.readFile(p, 'utf-8');
 
   const indent = detectIndent(ogPackageJson);
-  await fs.writeFile(p, JSON.stringify(contents, null, indent.indent ?? '  '), 'utf-8');
+  await fs.writeFile(p, JSON.stringify(contents, null, indent.indent ?? '  ') + '\n', 'utf-8');
 }
