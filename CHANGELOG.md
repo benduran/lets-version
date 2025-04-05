@@ -1,3 +1,20 @@
+## 1.3.1 (2025-04-05)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #33 from vladkampov/patch-1 (7b2dba37dff6e6c64f11891184457bbe15978ff6)
+- chore: add the new line indent when creating the packageJson file (d1d490b5d8ff3f38b283c2ade011ea815457a16e)
+- chore: fully migrated to bun (0800d9557c1119ee8a96f9ade8f409240487fa57)
+- squash (01598a44e7f25fae103d35fc2360d0f7dd6be598)
+
+
+
+### 🛠️ Fixes 🛠️
+
+- fix: writePackageJSON.ts newline symbol to make it cross-platform (49384a13425ed76ad998d5e465ff7cdd80cdee39)
+
+---
+
 ## 1.3.0 (2024-12-02)
 
 
