@@ -1,3 +1,21 @@
+## 1.3.2-beta.1 (2025-09-29)
+
+### 🔀 Miscellaneous 🔀
+
+- chore: remove npm-run-all and just use bun directly (00c42a80c68ea90a501235597ebaa2f00be473ad)
+
+---
+
+## 1.3.2-beta.0 (2025-09-29)
+
+### 🛠️ Fixes 🛠️
+
+- fix: use the correct command to get the branch name (b28a45369bd61e01d93951eb18e14de06c0c3181)
+- fix: ensure that the branch is pushed to origin during any normal push operation (c7422f1d59f2d385590e42bf73478ed3d8cc8b45)
+- fix: bumped deps and allow fetching of conventional commits to happen even is there wasn't previously a release (c454894f70a79345b5dba2988937e9aeb1efef98)
+
+---
+
 ## 1.3.1 (2025-04-05)
 
 ### 🔀 Miscellaneous 🔀

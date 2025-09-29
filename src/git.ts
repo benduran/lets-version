@@ -321,14 +321,16 @@ export async function gitConventionalForPackage(
   const taginfo = await gitLastKnownPublishTagInfoForPackage(packageInfo, fixedCWD);
   const relPackagePath = path.relative(cwd, packageInfo.packagePath);
 
-  if (!taginfo?.sha) {
-    throw new Error(
-      `unable to git conventional commits for package because no git sha was returned when computing last known publish tag for package ${packageInfo.name}`,
-    );
-  }
+  // in a prior version of lets-version, we used to error out if there wasn't a previous publish at all,
+  // which wasn't great, as it meant that you needed at least one publish to use this library in your repo.
+  // now, we take the first commit in the repo (it's the default behavior) and let the process continue
 
-  // const results = await gitCommitsSince(taginfo?.sha, relPackagePath, fixedCWD);
-  const results = await gitCommitsSince({ ...rest, cwd: fixedCWD, relPath: relPackagePath, since: taginfo?.sha });
+  const results = await gitCommitsSince({
+    ...rest,
+    cwd: fixedCWD,
+    relPath: relPackagePath,
+    since: taginfo?.sha ?? undefined,
+  });
   const conventional = parseToConventional(results);
 
   return conventional.map(
@@ -394,12 +396,53 @@ export async function gitCommit(header: string, body?: string, footer?: string, 
   await fs.remove(tempFilePath);
 }
 
+async function gitCurrentBranchName(cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  const result = await exec('git rev-parse --abbrev-ref HEAD', { cwd: fixedCWD, stdio: 'pipe' });
+
+  return result.trim();
+}
+
+/**
+ * as the name of this function insists, this
+ * function will auto push the current branch, using the current
+ * branch name, to origin if it doesn't already exist there.
+ */
+async function gitEnsureBranchExistsOnOrigin(cwd = appRootPath.toString()) {
+  const fixedCWD = fixCWD(cwd);
+
+  const currentBranchName = await gitCurrentBranchName(cwd);
+  if (!currentBranchName) {
+    throw new Error(
+      "gitEnsureBranchExistsOnOrigin() failed because your repository's current branch name could not be properly computed. this is a bug 🐛",
+    );
+  }
+
+  // this command will return with *something*, not an empty response, if the branch exists on upstream
+  const branchExistsOnUpstream = Boolean(
+    (
+      await exec(`git ls-remote --heads origin ${currentBranchName}`, {
+        cwd: fixedCWD,
+        stdio: 'pipe',
+      })
+    ).trim(),
+  );
+
+  if (!branchExistsOnUpstream) {
+    await exec(`git push --set-upstream origin ${currentBranchName}`, { cwd: fixedCWD, stdio: 'inherit' });
+  }
+
+  return currentBranchName;
+}
+
 /**
  * Pushes current local changes to upstream / origin
  */
 export async function gitPush(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
+  await gitEnsureBranchExistsOnOrigin(cwd);
   await exec('git push --no-verify', { cwd: fixedCWD, stdio: 'inherit' });
 }
 
@@ -409,6 +452,7 @@ export async function gitPush(cwd = appRootPath.toString()) {
 export async function gitPushTag(tag: string, cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
+  await gitEnsureBranchExistsOnOrigin(cwd);
   await exec(`git push origin ${tag} --no-verify`, { cwd: fixedCWD, stdio: 'inherit' });
 }
 

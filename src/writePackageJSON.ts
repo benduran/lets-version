@@ -1,5 +1,6 @@
-import path from 'node:path';
 import os from 'node:os';
+import path from 'node:path';
+
 import detectIndent from 'detect-indent';
 import fs from 'fs-extra';
 import type { PackageJson } from 'type-fest';
