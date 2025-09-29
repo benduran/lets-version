@@ -399,7 +399,7 @@ export async function gitCommit(header: string, body?: string, footer?: string, 
 async function gitCurrentBranchName(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
 
-  const result = await exec('git branch --abbrev-ref HEAD', { cwd: fixedCWD, stdio: 'pipe' });
+  const result = await exec('git rev-parse --abbrev-ref HEAD', { cwd: fixedCWD, stdio: 'pipe' });
 
   return result.trim();
 }
