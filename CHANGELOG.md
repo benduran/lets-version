@@ -1,3 +1,11 @@
+## 1.3.2 (2025-09-29)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #34 from benduran/fix/allow-first-publish (e87c9408789cae55e4486f9be62a221168708c6d)
+
+---
+
 ## 1.3.2-beta.1 (2025-09-29)
 
 ### 🔀 Miscellaneous 🔀
