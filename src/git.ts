@@ -321,14 +321,16 @@ export async function gitConventionalForPackage(
   const taginfo = await gitLastKnownPublishTagInfoForPackage(packageInfo, fixedCWD);
   const relPackagePath = path.relative(cwd, packageInfo.packagePath);
 
-  if (!taginfo?.sha) {
-    throw new Error(
-      `unable to git conventional commits for package because no git sha was returned when computing last known publish tag for package ${packageInfo.name}`,
-    );
-  }
+  // in a prior version of lets-version, we used to error out if there wasn't a previous publish at all,
+  // which wasn't great, as it meant that you needed at least one publish to use this library in your repo.
+  // now, we take the first commit in the repo (it's the default behavior) and let the process continue
 
-  // const results = await gitCommitsSince(taginfo?.sha, relPackagePath, fixedCWD);
-  const results = await gitCommitsSince({ ...rest, cwd: fixedCWD, relPath: relPackagePath, since: taginfo?.sha });
+  const results = await gitCommitsSince({
+    ...rest,
+    cwd: fixedCWD,
+    relPath: relPackagePath,
+    since: taginfo?.sha ?? undefined,
+  });
   const conventional = parseToConventional(results);
 
   return conventional.map(
