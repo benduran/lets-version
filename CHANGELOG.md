@@ -1,3 +1,11 @@
+## 1.3.2-beta.1 (2025-09-29)
+
+### 🔀 Miscellaneous 🔀
+
+- chore: remove npm-run-all and just use bun directly (00c42a80c68ea90a501235597ebaa2f00be473ad)
+
+---
+
 ## 1.3.2-beta.0 (2025-09-29)
 
 ### 🛠️ Fixes 🛠️
