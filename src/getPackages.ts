@@ -1,12 +1,12 @@
 import mapWorkspaces from '@npmcli/map-workspaces';
 import appRootPath from 'app-root-path';
-import { detect as detectPackageManager } from 'detect-package-manager';
 import { promises as fs } from 'fs';
 import path from 'path';
 import { PackageJson } from 'type-fest';
 
 import { fixCWD } from './cwd.js';
 import { exec } from './exec.js';
+import { getPackageManager } from './getPackageManager.js';
 import { PackageInfo } from './types.js';
 import { detectIfMonorepo } from './workspaces.js';
 
@@ -19,7 +19,7 @@ import { detectIfMonorepo } from './workspaces.js';
  */
 export async function getPackages(cwd = appRootPath.toString()) {
   const fixedCWD = fixCWD(cwd);
-  const pm = await detectPackageManager({ cwd: fixedCWD });
+  const pm = await getPackageManager(fixedCWD);
 
   const rootPJSONPath = path.join(fixedCWD, 'package.json');
 
@@ -29,13 +29,24 @@ export async function getPackages(cwd = appRootPath.toString()) {
 
   if (pm === 'pnpm') {
     // this will also include the ROOT workspace, which we need to manually exclude
-    const pnpmOutput = await exec('pnpm list -r --dept -1 --json', { cwd: fixedCWD, stdio: 'pipe' });
+    try {
+      const pnpmOutput = await exec('pnpm list -r --depth -1 --json', {
+        cwd: fixedCWD,
+        stdio: 'pipe',
+      });
 
-    const foundPnpmWorkspaces: Array<{ name: string; path: string; private: boolean; version: string }> = JSON.parse(
-      pnpmOutput || '',
-    );
+      const foundPnpmWorkspaces: Array<{
+        name: string;
+        path: string;
+        private: boolean;
+        version: string;
+      }> = JSON.parse(pnpmOutput || '');
 
-    workspaces = new Map(foundPnpmWorkspaces.filter(w => w.name !== rootPJSON.name).map(w => [w.name, w.path]));
+      workspaces = new Map(foundPnpmWorkspaces.filter(w => w.name !== rootPJSON.name).map(w => [w.name, w.path]));
+    } catch {
+      // likely a single package repo, we just ignore the root package until later down the line
+      workspaces = new Map();
+    }
   } else {
     // yarn and npm use the same "workspaces" field in the package.json,
     // so we can rely on the npmcli detection algo

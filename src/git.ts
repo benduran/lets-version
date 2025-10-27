@@ -95,6 +95,7 @@ let remoteTagsCache: Array<[string, string]> | null = null;
  * Grabs the full list of all tags available on upstream
  */
 export async function gitRemoteTags(cwd = appRootPath.toString()): Promise<Array<[string, string]>> {
+  debugger;
   if (remoteTagsCache) return remoteTagsCache;
 
   const fixedCWD = fixCWD(cwd);
@@ -139,11 +140,8 @@ export async function gitLocalTags(cwd = appRootPath.toString()): Promise<Array<
         }) ?? null;
 
     return localTagsCache ?? [];
-  } catch (error) {
-    // According to the official git documentation, zero results will cause an exit code of "1"
-    // https://git-scm.com/docs/git-show-ref#_examples
-    if (error.exitCode === 1) return [];
-    throw error;
+  } catch {
+    return [];
   }
 }
 
@@ -166,6 +164,7 @@ export async function gitLastKnownPublishTagInfoForPackage(
   packageInfo: PackageInfo,
   cwd = appRootPath.toString(),
 ): Promise<PublishTagInfo | null> {
+  debugger;
   const fixedCWD = fixCWD(cwd);
 
   // tag may either be on upstream or local-only. We need to treat both cases as "exists"

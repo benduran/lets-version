@@ -37,7 +37,7 @@ export function exec(
     child.once('exit', code => {
       if (code) {
         const errMsg = errBuffer.toString('utf-8');
-        console.error(errMsg);
+        if (opts.stdio === 'inherit') console.error(errMsg);
 
         if (error) {
           return reject(error);
