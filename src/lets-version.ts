@@ -513,7 +513,6 @@ export async function applyRecommendedBumpsByPackage(
 
   if (!allPackages.length) return null;
 
-  debugger;
   const synchronized = await getRecommendedBumpsByPackage({
     cwd: fixedCWD,
     names,
@@ -527,7 +526,6 @@ export async function applyRecommendedBumpsByPackage(
     updatePeer,
     updateOptional,
   });
-  debugger;
 
   const { bumpsByPackageName: presyncBumpsByPackageName } = synchronized;
 

@@ -17,8 +17,6 @@ export async function detectIfMonorepo(cwd = appRootPath.toString()) {
   const rootPjsonPath = path.join(fixedCWD, 'package.json');
   const pjson = JSON.parse(await fs.readFile(rootPjsonPath, 'utf8')) as PackageJson;
 
-  debugger;
-
   // short circuit if the package.json tells us it's a monorepo
   if (Array.isArray(pjson.workspaces) && pjson.workspaces.length) return true;
   if (pm === 'pnpm') {
