@@ -1,3 +1,18 @@
+## 1.4.0 (2025-10-27)
+
+### 🔀 Miscellaneous 🔀
+
+- Merge pull request #35 from benduran/fix-pnpm (64771d08a838ff0f14049b0a982bd67dbda26b0a)
+- chore: fixed linting errors (01f714bd0b009a5201465f32eeb4192db6732780)
+
+
+
+### 🛠️ Fixes 🛠️
+
+- fix: pnpm package collection now works. also silenced extra errors when stdio is not inherit (73a0d99dbee9e4acbd747ab4162b361b30bf9575)
+
+---
+
 ## 1.3.2 (2025-09-29)
 
 ### 🔀 Miscellaneous 🔀
