@@ -139,11 +139,8 @@ export async function gitLocalTags(cwd = appRootPath.toString()): Promise<Array<
         }) ?? null;
 
     return localTagsCache ?? [];
-  } catch (error) {
-    // According to the official git documentation, zero results will cause an exit code of "1"
-    // https://git-scm.com/docs/git-show-ref#_examples
-    if (error.exitCode === 1) return [];
-    throw error;
+  } catch {
+    return [];
   }
 }
 

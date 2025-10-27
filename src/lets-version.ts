@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import appRootPath from 'app-root-path';
 import { execSync } from 'child_process';
-import { detect as detectPM } from 'detect-package-manager';
 import fs from 'fs-extra';
 import os from 'os';
 import path from 'path';
@@ -11,6 +10,7 @@ import semver from 'semver';
 import { getChangelogUpdateForPackageInfo, getFormattedChangelogDate } from './changelog.js';
 import { fixCWD } from './cwd.js';
 import { getBumpRecommendationForPackageInfo, synchronizeBumps } from './dependencies.js';
+import { getPackageManager } from './getPackageManager.js';
 import { filterPackagesByNames, getAllPackagesChangedBasedOnFilesModified, getPackages } from './getPackages.js';
 import {
   formatVersionTagForPackage,
@@ -136,7 +136,7 @@ export async function getChangedPackagesSinceBump(opts?: GetLastVersionTagsByPac
   const rootPackage = allPackages.find(p => p.root);
   const filteredPackages = await filterPackagesByNames(allPackages, names, fixedCWD);
 
-  if (!filteredPackages) return [];
+  if (!filteredPackages.length) return [];
 
   const tagInfos = await getLastKnownPublishTagInfoForAllPackages(filteredPackages, noFetchTags, fixedCWD);
   const changedFiles = await getAllFilesChangedSinceTagInfos(filteredPackages, tagInfos, fixedCWD);
@@ -161,7 +161,7 @@ export async function getChangedPackagesSinceBranch(opts?: GetChangedFilesSinceB
   const rootPackage = allPackages.find(p => p.root);
   const filteredPackages = await filterPackagesByNames(allPackages, names, fixedCWD);
 
-  if (!filteredPackages) return [];
+  if (!filteredPackages.length) return [];
 
   const changedFiles = await getAllFilesChangedSinceBranch(filteredPackages, branch, fixedCWD);
 
@@ -250,7 +250,13 @@ export async function getRecommendedBumpsByPackage(
   const allPackages = await getPackages(fixedCWD);
   const filteredPackages = await filterPackagesByNames(allPackages, names, fixedCWD);
 
-  if (!filteredPackages) return { bumps: [], bumpsByPackageName: new Map(), conventional: [], packages: [] };
+  if (!filteredPackages.length)
+    return {
+      bumps: [],
+      bumpsByPackageName: new Map(),
+      conventional: [],
+      packages: [],
+    };
 
   const conventional = await gitConventionalForAllPackages({
     commitDateFormat,
@@ -520,6 +526,7 @@ export async function applyRecommendedBumpsByPackage(
     updatePeer,
     updateOptional,
   });
+
   const { bumpsByPackageName: presyncBumpsByPackageName } = synchronized;
 
   if (!synchronized.bumps.length) {
@@ -572,7 +579,7 @@ export async function applyRecommendedBumpsByPackage(
   );
 
   // install deps to ensure lockfiles are updated
-  const pm = await detectPM({ cwd: fixedCWD });
+  const pm = await getPackageManager(fixedCWD);
 
   if (!noInstall) {
     if (dryRun) console.info(`Will run ${pm} install to synchronize lockfiles`);
