@@ -1,3 +1,17 @@
+## 1.4.1-beta.0 (2025-11-06)
+
+### ✨ Features ✨
+
+- feat: added standalone binfile that can be used via npx (f7a633aa61c8f1a6af5559ff1a3fb06f2c20bcdd)
+
+
+
+### 🔀 Miscellaneous 🔀
+
+- chore: disable prettier for the repo (74a7f665ac5ac969d4580caf391dc06854e33a54)
+
+---
+
 ## 1.4.0 (2025-10-27)
 
 ### 🔀 Miscellaneous 🔀
