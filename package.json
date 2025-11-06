@@ -3,17 +3,22 @@
   "version": "1.4.0",
   "description": "A package that reads your conventional commits and git history and recommends (or applies) a SemVer version bump for you",
   "exports": "./dist/lets-version.js",
-  "bin": "./dist/cli.js",
+  "bin": "./bin/cli.js",
   "typings": "./dist/lets-version.d.ts",
   "types": "./dist/lets-version.d.ts",
   "type": "module",
+  "engines": {
+    "bun": ">=1.3.1",
+    "node": ">=22"
+  },
   "files": [
     "dist/"
   ],
   "scripts": {
-    "build": "bun run clean && bun run compile",
-    "clean": "rm -rf ./dist",
+    "build": "bun run clean && bun run compile && bun run compile:bin",
+    "clean": "rm -rf ./dist && rm -rf ./bin",
     "compile": "tsc --project ./tsconfig.build.json",
+    "compile:bin": "bun build --production --target=node --outfile=./bin/cli.js ./src/cli.ts",
     "lint": "eslint --no-error-on-unmatched-pattern './src/**/*.{tsx,ts,jsx,js,mjs}'",
     "lint:fix": "bun run lint -- --fix",
     "start": "tsx src/cli.ts",
