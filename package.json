@@ -12,7 +12,8 @@
     "node": ">=22"
   },
   "files": [
-    "dist/"
+    "dist/",
+    "bin/"
   ],
   "scripts": {
     "build": "bun run clean && bun run compile && bun run compile:bin",
