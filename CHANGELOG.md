@@ -1,3 +1,11 @@
+## 1.5.1 (2025-11-13)
+
+### 🛠️ Fixes 🛠️
+
+- fix: fixed bad semver range detected when bumping prereleases (fb17ee3b177a0de143ae7aad988a6d78eee88cbe)
+
+---
+
 ## 1.5.0 (2025-11-13)
 
 ### 🔀 Miscellaneous 🔀
