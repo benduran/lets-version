@@ -1,3 +1,11 @@
+## 1.5.0 (2025-11-13)
+
+### 🔀 Miscellaneous 🔀
+
+- chore: added bin to files (7b96ab785ad055a24397a6a66bb4d5a06a658618)
+
+---
+
 ## 1.4.1-beta.0 (2025-11-06)
 
 ### ✨ Features ✨
