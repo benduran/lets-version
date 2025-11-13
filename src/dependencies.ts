@@ -141,12 +141,12 @@ export async function synchronizeBumps(
           const existingdependentDepSemver = String(dependent.pkg[dependentPjsonKey][dependentDepName]);
           const [semverDetails] = semverUtils.parseRange(existingdependentDepSemver);
 
-          if (!semverDetails?.operator) {
+          if (!semverDetails) {
             throw new Error(
               `unable to synchronize deps because ${dependent.name} has a bad semver specified for ${dependentDepName} of ${existingdependentDepSemver}`,
             );
           }
-          const { operator } = semverDetails;
+          const { operator = '' } = semverDetails;
 
           let operatorTouse = operator;
 
