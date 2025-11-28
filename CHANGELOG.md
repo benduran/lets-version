@@ -1,3 +1,11 @@
+## 1.6.0 (2025-11-28)
+
+### ✨ Features ✨
+
+- feat: added support for prefixed semver ranges, which are allowed in yarn, bun and pnpm (d3eae5a912b9d30f403135102d67702e67b4939f)
+
+---
+
 ## 1.5.1 (2025-11-13)
 
 ### 🛠️ Fixes 🛠️
