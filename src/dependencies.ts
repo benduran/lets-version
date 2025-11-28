@@ -139,14 +139,22 @@ export async function synchronizeBumps(
 
           // @ts-expect-error - silence tsc because accessors here are safe, as we've already checked for key existence
           const existingdependentDepSemver = String(dependent.pkg[dependentPjsonKey][dependentDepName]);
-          const [semverDetails] = semverUtils.parseRange(existingdependentDepSemver);
 
-          if (!semverDetails) {
+          // we add some looseness for monorepos and package managers
+          // that allow for prefixes syntaxes
+          const semverRegexWithPrefixes = /^((catalog|workspace):)?(.*)$/;
+          const [, prefix, , actualDeclaredSemver = ''] =
+            semverRegexWithPrefixes.exec(existingdependentDepSemver) ?? [];
+
+          const [semverDetails] = semverUtils.parseRange(actualDeclaredSemver);
+
+          if (!prefix && !semverDetails) {
             throw new Error(
               `unable to synchronize deps because ${dependent.name} has a bad semver specified for ${dependentDepName} of ${existingdependentDepSemver}`,
             );
           }
-          const { operator = '' } = semverDetails;
+          const semverDetailsToUse = semverDetails ?? {};
+          const { operator = '' } = semverDetailsToUse;
 
           let operatorTouse = operator;
 
@@ -156,6 +164,7 @@ export async function synchronizeBumps(
           if (useExactVersion) {
             operatorTouse = '';
           } else if (
+            operatorTouse &&
             !operatorTouse.startsWith('>=') &&
             !operatorTouse.startsWith('^') &&
             !operatorTouse.startsWith('~')
@@ -163,8 +172,14 @@ export async function synchronizeBumps(
             operatorTouse = '^';
           }
 
-          // @ts-expect-error - silence tsc because accessors here are safe, as we've already checked for key existence
-          dependent.pkg[dependentPjsonKey][dependentDepName] = `${operatorTouse}${bump.to}`;
+          // a prefixed semver for use with certain package managers
+          // might not translate into valid semver (it could be empty),
+          // so we should only change the package.json file here
+          // if it was an actual parsed thing
+          if (semverDetails) {
+            // @ts-expect-error - silence tsc because accessors here are safe, as we've already checked for key existence
+            dependent.pkg[dependentPjsonKey][dependentDepName] = `${operatorTouse}${bump.to}`;
+          }
 
           const existingChildBumpRec = bumpsByPackageName.get(dependent.name);
           const childBumpRec = await getBumpRecommendationForPackageInfo(
